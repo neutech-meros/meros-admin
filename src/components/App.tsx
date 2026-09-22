@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 
 import { useAtom } from 'jotai';
 
-import { DemoForm } from '@/components/DemoForm';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -165,9 +164,6 @@ export function App() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Demo Form */}
-        <DemoForm />
 
         {/* Theme Toggle */}
         <ThemeToggle />
