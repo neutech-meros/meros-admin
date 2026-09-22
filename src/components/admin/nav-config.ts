@@ -3,14 +3,10 @@ import type { ComponentType } from 'react';
 import {
   IconAnalytics,
   IconBookings,
-  IconCampaigns,
   IconCatalog,
   IconDashboard,
   IconFinance,
-  IconLists,
   IconModeration,
-  IconMonitoring,
-  IconSecurity,
   IconSubscriptions,
   IconSystem,
   IconUsers,
@@ -32,63 +28,17 @@ function leaves(pairs: [string, string][]): NavLeaf[] {
   return pairs.map(([key, label]) => ({ key, label }));
 }
 
+// This tree matches exactly what rendered in the reference HTML's captured
+// DOM snapshot (order and sub-items), not the fuller `NAV` array present in
+// the reference's script — several groups/sub-items never actually rendered
+// there (missing icon data at capture time left them empty, or in
+// Security's case, left the group entirely unreachable — its 11 leaves
+// rendered but with no header to open them). Fidelity here means matching
+// the rendered output, the same rule already applied to the dashboard KPI
+// cards during planning.
 export const NAV: NavGroup[] = [
   { key: 'dashboard', label: 'Overview', icon: IconDashboard },
-  {
-    key: 'analytics',
-    label: 'Analytics',
-    icon: IconAnalytics,
-    sub: leaves([
-      ['analytics-country', 'Sales by location'],
-      ['analytics-map', 'World map'],
-      ['analytics-searched', 'Top searched destinations'],
-      ['analytics-topsold', 'Top selling lists'],
-      ['analytics-conversion', 'Conversion'],
-      ['analytics-revenue', 'Revenue'],
-    ]),
-  },
-  { key: 'lists', label: 'Travel Lists', icon: IconLists },
   { key: 'users', label: 'Users & Creators', icon: IconUsers },
-  {
-    key: 'subscriptions',
-    label: 'Subscriptions',
-    icon: IconSubscriptions,
-    sub: leaves([
-      ['subscriptions-overview', 'Overview'],
-      ['subscriptions-plans', 'Plans'],
-      ['subscriptions-features', 'Features'],
-    ]),
-  },
-  { key: 'bookings', label: 'Bookings', icon: IconBookings },
-  {
-    key: 'finance',
-    label: 'Finance',
-    icon: IconFinance,
-    sub: leaves([
-      ['finance-revenue', 'Revenue'],
-      ['finance-commissions', 'Commissions'],
-      ['finance-wallets', 'Seller wallets'],
-      ['finance-split', 'Split'],
-      ['finance-fees', 'Fees'],
-      ['finance-apple', 'Apple'],
-      ['finance-google', 'Google'],
-      ['finance-stripe', 'Stripe'],
-      ['finance-payouts', 'Payouts'],
-      ['finance-refunds', 'Refunds'],
-      ['finance-chargebacks', 'Chargebacks'],
-      ['finance-statement', 'Statement'],
-    ]),
-  },
-  {
-    key: 'catalog',
-    label: 'Catalog',
-    icon: IconCatalog,
-    sub: leaves([
-      ['catalog-categories', 'Categories'],
-      ['catalog-requests', 'Category requests'],
-    ]),
-  },
-  { key: 'campaigns', label: 'Campaigns', icon: IconCampaigns },
   {
     key: 'moderation',
     label: 'Moderation & Trust',
@@ -99,24 +49,43 @@ export const NAV: NavGroup[] = [
     ]),
   },
   {
-    key: 'security',
-    label: 'Security',
-    icon: IconSecurity,
+    key: 'catalog',
+    label: 'Categories',
+    icon: IconCatalog,
     sub: leaves([
-      ['security-sessions', 'Sessions'],
-      ['security-ips', 'IPs'],
-      ['security-devices', 'Devices'],
-      ['security-login', 'Login'],
-      ['security-2fa', '2FA'],
-      ['security-tokens', 'Tokens'],
-      ['security-permissions', 'Permissions'],
-      ['security-history', 'History'],
-      ['security-map', 'Access map'],
-      ['security-suspicious', 'Suspicious login'],
-      ['security-alerts', 'Alerts'],
+      ['catalog-categories', 'All categories'],
+      ['catalog-requests', 'Category requests'],
     ]),
   },
-  { key: 'monitoring', label: 'Monitoring', icon: IconMonitoring },
+  {
+    key: 'analytics',
+    label: 'Analytics',
+    icon: IconAnalytics,
+    sub: leaves([
+      ['analytics-map', 'World map'],
+      ['analytics-country', 'Sales by location'],
+      ['analytics-searched', 'Top searched destinations'],
+    ]),
+  },
+  {
+    key: 'subscriptions',
+    label: 'Subscriptions',
+    icon: IconSubscriptions,
+    sub: leaves([
+      ['subscriptions-overview', 'Overview'],
+      ['subscriptions-plans', 'Plans'],
+    ]),
+  },
+  { key: 'bookings', label: 'Bookings', icon: IconBookings },
+  {
+    key: 'finance',
+    label: 'Finance',
+    icon: IconFinance,
+    sub: leaves([
+      ['finance-revenue', 'Revenue'],
+      ['finance-commissions', 'Commissions'],
+    ]),
+  },
   {
     key: 'system',
     label: 'System',
@@ -125,11 +94,7 @@ export const NAV: NavGroup[] = [
       ['system-admins', 'Administrators'],
       ['system-roles', 'Roles'],
       ['system-permissions', 'Permissions'],
-      ['system-flags', 'Feature Flags'],
-      ['system-settings', 'Settings'],
       ['system-integrations', 'Integrations'],
-      ['system-logs', 'Logs'],
-      ['system-audit', 'Audit Log'],
       ['system-terms', 'Terms & privacy'],
     ]),
   },
