@@ -202,15 +202,9 @@ export function getUsers(): UserRecord[] {
 }
 
 const SUBSCRIPTIONS: Record<string, SubscriptionRow[]> = {
-  u1: [
-    { plan: 'Premium', amount: 'R$ 39,90/mo', since: '12/03/2025', status: 'Active' },
-  ],
-  u3: [
-    { plan: 'Premium', amount: 'R$ 39,90/mo', since: '02/01/2026', status: 'Active' },
-  ],
-  u5: [
-    { plan: 'Freemium', amount: 'R$ 0,00', since: '05/11/2025', status: 'Active' },
-  ],
+  u1: [{ plan: 'Premium', amount: 'R$ 39,90/mo', since: '12/03/2025', status: 'Active' }],
+  u3: [{ plan: 'Premium', amount: 'R$ 39,90/mo', since: '02/01/2026', status: 'Active' }],
+  u5: [{ plan: 'Freemium', amount: 'R$ 0,00', since: '05/11/2025', status: 'Active' }],
   u9: [
     { plan: 'Premium', amount: 'R$ 39,90/mo', since: '22/04/2025', status: 'Active' },
     { plan: 'Freemium', amount: 'R$ 0,00', since: '10/01/2024', status: 'Cancelled' },
@@ -280,10 +274,27 @@ export interface ReportRow {
 }
 
 const REPORTS: Record<string, ReportRow[]> = {
-  u4: [{ type: 'Received', reason: 'Suspicious payment activity', status: 'Pending', date: '17/08/2026' }],
+  u4: [
+    {
+      type: 'Received',
+      reason: 'Suspicious payment activity',
+      status: 'Pending',
+      date: '17/08/2026',
+    },
+  ],
   u7: [
-    { type: 'Received', reason: 'Fake profile information', status: 'Approved', date: '28/02/2026' },
-    { type: 'Sent', reason: 'Spam messages from another account', status: 'Denied', date: '20/02/2026' },
+    {
+      type: 'Received',
+      reason: 'Fake profile information',
+      status: 'Approved',
+      date: '28/02/2026',
+    },
+    {
+      type: 'Sent',
+      reason: 'Spam messages from another account',
+      status: 'Denied',
+      date: '20/02/2026',
+    },
   ],
 };
 

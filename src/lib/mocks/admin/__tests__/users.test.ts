@@ -13,16 +13,18 @@ describe('getUsers', () => {
   it('covers every account/plan/status/type value at least once', () => {
     const users = getUsers();
     expect(new Set(users.map((u) => u.account))).toEqual(new Set(['Personal', 'Business']));
-    expect(new Set(users.map((u) => u.plan))).toEqual(new Set(['Free trial', 'Freemium', 'Premium']));
-    expect(new Set(users.map((u) => u.status))).toEqual(new Set(['Active', 'Deactivated', 'Deleted']));
+    expect(new Set(users.map((u) => u.plan))).toEqual(
+      new Set(['Free trial', 'Freemium', 'Premium']),
+    );
+    expect(new Set(users.map((u) => u.status))).toEqual(
+      new Set(['Active', 'Deactivated', 'Deleted']),
+    );
     expect(new Set(users.map((u) => u.type))).toEqual(new Set(['User', 'Creator']));
   });
 
   it('has at least one record where type and account disagree (independent fields)', () => {
     const users = getUsers();
-    const disagree = users.some(
-      (u) => (u.type === 'Creator') !== (u.account === 'Business'),
-    );
+    const disagree = users.some((u) => (u.type === 'Creator') !== (u.account === 'Business'));
     expect(disagree).toBe(true);
   });
 
