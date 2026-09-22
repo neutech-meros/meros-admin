@@ -206,11 +206,36 @@ export interface SaleRow {
 // Mock (window.MEROS.ORDERS is not present in the source file).
 export function getLatestSales(): SaleRow[] {
   return [
-    { buyer: 'Marina Alves', list: '10 dias na Patagônia', amount: 'R$ 1.240', status: 'Paid' },
-    { buyer: 'Diego Fontes', list: 'Roteiro Lisboa + Porto', amount: 'R$ 680', status: 'Processing' },
-    { buyer: 'Helena Cardoso', list: 'Trilhas na Chapada Diamantina', amount: 'R$ 420', status: 'Paid' },
-    { buyer: 'Bruno Tavares', list: 'Tóquio essencial em 7 dias', amount: 'R$ 990', status: 'Pending' },
-    { buyer: 'Isabela Ramos', list: 'Vinícolas do Vale dos Vinhedos', amount: 'R$ 350', status: 'Refunded' },
+    {
+      buyer: 'Marina Alves',
+      list: '10 dias na Patagônia',
+      amount: 'R$ 1.240',
+      status: 'Paid',
+    },
+    {
+      buyer: 'Diego Fontes',
+      list: 'Roteiro Lisboa + Porto',
+      amount: 'R$ 680',
+      status: 'Processing',
+    },
+    {
+      buyer: 'Helena Cardoso',
+      list: 'Trilhas na Chapada Diamantina',
+      amount: 'R$ 420',
+      status: 'Paid',
+    },
+    {
+      buyer: 'Bruno Tavares',
+      list: 'Tóquio essencial em 7 dias',
+      amount: 'R$ 990',
+      status: 'Pending',
+    },
+    {
+      buyer: 'Isabela Ramos',
+      list: 'Vinícolas do Vale dos Vinhedos',
+      amount: 'R$ 350',
+      status: 'Refunded',
+    },
   ];
 }
 

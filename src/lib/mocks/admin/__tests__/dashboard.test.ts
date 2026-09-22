@@ -14,7 +14,11 @@ describe('getDashboardKpis', () => {
   it('returns the 4 KPI cards with the exact source values', () => {
     const kpis = getDashboardKpis();
     expect(kpis).toHaveLength(4);
-    expect(kpis[0]).toMatchObject({ label: 'Total revenue', value: 'R$ 1.842.900', positive: true });
+    expect(kpis[0]).toMatchObject({
+      label: 'Total revenue',
+      value: 'R$ 1.842.900',
+      positive: true,
+    });
     expect(kpis[2]).toMatchObject({ label: 'Personal account', value: '48.290' });
   });
 });
@@ -46,12 +50,15 @@ describe('getGrowthSeries', () => {
 });
 
 describe('getRevenueTrend', () => {
-  it.each(['7d', '30d', '90d'] as const)('returns matching-length labels/marketplace/subscriptions for %s', (period) => {
-    const trend = getRevenueTrend(period);
-    expect(trend.labels.length).toBeGreaterThan(0);
-    expect(trend.marketplace).toHaveLength(trend.labels.length);
-    expect(trend.subscriptions).toHaveLength(trend.labels.length);
-  });
+  it.each(['7d', '30d', '90d'] as const)(
+    'returns matching-length labels/marketplace/subscriptions for %s',
+    (period) => {
+      const trend = getRevenueTrend(period);
+      expect(trend.labels.length).toBeGreaterThan(0);
+      expect(trend.marketplace).toHaveLength(trend.labels.length);
+      expect(trend.subscriptions).toHaveLength(trend.labels.length);
+    },
+  );
 });
 
 describe('getAlerts / getLatestSales / getRecentUsers', () => {
