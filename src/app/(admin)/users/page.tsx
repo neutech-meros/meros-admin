@@ -67,6 +67,7 @@ export default function UsersPage() {
 
   function handleSaveProfile(user: UserRecord, draft: ProfileDraft) {
     setUsers((cur) => cur.map((u) => (u.id === user.id ? { ...u, ...draft } : u)));
+    setDrawerUser((cur) => (cur && cur.id === user.id ? { ...cur, ...draft } : cur));
     toast.success(t('admin.users.toasts.profileSavedTitle'), {
       description: t('admin.users.toasts.profileSaved', { name: draft.name || user.name }),
     });

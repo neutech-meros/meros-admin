@@ -62,4 +62,20 @@ describe('UsersPage', () => {
     await user.click(screen.getByText('Reset password'));
     expect(screen.getByText(/send.*a reset link/i)).toBeInTheDocument();
   });
+
+  it('keeps the drawer open and up to date after saving a profile edit', async () => {
+    const user = userEvent.setup();
+    render(<UsersPage />);
+    await user.click(screen.getByText('Camila Duarte'));
+    await user.click(screen.getByRole('button', { name: /edit profile/i }));
+    const nameInput = screen.getByDisplayValue('Camila Duarte');
+    await user.clear(nameInput);
+    await user.type(nameInput, 'Camila D. Silva');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    // Drawer stays open (no onClose call on save) and now shows the updated name
+    // instead of the stale pre-save value.
+    expect(screen.getByRole('tab', { name: 'Profile' })).toBeInTheDocument();
+    expect(screen.getAllByText('Camila D. Silva').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Camila Duarte')).not.toBeInTheDocument();
+  });
 });
