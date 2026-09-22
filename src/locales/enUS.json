@@ -85,6 +85,16 @@
       "chartErrorTitle": "Could not load the chart",
       "chartErrorDescription": "The revenue series is temporarily unavailable. Try again in a few seconds.",
       "chartErrorRetry": "Try again"
+    },
+    "users": {
+      "searchPlaceholder": "Search by name or email...",
+      "filterByAccount": "Filter by account",
+      "filterByPlan": "Filter by plan",
+      "filterByStatus": "Filter by status",
+      "allAccounts": "All accounts",
+      "allPlans": "All plans",
+      "allStatuses": "All statuses",
+      "clearFilters": "Clear filters"
     }
   }
 }

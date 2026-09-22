@@ -85,6 +85,16 @@
       "chartErrorTitle": "No se pudo cargar el gráfico",
       "chartErrorDescription": "La serie de ingresos no está disponible temporalmente. Inténtalo de nuevo en unos segundos.",
       "chartErrorRetry": "Intentar de nuevo"
+    },
+    "users": {
+      "searchPlaceholder": "Buscar por nombre o email...",
+      "filterByAccount": "Filtrar por cuenta",
+      "filterByPlan": "Filtrar por plan",
+      "filterByStatus": "Filtrar por estado",
+      "allAccounts": "Todas las cuentas",
+      "allPlans": "Todos los planes",
+      "allStatuses": "Todos los estados",
+      "clearFilters": "Limpiar filtros"
     }
   }
 }
