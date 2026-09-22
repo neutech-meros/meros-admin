@@ -87,6 +87,17 @@
       "chartErrorRetry": "Intentar de nuevo"
     },
     "users": {
+      "title": "Usuarios y creadores",
+      "subtitle": "Gestiona cuentas, verificaciones y planes.",
+      "toasts": {
+        "accountUpdatedTitle": "Cuenta actualizada",
+        "reactivated": "{{name}} fue reactivada.",
+        "deactivated": "{{name}} fue desactivada.",
+        "accountDeletedTitle": "Cuenta eliminada",
+        "deleted": "{{name}} fue eliminada de la plataforma.",
+        "profileSavedTitle": "Perfil guardado",
+        "profileSaved": "Se actualizó el perfil de {{name}}."
+      },
       "searchPlaceholder": "Buscar por nombre o email...",
       "filterByAccount": "Filtrar por cuenta",
       "filterByPlan": "Filtrar por plan",
