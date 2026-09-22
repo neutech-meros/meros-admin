@@ -44,7 +44,16 @@ export function GrowthChart({ data }: { data: GrowthSeries }) {
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip />
+        <Tooltip
+          contentStyle={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 10,
+            color: 'var(--text-primary)',
+          }}
+          labelStyle={{ color: 'var(--text-primary)' }}
+          itemStyle={{ color: 'var(--text-primary)' }}
+        />
         <Legend wrapperStyle={{ fontSize: 11.5 }} />
         <Line
           yAxisId="left"

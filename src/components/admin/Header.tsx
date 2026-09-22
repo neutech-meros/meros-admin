@@ -31,13 +31,7 @@ import {
   IconSearch,
   IconSun,
 } from './icons';
-import { NAV, labelForKey, navHref, navI18nKey, parentOfKey } from './nav-config';
-
-function keyFromPathname(pathname: string): string {
-  if (pathname === '/dashboard') return 'dashboard';
-  const key = pathname.replace(/^\//, '').replace(/\//g, '-');
-  return key || 'dashboard';
-}
+import { NAV, keyFromPathname, labelForKey, navHref, navI18nKey, parentOfKey } from './nav-config';
 
 // t is passed in so every NAV label rendered from this index goes through i18n
 // (see navI18nKey's doc comment in nav-config.ts for why defaultValue is used
@@ -139,7 +133,7 @@ export function Header() {
       <div className="flex flex-shrink-0 items-center gap-2">
         <button
           type="button"
-          aria-label="search"
+          aria-label={t('admin.header.search')}
           onClick={() => {
             setQuery('');
             setCmdkOpen(true);

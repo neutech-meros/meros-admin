@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const [month, setMonth] = useState('0');
   const [revPeriod, setRevPeriod] = useState<'7d' | '30d' | '90d'>('30d');
+  const [revError, setRevError] = useState(false);
 
   const kpis = getDashboardKpis();
   const subs = getSubscriptionSummaries();
@@ -122,9 +123,68 @@ export default function DashboardPage() {
                   {t(p.labelKey)}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setRevError(true)}
+                className="rounded-md p-1"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width={18}
+                  height={18}
+                  stroke="currentColor"
+                  fill="none"
+                  strokeWidth={1.6}
+                >
+                  <circle cx="5" cy="12" r="1.3" />
+                  <circle cx="12" cy="12" r="1.3" />
+                  <circle cx="19" cy="12" r="1.3" />
+                </svg>
+              </button>
             </div>
           </div>
-          <RevenueChart data={revenue} />
+          {revError ? (
+            <div
+              className="flex flex-col items-center justify-center px-4 py-8 text-center"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <div
+                className="mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-full"
+                style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width={18}
+                  height={18}
+                  stroke="currentColor"
+                  fill="none"
+                  strokeWidth={1.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
+                  <path d="M12 9v4M12 17h.01" />
+                </svg>
+              </div>
+              <h3 className="mb-1 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {t('admin.dashboard.chartErrorTitle')}
+              </h3>
+              <p className="mb-5 max-w-[340px] text-[13.5px]">
+                {t('admin.dashboard.chartErrorDescription')}
+              </p>
+              <button
+                type="button"
+                onClick={() => setRevError(false)}
+                className="inline-flex items-center gap-2 rounded-[10px] px-4 py-3 text-sm font-medium text-white"
+                style={{ background: 'var(--brand-500)' }}
+              >
+                {t('admin.dashboard.chartErrorRetry')}
+              </button>
+            </div>
+          ) : (
+            <RevenueChart data={revenue} />
+          )}
         </div>
 
         <div

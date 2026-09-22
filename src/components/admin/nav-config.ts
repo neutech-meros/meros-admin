@@ -154,6 +154,13 @@ export function navHref(key: string): string {
   return key === 'dashboard' ? '/dashboard' : `/${key.replace(/-/g, '/')}`;
 }
 
+// Inverse of navHref: derives a NAV key from the current pathname.
+export function keyFromPathname(pathname: string): string {
+  if (pathname === '/dashboard') return 'dashboard';
+  const key = pathname.replace(/^\//, '').replace(/\//g, '-');
+  return key || 'dashboard';
+}
+
 // i18n key for a NAV key's label, e.g. 'finance-payouts' -> 'admin.nav.financePayouts'.
 // Sidebar/Header call t(navI18nKey(key), { defaultValue: labelForKey(key) }) — this
 // keeps every visible NAV string going through react-i18next (translators can add a

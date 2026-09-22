@@ -75,7 +75,10 @@
       "growthSubtitle": "Users and creators over the last 7 months",
       "period7d": "7 days",
       "period30d": "30 days",
-      "period90d": "90 days"
+      "period90d": "90 days",
+      "chartErrorTitle": "Could not load the chart",
+      "chartErrorDescription": "The revenue series is temporarily unavailable. Try again in a few seconds.",
+      "chartErrorRetry": "Try again"
     }
   }
 }

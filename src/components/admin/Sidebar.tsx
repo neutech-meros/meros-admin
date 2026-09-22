@@ -9,13 +9,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { IconChevronRight, IconCollapse } from './icons';
-import { NAV, navHref, navI18nKey, type NavLeaf } from './nav-config';
-
-function keyFromPathname(pathname: string): string {
-  if (pathname === '/dashboard') return 'dashboard';
-  const key = pathname.replace(/^\//, '').replace(/\//g, '-');
-  return key || 'dashboard';
-}
+import { NAV, keyFromPathname, navHref, navI18nKey, type NavLeaf } from './nav-config';
 
 // Keeps sub-item leaves mounted through the closing transition so they visibly
 // recede as the wrapper's max-height collapses (matching the reference's

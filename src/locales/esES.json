@@ -75,7 +75,10 @@
       "growthSubtitle": "Usuarios y creadores en los últimos 7 meses",
       "period7d": "7 días",
       "period30d": "30 días",
-      "period90d": "90 días"
+      "period90d": "90 días",
+      "chartErrorTitle": "No se pudo cargar el gráfico",
+      "chartErrorDescription": "La serie de ingresos no está disponible temporalmente. Inténtalo de nuevo en unos segundos.",
+      "chartErrorRetry": "Intentar de nuevo"
     }
   }
 }
