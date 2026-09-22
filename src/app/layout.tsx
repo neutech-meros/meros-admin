@@ -1,26 +1,20 @@
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 
-import { Navigation } from '@/components/Navigation';
 import { Providers } from '@/providers/providers';
 
 import type { Metadata } from 'next';
 
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const poppins = Poppins({
+  variable: '--font-poppins',
   subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
-  title: 'FDTE Boilerplate Next.js',
-  description:
-    'Boilerplate do FDTE usando Next.js com TypeScript, Tailwind CSS, shadcn/ui, i18n e Jotai',
+  title: 'Meros Admin',
+  description: 'Painel administrativo do Meros',
 };
 
 export default function RootLayout({
@@ -30,13 +24,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>
-          <div className="min-h-screen flex flex-col">
-            <Navigation />
-            <main className="flex-1">{children}</main>
-          </div>
-        </Providers>
+      <body className={`${poppins.variable} font-sans antialiased`}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
