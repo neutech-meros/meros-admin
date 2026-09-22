@@ -151,16 +151,38 @@ which gates on `type === 'Creator'`, is one of the 7 unbound tabs this
 screen doesn't build — not relevant here beyond noting where `type` would
 otherwise matter.
 
-Badge auto-coloring (`H.badge()`'s color map, as used by this screen):
-`Active` → success, `Creator` → info; everything else (`User`,
-`Deactivated`, `Deleted`, `Free trial`, `Freemium`, `Premium`, etc.) →
-neutral (`var(--text-secondary)` / `var(--bg-surface-hover)`) — this
-reuses Phase 1's existing `statusStyle`/`typeStyle` pattern in
-`src/lib/admin/status-styles.ts`, which already encodes exactly this map;
-extend it rather than duplicating it if it doesn't already cover every
-status/type value this screen needs (check `Active`/`Creator` are there —
-they are; `Deactivated`/`Deleted`/`User`/plan values aren't explicitly
-keyed but already fall through to the correct neutral default).
+**Badge coloring — this screen uses a different helper than Phase 1's,
+confirmed by reading the source directly.** Phase 1's
+`src/lib/admin/status-styles.ts` (`statusStyle`/`typeStyle`) ports a
+Dashboard-specific function (script lines 5101–5118) with its own status
+set. This screen's markup is driven by `cellHelpers().badge()` (script
+lines 3595–3609), a general-purpose helper used across most of the
+reference's generic/table screens, with a genuinely different tone map:
+
+```js
+const map = {
+  success: ['var(--success)', 'var(--success-bg)'],
+  warning: ['var(--warning)', 'var(--warning-bg)'],
+  danger: ['var(--danger)', 'var(--danger-bg)'],
+  info: ['var(--info)', 'var(--info-bg)'],
+  neutral: ['var(--text-secondary)', 'var(--bg-surface-hover)'],
+};
+const auto = {
+  Published: 'success', Active: 'success', Paid: 'success', Completed: 'success', Approved: 'success', Won: 'success',
+  'In review': 'warning', Pending: 'warning', Processing: 'warning', Requested: 'warning', 'In dispute': 'warning',
+  Reported: 'danger', Failed: 'danger', Denied: 'danger', Blocked: 'danger', Lost: 'danger', Received: 'danger',
+  Creator: 'info', 'Session atual': 'info',
+};
+// tone = explicit override, else auto[status], else 'neutral'
+```
+
+Note this map has **no entry for `Deleted`** (Phase 1's dashboard-specific
+map colors it danger; this general helper falls through to neutral for
+it) — port the map above exactly, don't merge it with Phase 1's. Add a
+new `src/lib/admin/badge-tone.ts` (or similar) rather than extending
+`status-styles.ts` — they're two distinct, independently-faithful ports of
+two different source functions, and conflating them would silently change
+one screen's colors to match the other's.
 
 Subscriptions/history/reports tab data is fully invented mock data (no
 extraction possible — `D.getUserSubscriptions`/`getUserHistory`/
