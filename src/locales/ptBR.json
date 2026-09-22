@@ -38,6 +38,20 @@
     "sidebar": {
       "collapse": "Recolher menu",
       "administrator": "Administrator"
+    },
+    "header": {
+      "crumbRoot": "Dashboard",
+      "search": "Search…",
+      "searchPlaceholder": "Search users, lists, orders, creators…",
+      "noResults": "No result found",
+      "notifications": "Notifications",
+      "toggleTheme": "Alternar tema",
+      "preferences": "Preferences",
+      "logout": "Log out"
+    },
+    "nav": {
+      "dashboard": "Overview",
+      "finance": "Finance"
     }
   }
 }
