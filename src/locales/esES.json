@@ -94,7 +94,10 @@
       "allAccounts": "Todas las cuentas",
       "allPlans": "Todos los planes",
       "allStatuses": "Todos los estados",
-      "clearFilters": "Limpiar filtros"
+      "clearFilters": "Limpiar filtros",
+      "footerText": "Mostrando 1–{{count}} de 3.482 cuentas",
+      "emptyTitle": "Ningún usuario encontrado",
+      "emptyDescription": "Intenta buscar por otro nombre o email."
     }
   }
 }

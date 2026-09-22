@@ -94,7 +94,10 @@
       "allAccounts": "All accounts",
       "allPlans": "All plans",
       "allStatuses": "All statuses",
-      "clearFilters": "Clear filters"
+      "clearFilters": "Clear filters",
+      "footerText": "Showing 1–{{count}} de 3.482 accounts",
+      "emptyTitle": "No user found",
+      "emptyDescription": "Try searching for another name or email."
     }
   }
 }
