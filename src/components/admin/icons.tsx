@@ -108,17 +108,17 @@ export function IconGear(props: IconProps) {
 export const IconSystem = IconGear;
 
 // Not present in the reference markup (D.ICONS entries missing from the export) — closest lucide equivalents.
-export function IconLists(props: IconProps) {
-  return <List size={props.size ?? 18} {...props} />;
+export function IconLists({ size = 18, ...props }: IconProps) {
+  return <List size={size} {...props} />;
 }
-export function IconCampaigns(props: IconProps) {
-  return <Send size={props.size ?? 18} {...props} />;
+export function IconCampaigns({ size = 18, ...props }: IconProps) {
+  return <Send size={size} {...props} />;
 }
-export function IconSecurity(props: IconProps) {
-  return <ShieldCheck size={props.size ?? 18} {...props} />;
+export function IconSecurity({ size = 18, ...props }: IconProps) {
+  return <ShieldCheck size={size} {...props} />;
 }
-export function IconMonitoring(props: IconProps) {
-  return <Activity size={props.size ?? 18} {...props} />;
+export function IconMonitoring({ size = 18, ...props }: IconProps) {
+  return <Activity size={size} {...props} />;
 }
 
 // Shell chrome icons (header/sidebar controls), exact source paths.
