@@ -52,6 +52,30 @@
     "nav": {
       "dashboard": "Overview",
       "finance": "Finance"
+    },
+    "dashboard": {
+      "title": "Overview",
+      "subtitle": "Platform health — revenue, growth and items that need your attention.",
+      "export": "Export",
+      "alertsTitle": "Alerts importantes",
+      "latestSales": "Latest sales",
+      "latestUsers": "Latest users",
+      "buyer": "Buyer",
+      "list": "List",
+      "amount": "Amount",
+      "status": "Status",
+      "name": "Name",
+      "type": "Type",
+      "joined": "Joined",
+      "revenueTitle": "Revenue",
+      "revenueSubtitle": "Marketplace + Subscriptions, composition by period",
+      "subscriptionsTitle": "Subscriptions",
+      "conversionRate": "Conversion rate to paid",
+      "growthTitle": "Growth",
+      "growthSubtitle": "Users and creators over the last 7 months",
+      "period7d": "7 days",
+      "period30d": "30 days",
+      "period90d": "90 days"
     }
   }
 }

@@ -52,6 +52,30 @@
     "nav": {
       "dashboard": "Resumen",
       "finance": "Finanzas"
+    },
+    "dashboard": {
+      "title": "Resumen",
+      "subtitle": "Salud de la plataforma — ingresos, crecimiento y elementos que requieren tu atención.",
+      "export": "Exportar",
+      "alertsTitle": "Alerts importantes",
+      "latestSales": "Últimas ventas",
+      "latestUsers": "Últimos usuarios",
+      "buyer": "Comprador",
+      "list": "Lista",
+      "amount": "Monto",
+      "status": "Estado",
+      "name": "Nombre",
+      "type": "Tipo",
+      "joined": "Se unió",
+      "revenueTitle": "Ingresos",
+      "revenueSubtitle": "Marketplace + Suscripciones, composición por período",
+      "subscriptionsTitle": "Suscripciones",
+      "conversionRate": "Tasa de conversión a pago",
+      "growthTitle": "Crecimiento",
+      "growthSubtitle": "Usuarios y creadores en los últimos 7 meses",
+      "period7d": "7 días",
+      "period30d": "30 días",
+      "period90d": "90 días"
     }
   }
 }
