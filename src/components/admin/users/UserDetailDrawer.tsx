@@ -262,10 +262,8 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
                   {t('admin.users.drawer.contactSection')}
                 </div>
                 {[
-                  // "Full name" and "Email" are intentionally omitted here —
-                  // both are already shown in the header directly above
-                  // (user.name / user.email), and repeating them here would
-                  // render the identical text twice in the document.
+                  [t('admin.users.drawer.fullName'), user.name],
+                  [t('admin.users.drawer.email'), user.email],
                   [t('admin.users.drawer.phone'), user.phone],
                   [t('admin.users.drawer.location'), user.location],
                 ].map(([label, value]) => (
