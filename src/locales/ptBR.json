@@ -33,5 +33,11 @@
       "demoInfo": "Informações da Demonstração",
       "demoDescription": "Este é um sistema de autenticação mock para demonstração. Em produção, conecte-se a uma API real de autenticação."
     }
+  },
+  "admin": {
+    "sidebar": {
+      "collapse": "Recolher menu",
+      "administrator": "Administrator"
+    }
   }
 }
