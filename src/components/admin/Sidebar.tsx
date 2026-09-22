@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
@@ -9,12 +9,62 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { IconChevronRight, IconCollapse } from './icons';
-import { NAV, navHref, navI18nKey } from './nav-config';
+import { NAV, navHref, navI18nKey, type NavLeaf } from './nav-config';
 
 function keyFromPathname(pathname: string): string {
   if (pathname === '/dashboard') return 'dashboard';
   const key = pathname.replace(/^\//, '').replace(/\//g, '-');
   return key || 'dashboard';
+}
+
+// Keeps sub-item leaves mounted through the closing transition so they visibly
+// recede as the wrapper's max-height collapses (matching the reference's
+// "always mounted, only the clip animates" behavior), instead of popping out
+// instantly the moment `isOpen` flips to false. On open, `mounted` flips to
+// `true` in the same commit the wrapper starts growing (visually identical to
+// mounting unconditionally). On close, `mounted` only flips back to `false`
+// once the CSS transition actually finishes (`onTransitionEnd`).
+function NavSubItems({
+  isOpen,
+  leaves,
+  currentKey,
+  t,
+}: {
+  isOpen: boolean;
+  leaves: NavLeaf[];
+  currentKey: string;
+  t: (key: string, opts?: { defaultValue: string }) => string;
+}) {
+  const [mounted, setMounted] = useState(isOpen);
+
+  useEffect(() => {
+    if (isOpen) setMounted(true);
+  }, [isOpen]);
+
+  return (
+    <div
+      className="overflow-hidden pl-8 transition-[max-height] duration-200"
+      style={{ maxHeight: isOpen ? '460px' : '0px' }}
+      onTransitionEnd={() => {
+        if (!isOpen) setMounted(false);
+      }}
+    >
+      {mounted &&
+        leaves.map((leaf) => (
+          <Link
+            key={leaf.key}
+            href={navHref(leaf.key)}
+            className="block rounded-md px-3 py-1.5 text-[13px]"
+            style={{
+              color: currentKey === leaf.key ? 'var(--brand-600)' : 'var(--text-secondary)',
+              fontWeight: currentKey === leaf.key ? 600 : 400,
+            }}
+          >
+            {t(navI18nKey(leaf.key), { defaultValue: leaf.label })}
+          </Link>
+        ))}
+    </div>
+  );
 }
 
 export function Sidebar() {
@@ -117,26 +167,7 @@ export function Sidebar() {
               )}
 
               {group.sub && !collapsed && (
-                <div
-                  className="overflow-hidden pl-8 transition-[max-height] duration-200"
-                  style={{ maxHeight: isOpen ? '460px' : '0px' }}
-                >
-                  {isOpen &&
-                    group.sub.map((leaf) => (
-                      <Link
-                        key={leaf.key}
-                        href={navHref(leaf.key)}
-                        className="block rounded-md px-3 py-1.5 text-[13px]"
-                        style={{
-                          color:
-                            currentKey === leaf.key ? 'var(--brand-600)' : 'var(--text-secondary)',
-                          fontWeight: currentKey === leaf.key ? 600 : 400,
-                        }}
-                      >
-                        {t(navI18nKey(leaf.key), { defaultValue: leaf.label })}
-                      </Link>
-                    ))}
-                </div>
+                <NavSubItems isOpen={!!isOpen} leaves={group.sub} currentKey={currentKey} t={t} />
               )}
             </div>
           );
