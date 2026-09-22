@@ -1,5 +1,6 @@
-import { Activity, List, Send, ShieldCheck } from 'lucide-react';
 import type { SVGProps } from 'react';
+
+import { Activity, List, Send, ShieldCheck } from 'lucide-react';
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 

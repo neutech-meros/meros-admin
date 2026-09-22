@@ -22,7 +22,10 @@ describe('NAV', () => {
   it('gives finance 12 sub-items ending with statement', () => {
     const finance = NAV.find((g) => g.key === 'finance')!;
     expect(finance.sub).toHaveLength(12);
-    expect(finance.sub![finance.sub!.length - 1]).toEqual({ key: 'finance-statement', label: 'Statement' });
+    expect(finance.sub![finance.sub!.length - 1]).toEqual({
+      key: 'finance-statement',
+      label: 'Statement',
+    });
   });
 });
 

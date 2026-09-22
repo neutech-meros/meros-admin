@@ -3,7 +3,10 @@ export interface StatusStyle {
   background: string;
 }
 
-const NEUTRAL: StatusStyle = { color: 'var(--text-secondary)', background: 'var(--bg-surface-hover)' };
+const NEUTRAL: StatusStyle = {
+  color: 'var(--text-secondary)',
+  background: 'var(--bg-surface-hover)',
+};
 
 const STATUS_MAP: Record<string, StatusStyle> = {
   Paid: { color: 'var(--success)', background: 'var(--success-bg)' },
