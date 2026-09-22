@@ -135,6 +135,25 @@
         "reportReason": "Motivo",
         "reportStatus": "Estado",
         "reportDate": "Fecha"
+      },
+      "resetPassword": {
+        "title": "Restablecer contraseña",
+        "subtitle": "Envía a {{name}} un enlace de restablecimiento. Lo abre para definir una nueva contraseña y volver a entrar.",
+        "sendLinkTo": "Enviar enlace a",
+        "email": "Email",
+        "sms": "SMS",
+        "noEmail": "Sin email registrado",
+        "noPhone": "Sin teléfono registrado",
+        "expiryNote": "El enlace expira en 60 minutos y solo puede usarse una vez.",
+        "cancel": "Cancelar",
+        "sendEmail": "Enviar enlace por email",
+        "sendSms": "Enviar enlace por SMS",
+        "invalidEmailTitle": "Revisa el email",
+        "invalidPhoneTitle": "Revisa el teléfono",
+        "invalidHint": "No parece válido — corrígelo antes de enviar.",
+        "missingHint": "No hay nada registrado — agrégalo antes de enviar.",
+        "sentTitle": "Enlace enviado",
+        "sentDescription": "Se envió un enlace de restablecimiento a {{destination}}."
       }
     }
   }

@@ -135,6 +135,25 @@
         "reportReason": "Reason",
         "reportStatus": "Status",
         "reportDate": "Date"
+      },
+      "resetPassword": {
+        "title": "Reset password",
+        "subtitle": "Send {{name}} a reset link. They open it to set a new password and get back into the app.",
+        "sendLinkTo": "Send link to",
+        "email": "Email",
+        "sms": "SMS",
+        "noEmail": "No email on file",
+        "noPhone": "No phone on file",
+        "expiryNote": "The link expires in 60 minutes and can only be used once.",
+        "cancel": "Cancel",
+        "sendEmail": "Send email link",
+        "sendSms": "Send SMS link",
+        "invalidEmailTitle": "Check the email address",
+        "invalidPhoneTitle": "Check the phone number",
+        "invalidHint": "It doesn’t look valid — edit it before sending.",
+        "missingHint": "There’s nothing on file — add it before sending.",
+        "sentTitle": "Reset link sent",
+        "sentDescription": "A password reset link was sent to {{destination}}."
       }
     }
   }
