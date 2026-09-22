@@ -24,9 +24,9 @@ describe('Sidebar', () => {
   it('expands a group with sub-items on click and shows its leaves', async () => {
     const user = userEvent.setup();
     render(<Sidebar />);
-    expect(screen.queryByText('Payouts')).not.toBeInTheDocument();
+    expect(screen.queryByText('Commissions')).not.toBeInTheDocument();
     await user.click(screen.getByText('Finance'));
-    expect(screen.getByText('Payouts')).toBeInTheDocument();
+    expect(screen.getByText('Commissions')).toBeInTheDocument();
   });
 
   it('collapses to icon-only width when the collapse toggle is clicked', async () => {
