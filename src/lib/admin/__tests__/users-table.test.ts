@@ -1,6 +1,11 @@
 import type { UserRecord } from '@/lib/mocks/admin/users';
 
-import { DEFAULT_FILTERS, DEFAULT_SORT, filterAndSortUsers, isAnyFilterActive } from '../users-table';
+import {
+  DEFAULT_FILTERS,
+  DEFAULT_SORT,
+  filterAndSortUsers,
+  isAnyFilterActive,
+} from '../users-table';
 
 function user(overrides: Partial<UserRecord>): UserRecord {
   return {
@@ -25,9 +30,36 @@ function user(overrides: Partial<UserRecord>): UserRecord {
 
 describe('filterAndSortUsers', () => {
   const users = [
-    user({ id: 'a', name: 'Alice Andrade', email: 'alice@mail.com', account: 'Personal', plan: 'Freemium', followers: '1.5k', joined: '10/01/2025', status: 'Active' }),
-    user({ id: 'b', name: 'Bruno Barros', email: 'bruno@mail.com', account: 'Business', plan: 'Premium', followers: '48.3k', joined: '05/06/2025', status: 'Deactivated' }),
-    user({ id: 'c', name: 'Carla Costa', email: 'carla@mail.com', account: 'Personal', plan: 'Free trial', followers: '90', joined: '20/03/2025', status: 'Active' }),
+    user({
+      id: 'a',
+      name: 'Alice Andrade',
+      email: 'alice@mail.com',
+      account: 'Personal',
+      plan: 'Freemium',
+      followers: '1.5k',
+      joined: '10/01/2025',
+      status: 'Active',
+    }),
+    user({
+      id: 'b',
+      name: 'Bruno Barros',
+      email: 'bruno@mail.com',
+      account: 'Business',
+      plan: 'Premium',
+      followers: '48.3k',
+      joined: '05/06/2025',
+      status: 'Deactivated',
+    }),
+    user({
+      id: 'c',
+      name: 'Carla Costa',
+      email: 'carla@mail.com',
+      account: 'Personal',
+      plan: 'Free trial',
+      followers: '90',
+      joined: '20/03/2025',
+      status: 'Active',
+    }),
   ];
 
   it('returns everything with default filters and no sort', () => {
