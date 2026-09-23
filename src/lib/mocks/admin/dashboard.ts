@@ -139,6 +139,11 @@ export function getSubscriptionsBreakdown(): SubscriptionSlice[] {
   ];
 }
 
+// Mock (window.MEROS.CONVERSION is not present in the source file).
+export function getConversionRate(): string {
+  return '14,5%';
+}
+
 export interface GrowthSeries {
   labels: string[];
   users: number[];

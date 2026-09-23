@@ -47,6 +47,7 @@
       "notifications": "Notifications",
       "toggleTheme": "Toggle theme",
       "preferences": "Preferences",
+      "language": "Language",
       "logout": "Log out"
     },
     "nav": {
@@ -57,7 +58,12 @@
       "title": "Overview",
       "subtitle": "Platform health — revenue, growth and items that need your attention.",
       "export": "Export",
-      "alertsTitle": "Alerts importantes",
+      "chartMenu": "Chart options",
+      "alertsTitle": "Important alerts",
+      "seriesMarketplace": "Marketplace",
+      "seriesSubscriptions": "Subscriptions",
+      "seriesUsers": "Users",
+      "seriesCreators": "Creators",
       "latestSales": "Latest sales",
       "latestUsers": "Latest users",
       "buyer": "Buyer",

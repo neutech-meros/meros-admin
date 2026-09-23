@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
+
 import {
   Area,
   AreaChart,
@@ -16,6 +18,7 @@ import type { RevenuePeriodData } from '@/lib/mocks/admin/dashboard';
 import type { TooltipValueType } from 'recharts';
 
 export function RevenueChart({ data }: { data: RevenuePeriodData }) {
+  const { t } = useTranslation();
   const rows = data.labels.map((label, i) => ({
     label,
     Marketplace: data.marketplace[i],
@@ -53,6 +56,7 @@ export function RevenueChart({ data }: { data: RevenuePeriodData }) {
         <Area
           type="monotone"
           dataKey="Marketplace"
+          name={t('admin.dashboard.seriesMarketplace')}
           stackId="revenue"
           stroke="var(--brand-500)"
           fill="var(--brand-500)"
@@ -62,6 +66,7 @@ export function RevenueChart({ data }: { data: RevenuePeriodData }) {
         <Area
           type="monotone"
           dataKey="Subscriptions"
+          name={t('admin.dashboard.seriesSubscriptions')}
           stackId="revenue"
           stroke="var(--success)"
           fill="var(--success)"

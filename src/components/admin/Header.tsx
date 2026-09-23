@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
+import { useAtom } from 'jotai';
 import { usePathname, useRouter } from 'next/navigation';
 
 import {
@@ -18,9 +19,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/hooks/useTheme';
+import { languageAtom } from '@/store/atoms/language';
 
 import {
   IconBell,
@@ -56,14 +62,30 @@ const NOTIFICATIONS = [
   { title: 'Relatório mensal de receita disponível', time: 'há 3 h' },
 ];
 
+const LANGUAGES = [
+  { code: 'pt', label: 'Português' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+];
+
 export function Header() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const currentKey = keyFromPathname(pathname);
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [language, setLanguage] = useAtom(languageAtom);
+
+  useEffect(() => {
+    if (language !== i18n.language) i18n.changeLanguage(language);
+  }, [language, i18n]);
+
+  function changeLanguage(lng: string) {
+    setLanguage(lng);
+    i18n.changeLanguage(lng);
+  }
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -244,6 +266,16 @@ export function Header() {
               <IconGear size={15} className="mr-2" />
               {t('admin.header.preferences')}
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>{t('admin.header.language')}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={language} onValueChange={changeLanguage}>
+              {LANGUAGES.map((l) => (
+                <DropdownMenuRadioItem key={l.code} value={l.code}>
+                  {l.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => {}}>
               <IconLogout size={15} className="mr-2" />
               {t('admin.header.logout')}

@@ -19,11 +19,13 @@ import { NAV, keyFromPathname, navHref, navI18nKey, type NavLeaf } from './nav-c
 // mounting unconditionally). On close, `mounted` only flips back to `false`
 // once the CSS transition actually finishes (`onTransitionEnd`).
 function NavSubItems({
+  groupKey,
   isOpen,
   leaves,
   currentKey,
   t,
 }: {
+  groupKey: string;
   isOpen: boolean;
   leaves: NavLeaf[];
   currentKey: string;
@@ -37,6 +39,7 @@ function NavSubItems({
 
   return (
     <div
+      id={`nav-sub-${groupKey}`}
       className="overflow-hidden pl-8 transition-[max-height] duration-200"
       style={{ maxHeight: isOpen ? '460px' : '0px' }}
       onTransitionEnd={() => {
@@ -48,6 +51,7 @@ function NavSubItems({
           <Link
             key={leaf.key}
             href={navHref(leaf.key)}
+            aria-current={currentKey === leaf.key ? 'page' : undefined}
             className="block rounded-md px-3 py-1.5 text-[13px]"
             style={{
               color: currentKey === leaf.key ? 'var(--brand-600)' : 'var(--text-secondary)',
@@ -95,6 +99,7 @@ export function Sidebar() {
         <button
           type="button"
           aria-label={t('admin.sidebar.collapse')}
+          aria-expanded={!collapsed}
           title={t('admin.sidebar.collapse')}
           onClick={() => setCollapsed((c) => !c)}
           className="rounded-md p-1"
@@ -119,6 +124,8 @@ export function Sidebar() {
                   type="button"
                   data-nav-key={group.key}
                   data-active={!!activeParent}
+                  aria-expanded={!!isOpen}
+                  aria-controls={`nav-sub-${group.key}`}
                   onClick={() => setOpenGroups((g) => ({ ...g, [group.key]: !isOpen }))}
                   className="flex w-full items-center gap-3 overflow-hidden whitespace-nowrap rounded-md px-3 py-2 text-[13.5px] font-medium"
                   style={{
@@ -147,6 +154,7 @@ export function Sidebar() {
                   href={navHref(group.key)}
                   data-nav-key={group.key}
                   data-active={!!activeParent}
+                  aria-current={currentKey === group.key ? 'page' : undefined}
                   className="flex items-center gap-3 overflow-hidden whitespace-nowrap rounded-md px-3 py-2 text-[13.5px] font-medium"
                   style={{
                     background: activeParent ? 'var(--brand-100)' : 'transparent',
@@ -161,7 +169,13 @@ export function Sidebar() {
               )}
 
               {group.sub && !collapsed && (
-                <NavSubItems isOpen={!!isOpen} leaves={group.sub} currentKey={currentKey} t={t} />
+                <NavSubItems
+                  groupKey={group.key}
+                  isOpen={!!isOpen}
+                  leaves={group.sub}
+                  currentKey={currentKey}
+                  t={t}
+                />
               )}
             </div>
           );

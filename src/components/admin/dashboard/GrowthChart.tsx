@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
+
 import {
   CartesianGrid,
   Legend,
@@ -14,6 +16,7 @@ import {
 import type { GrowthSeries } from '@/lib/mocks/admin/dashboard';
 
 export function GrowthChart({ data }: { data: GrowthSeries }) {
+  const { t } = useTranslation();
   const rows = data.labels.map((label, i) => ({
     label,
     Users: data.users[i],
@@ -59,6 +62,7 @@ export function GrowthChart({ data }: { data: GrowthSeries }) {
           yAxisId="left"
           type="monotone"
           dataKey="Users"
+          name={t('admin.dashboard.seriesUsers')}
           stroke="var(--brand-500)"
           strokeWidth={2}
           dot={false}
@@ -67,6 +71,7 @@ export function GrowthChart({ data }: { data: GrowthSeries }) {
           yAxisId="right"
           type="monotone"
           dataKey="Creators"
+          name={t('admin.dashboard.seriesCreators')}
           stroke="#B7791F"
           strokeWidth={2}
           dot={false}

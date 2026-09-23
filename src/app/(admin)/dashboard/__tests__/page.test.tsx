@@ -49,7 +49,7 @@ describe('DashboardPage', () => {
 
   it('renders the alerts card', () => {
     render(<DashboardPage />);
-    expect(screen.getByText('Alerts importantes')).toBeInTheDocument();
+    expect(screen.getByText('Alertas importantes')).toBeInTheDocument();
     expect(screen.getByText('Pagamento Stripe falhou')).toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
@@ -14,6 +14,7 @@ import { SubscriptionsChart } from '@/components/admin/dashboard/SubscriptionsCh
 import { SubscriptionSummaryCard } from '@/components/admin/dashboard/SubscriptionSummaryCard';
 import {
   getAlerts,
+  getConversionRate,
   getDashboardKpis,
   getGrowthSeries,
   getLatestSales,
@@ -22,6 +23,7 @@ import {
   getRevenueTrend,
   getSubscriptionSummaries,
   getSubscriptionsBreakdown,
+  type MonthOption,
 } from '@/lib/mocks/admin/dashboard';
 
 const REV_PERIODS: Array<{ value: '7d' | '30d' | '90d'; labelKey: string }> = [
@@ -35,6 +37,14 @@ export default function DashboardPage() {
   const [month, setMonth] = useState('0');
   const [revPeriod, setRevPeriod] = useState<'7d' | '30d' | '90d'>('30d');
   const [revError, setRevError] = useState(false);
+  // Computed client-side only: getMonthOptions() is relative to the current date, and this
+  // page is prerendered at build time, so calling it at render/module scope would make the
+  // server-rendered <option> labels drift from the client's once the build month passes,
+  // triggering a hydration mismatch.
+  const [months, setMonths] = useState<MonthOption[]>([]);
+  useEffect(() => {
+    setMonths(getMonthOptions());
+  }, []);
 
   const kpis = getDashboardKpis();
   const subs = getSubscriptionSummaries();
@@ -43,8 +53,8 @@ export default function DashboardPage() {
   const alerts = getAlerts();
   const sales = getLatestSales();
   const users = getRecentUsers();
-  const months = getMonthOptions();
   const revenue = getRevenueTrend(revPeriod);
+  const conversionRate = getConversionRate();
 
   return (
     <div>
@@ -125,6 +135,8 @@ export default function DashboardPage() {
               ))}
               <button
                 type="button"
+                aria-label={t('admin.dashboard.chartMenu')}
+                title={t('admin.dashboard.chartMenu')}
                 onClick={() => setRevError(true)}
                 className="rounded-md p-1"
                 style={{ color: 'var(--text-secondary)' }}
@@ -211,7 +223,7 @@ export default function DashboardPage() {
               style={{ borderColor: 'var(--border-subtle)' }}
             >
               {t('admin.dashboard.conversionRate')}
-              <span className="ml-auto font-semibold">14,5%</span>
+              <span className="ml-auto font-semibold">{conversionRate}</span>
             </div>
           </div>
         </div>
