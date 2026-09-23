@@ -364,7 +364,7 @@ const SEEDS: UserSeed[] = [
     followers: '19.7k',
     following: '156',
     joined: '02/01/2026',
-    status: 'Pending',
+    status: 'Active',
     type: 'Creator',
   },
   {
