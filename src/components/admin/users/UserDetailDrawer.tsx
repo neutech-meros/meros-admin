@@ -229,7 +229,7 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
 
         <div
           role="tablist"
-          className="flex flex-shrink-0 gap-1 overflow-x-auto border-b px-5"
+          className="flex flex-shrink-0 flex-wrap gap-1 border-b px-5"
           style={{ borderColor: 'var(--border-subtle)' }}
         >
           {TAB_KEYS.map((key) => (
