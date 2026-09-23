@@ -165,6 +165,20 @@
         "missingHint": "No hay nada registrado — agrégalo antes de enviar.",
         "sentTitle": "Enlace enviado",
         "sentDescription": "Se envió un enlace de restablecimiento a {{destination}}."
+      },
+      "table": {
+        "columnName": "Nombre",
+        "columnAccount": "Cuenta",
+        "columnPlan": "Plan",
+        "columnFollowers": "Seguidores",
+        "columnJoined": "Se unió",
+        "columnStatus": "Estado",
+        "actionsFor": "Acciones para {{name}}",
+        "viewProfile": "Ver perfil",
+        "resetPassword": "Restablecer contraseña",
+        "deactivateAccount": "Desactivar cuenta",
+        "reactivateAccount": "Reactivar cuenta",
+        "deleteAccount": "Eliminar cuenta"
       }
     }
   }

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { badgeTone } from '@/lib/admin/badge-tone';
 import { getUserHistory, getUserReports, getUserSubscriptions } from '@/lib/mocks/admin/users';
 import type { UserRecord } from '@/lib/mocks/admin/users';
@@ -193,7 +193,7 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-lg font-semibold">{user.name}</span>
+                <SheetTitle className="text-lg font-semibold">{user.name}</SheetTitle>
                 <span
                   className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
                   style={{ color: badge.color, background: badge.background }}
@@ -294,6 +294,11 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
                   <div style={{ color: 'var(--text-secondary)' }}>
                     {t('admin.users.drawer.accountType')}
                   </div>
+                  {/* `account` and `type` are independent fields in the source data
+                      model and may legitimately disagree for a given user (e.g. seed
+                      `u8`: account 'Business' but type 'User') — this is not a bug to
+                      reconcile, the header badge above intentionally reflects `type`
+                      while this one reflects `account`. */}
                   {(() => {
                     const acctTone = badgeTone(user.account === 'Business' ? 'Creator' : 'User');
                     return (

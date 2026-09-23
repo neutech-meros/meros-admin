@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { toast } from 'sonner';
 
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 interface ResetPasswordTarget {
   name: string;
@@ -90,9 +90,9 @@ export function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProp
         style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}
       >
         <div className="p-6 pb-0">
-          <div className="text-[17px] font-semibold tracking-tight">
+          <DialogTitle className="text-[17px] font-semibold tracking-tight">
             {t('admin.users.resetPassword.title')}
-          </div>
+          </DialogTitle>
           <div
             className="mt-1 text-[13px] leading-relaxed"
             style={{ color: 'var(--text-secondary)' }}

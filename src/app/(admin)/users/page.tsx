@@ -19,6 +19,7 @@ import {
   type SortKey,
   type UserFilters,
 } from '@/lib/admin/users-table';
+import { initialsOf } from '@/lib/mocks/admin/avatar';
 import { getUsers } from '@/lib/mocks/admin/users';
 import type { UserRecord } from '@/lib/mocks/admin/users';
 
@@ -66,8 +67,12 @@ export default function UsersPage() {
   }
 
   function handleSaveProfile(user: UserRecord, draft: ProfileDraft) {
-    setUsers((cur) => cur.map((u) => (u.id === user.id ? { ...u, ...draft } : u)));
-    setDrawerUser((cur) => (cur && cur.id === user.id ? { ...cur, ...draft } : cur));
+    setUsers((cur) =>
+      cur.map((u) => (u.id === user.id ? { ...u, ...draft, initials: initialsOf(draft.name) } : u)),
+    );
+    setDrawerUser((cur) =>
+      cur && cur.id === user.id ? { ...cur, ...draft, initials: initialsOf(draft.name) } : cur,
+    );
     toast.success(t('admin.users.toasts.profileSavedTitle'), {
       description: t('admin.users.toasts.profileSaved', { name: draft.name || user.name }),
     });

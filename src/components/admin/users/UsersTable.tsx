@@ -21,13 +21,13 @@ import { badgeTone } from '@/lib/admin/badge-tone';
 import { type SortKey, type SortState, SORT_COLUMNS } from '@/lib/admin/users-table';
 import type { UserRecord } from '@/lib/mocks/admin/users';
 
-const COLUMN_LABELS: Record<SortKey, string> = {
-  name: 'Name',
-  account: 'Account',
-  plan: 'Plan',
-  followers: 'Followers',
-  joined: 'Joined',
-  status: 'Status',
+const COLUMN_LABEL_KEY: Record<SortKey, string> = {
+  name: 'admin.users.table.columnName',
+  account: 'admin.users.table.columnAccount',
+  plan: 'admin.users.table.columnPlan',
+  followers: 'admin.users.table.columnFollowers',
+  joined: 'admin.users.table.columnJoined',
+  status: 'admin.users.table.columnStatus',
 };
 
 interface UsersTableProps {
@@ -78,7 +78,7 @@ export function UsersTable({
                     }}
                   >
                     <span className="inline-flex items-center gap-1">
-                      {COLUMN_LABELS[key]}
+                      {t(COLUMN_LABEL_KEY[key])}
                       <span className="text-[9px]">{sortArrow(sort, key)}</span>
                     </span>
                   </TableHead>
@@ -132,7 +132,7 @@ export function UsersTable({
                         <DropdownMenuTrigger asChild>
                           <button
                             type="button"
-                            aria-label={`Actions for ${u.name}`}
+                            aria-label={t('admin.users.table.actionsFor', { name: u.name })}
                             className="rounded-md p-1"
                             style={{ color: 'var(--text-secondary)' }}
                           >
@@ -152,24 +152,24 @@ export function UsersTable({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onSelect={() => onViewProfile(u)}>
-                            View profile
+                            {t('admin.users.table.viewProfile')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => onResetPassword(u)}>
-                            Reset password
+                            {t('admin.users.table.resetPassword')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onSelect={() => onDeactivate(u)}
                             style={{ color: 'var(--warning)' }}
                           >
                             {u.status === 'Deactivated'
-                              ? 'Reactivate account'
-                              : 'Deactivate account'}
+                              ? t('admin.users.table.reactivateAccount')
+                              : t('admin.users.table.deactivateAccount')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onSelect={() => onDelete(u)}
                             style={{ color: 'var(--danger)' }}
                           >
-                            Delete account
+                            {t('admin.users.table.deleteAccount')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

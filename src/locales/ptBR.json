@@ -165,6 +165,20 @@
         "missingHint": "There’s nothing on file — add it before sending.",
         "sentTitle": "Reset link sent",
         "sentDescription": "A password reset link was sent to {{destination}}."
+      },
+      "table": {
+        "columnName": "Name",
+        "columnAccount": "Account",
+        "columnPlan": "Plan",
+        "columnFollowers": "Followers",
+        "columnJoined": "Joined",
+        "columnStatus": "Status",
+        "actionsFor": "Actions for {{name}}",
+        "viewProfile": "View profile",
+        "resetPassword": "Reset password",
+        "deactivateAccount": "Deactivate account",
+        "reactivateAccount": "Reactivate account",
+        "deleteAccount": "Delete account"
       }
     }
   }

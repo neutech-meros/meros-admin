@@ -33,9 +33,10 @@ describe('UserDetailDrawer', () => {
     render(<UserDetailDrawer user={user} onClose={jest.fn()} onSaveProfile={jest.fn()} />);
     // Name and email legitimately render twice — once in the header's
     // condensed identity summary, once in the Contact section's detailed
-    // field list — so these two tolerate multiple matches.
-    expect(screen.getAllByText('Camila Duarte').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('camila@mail.com').length).toBeGreaterThan(0);
+    // field list — so we pin the exact count instead of just "at least
+    // one match" (which would also pass if the Contact row were removed).
+    expect(screen.getAllByText('Camila Duarte')).toHaveLength(2);
+    expect(screen.getAllByText('camila@mail.com')).toHaveLength(2);
     expect(screen.getByText('Rio de Janeiro, RJ')).toBeInTheDocument();
     expect(screen.getByText('Travel creator.')).toBeInTheDocument();
   });
@@ -83,8 +84,9 @@ describe('UserDetailDrawer', () => {
     rerender(<UserDetailDrawer user={otherUser} onClose={jest.fn()} onSaveProfile={jest.fn()} />);
     // Back on the Profile tab by default for the new user — contact info
     // visible again. Name renders twice (header + Contact section), same
-    // as in the "shows the Profile tab by default" test above.
-    expect(screen.getAllByText('Rafael Nogueira').length).toBeGreaterThan(0);
+    // as in the "shows the Profile tab by default" test above; pin the
+    // exact count so this fails loudly if the Contact row disappears.
+    expect(screen.getAllByText('Rafael Nogueira')).toHaveLength(2);
     expect(screen.getByRole('tab', { name: 'Profile' })).toHaveAttribute('aria-selected', 'true');
   });
 });
