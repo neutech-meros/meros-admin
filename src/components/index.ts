@@ -1,9 +1,3 @@
-// Componentes personalizados
-export { DemoForm } from './DemoForm';
-export { Navigation } from './Navigation';
-export { ThemeToggle } from './ThemeToggle';
-export { ThemeToggleButton } from './ThemeToggleButton';
-
 // Re-export dos componentes UI do shadcn/ui para facilitar importações
 export { Badge } from './ui/badge';
 export { Button } from './ui/button';

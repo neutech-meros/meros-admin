@@ -22,15 +22,15 @@ Este é um boilerplate moderno para desenvolvimento web usando **Next.js** com a
 ```
 src/
 ├── app/                    # App Router do Next.js
+│   ├── (admin)/            # Grupo de rotas do Meros Admin (Sidebar + Header)
+│   ├── login/              # Rota de login (fora do grupo (admin))
 │   ├── globals.css        # Estilos globais
-│   ├── layout.tsx         # Layout principal
-│   └── page.tsx          # Página inicial
+│   └── layout.tsx         # Layout principal
 ├── components/            # Componentes React
-│   ├── ui/               # Componentes base do shadcn/ui
-│   ├── App.tsx          # Componente principal da aplicação
-│   ├── DemoForm.tsx     # Demonstração de formulário com validação
-│   └── ThemeToggle.tsx  # Toggle de tema claro/escuro
+│   ├── ui/                # Componentes base do shadcn/ui
+│   └── admin/              # Shell (Sidebar/Header) e telas do Meros Admin
 ├── lib/                  # Utilitários e configurações
+│   └── mocks/admin/       # Dados mockados das telas do Meros Admin
 ├── store/               # Gerenciamento de estado (Jotai)
 │   └── atoms/          # Definição dos atoms
 ├── locales/            # Arquivos de tradução

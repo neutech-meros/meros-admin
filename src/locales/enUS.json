@@ -1,283 +1,5 @@
 {
   "hello": "Hello {{name}}!",
-  "navigation": {
-    "home": "Home",
-    "config": "Configuration",
-    "designTokens": "Design Tokens",
-    "atoms": "State (Jotai)",
-    "forms": "Forms",
-    "dashboard": "Dashboard"
-  },
-  "home": {
-    "title": "FDTE Boilerplate",
-    "subtitle": "Modern boilerplate for Next.js applications with TypeScript, shadcn/ui, internationalization and complete Design Tokens system.",
-    "exploreDesignTokens": "Explore Design Tokens",
-    "seeGlobalState": "See Global State",
-    "technologies": {
-      "title": "Included Technologies",
-      "subtitle": "Modern stack with market best practices and tools"
-    },
-    "explore": {
-      "title": "Explore the Boilerplate",
-      "subtitle": "Navigate through different sections to know all features",
-      "configSection": {
-        "title": "Configuration & Layout",
-        "description": "Explore project settings and layout structure"
-      },
-      "designTokensSection": {
-        "title": "Design Tokens",
-        "description": "Complete token system: colors, typography, spacing"
-      },
-      "atomsSection": {
-        "title": "Global State (Jotai)",
-        "description": "State management with Jotai atoms"
-      },
-      "formsSection": {
-        "title": "Forms",
-        "description": "Complete forms with validation and user experience"
-      },
-      "exploreButton": "Explore"
-    },
-    "footer": {
-      "text": "Developed by FDTE team with ❤️ using Next.js and shadcn/ui"
-    }
-  },
-  "config": {
-    "title": "Configuration & Layout",
-    "description": "Explore project structure and configurations used in the boilerplate",
-    "projectStructure": {
-      "title": "Project Structure",
-      "main": "Main source code directory",
-      "appRouter": "Next.js 15 App Router",
-      "components": "Reusable React components",
-      "lib": "Utilities and configurations",
-      "providers": "Context providers (Theme, i18n, State)",
-      "store": "Global state with Jotai",
-      "locales": "Translation files",
-      "i18n": "Internationalization configuration"
-    },
-    "configFiles": {
-      "title": "Configuration Files",
-      "nextConfig": {
-        "description": "Next.js configuration with TypeScript",
-        "features": ["App Router", "Optimizations", "Middleware"]
-      },
-      "tailwindConfig": {
-        "description": "Tailwind CSS configuration",
-        "features": ["Design Tokens", "Themes", "Animations"]
-      },
-      "tsConfig": {
-        "description": "TypeScript configuration",
-        "features": ["Path mapping", "Strict mode", "Decorators"]
-      },
-      "componentsJson": {
-        "description": "shadcn/ui configuration",
-        "features": ["Components", "Styles", "Aliases"]
-      },
-      "designTokens": {
-        "description": "Design Tokens system",
-        "features": ["Colors", "Typography", "Spacing"]
-      }
-    },
-    "technologies": {
-      "title": "Technology Stack",
-      "framework": "Framework",
-      "styling": "Styling",
-      "stateI18n": "State & i18n",
-      "quality": "Quality",
-      "descriptions": {
-        "nextjs": "React Framework",
-        "react": "UI Library",
-        "typescript": "Static typing",
-        "tailwind": "Utility CSS",
-        "shadcn": "UI Components",
-        "radix": "Accessible primitives",
-        "lucide": "Icons",
-        "jotai": "Global state",
-        "nextIntl": "Internationalization",
-        "nextThemes": "Theme system",
-        "eslint": "Linting",
-        "prettier": "Formatting",
-        "jest": "Unit testing",
-        "husky": "Git hooks"
-      }
-    }
-  },
-  "designTokens": {
-    "title": "Design Tokens",
-    "description": "Complete design tokens system: colors, typography, spacing and customizable themes for your project",
-    "demo": {
-      "showControls": "Show Controls",
-      "hideControls": "Hide Controls",
-      "primaryColors": "Primary Colors",
-      "interfaceElements": "Interface Elements",
-      "primaryButton": "Primary Button",
-      "inputPlaceholder": "Example input",
-      "errorMessage": "Error message",
-      "borderRadius": "Border Radius",
-      "small": "Small",
-      "medium": "Medium",
-      "large": "Large",
-      "extraLarge": "Extra Large",
-      "designTokensControls": "Design Tokens Controls",
-      "predefinedThemes": "Predefined Themes",
-      "default": "Default",
-      "blue": "Blue",
-      "green": "Green",
-      "purple": "Purple",
-      "customColors": "Custom Colors",
-      "lightMode": "Light Mode",
-      "darkMode": "Dark Mode"
-    }
-  },
-  "forms": {
-    "title": "Forms",
-    "description": "Complete form demonstration with validation using React Hook Form, Zod and shadcn/ui components"
-  },
-  "form": {
-    "title": "Form Demonstration",
-    "description": "Example using shadcn/ui with Tabs, Forms, Switch and more components with Zod + React Hook Form validation",
-    "tabs": {
-      "form": "Form",
-      "preview": "Preview"
-    },
-    "fields": {
-      "name": "Full Name",
-      "namePlaceholder": "Enter your name",
-      "email": "Email",
-      "emailPlaceholder": "your@email.com",
-      "notifications": "Receive notifications"
-    },
-    "submit": "Submit Form",
-    "submitted": "Submitted! ✓",
-    "submitting": "Submitting...",
-    "errors": {
-      "nameRequired": "Name is required",
-      "nameMin": "Name must be at least 2 characters",
-      "emailRequired": "Email is required",
-      "emailInvalid": "Email must be in a valid format"
-    },
-    "preview": {
-      "title": "Form Data:",
-      "name": "Name:",
-      "email": "Email:",
-      "notifications": "Notifications:",
-      "notInformed": "Not informed",
-      "enabled": "Enabled",
-      "disabled": "Disabled",
-      "success": "Form submitted successfully! 🎉",
-      "validationStatus": "Validation Status:",
-      "valid": "✓ Valid",
-      "errors": "error(s)"
-    }
-  },
-  "theme": {
-    "title": "Dark Mode",
-    "description": "Test the shadcn/ui theme system with dark mode support",
-    "currentTheme": "Current theme:",
-    "lightMode": "☀️ Light Mode",
-    "darkMode": "🌙 Dark Mode",
-    "enableDark": "🌙 Enable Dark Mode",
-    "enableLight": "☀️ Enable Light Mode",
-    "tip": "💡 **Tip:** The theme is saved in localStorage and will be remembered on your next visit. shadcn/ui automatically adapts all components to the chosen theme."
-  },
-  "atoms": {
-    "title": "Jotai Atoms",
-    "description": "Demonstration of global state management using Jotai atoms",
-    "tabs": {
-      "basic": "Basic",
-      "derived": "Derived",
-      "storage": "Storage",
-      "advanced": "Advanced"
-    },
-    "basic": {
-      "title": "Basic Atoms",
-      "description": "Simple atoms for storing and updating values",
-      "counter": {
-        "title": "Counter Atom",
-        "code": "const counterAtom = atom(0)"
-      },
-      "message": {
-        "title": "Message Atom",
-        "placeholder": "Type a message...",
-        "clear": "Clear",
-        "messageLabel": "Message:",
-        "code": "const messageAtom = atom('')"
-      },
-      "user": {
-        "title": "User Object Atom",
-        "nameLabel": "Name",
-        "namePlaceholder": "Your name",
-        "emailLabel": "Email",
-        "emailPlaceholder": "your@email.com",
-        "userLabel": "User:",
-        "notInformed": "Not provided",
-        "code": "const userAtom = atom({ name: '', email: '' })"
-      }
-    },
-    "derived": {
-      "title": "Derived Atoms",
-      "description": "Atoms that derive values from other atoms",
-      "computed": {
-        "title": "Counter Doubled (Computed)",
-        "original": "Original",
-        "doubled": "Doubled",
-        "code": "const doubledAtom = atom((get) => get(counterAtom) * 2)"
-      },
-      "writeOnly": {
-        "title": "Increment By (Write-only)",
-        "button": "Increment by {{amount}}",
-        "current": "Current: {{value}}",
-        "code": "const incrementByAtom = atom(null, (get, set, amount) => ...)"
-      }
-    },
-    "storage": {
-      "title": "Storage Atoms",
-      "description": "Atoms that persist data in localStorage",
-      "language": {
-        "title": "Language Atom (already in use in navigation)",
-        "code": "const languageAtom = atomWithStorage('app-language', '')"
-      },
-      "preferences": {
-        "title": "Preferences Atom",
-        "notifications": "Notifications",
-        "activated": "Enabled",
-        "deactivated": "Disabled",
-        "theme": "Theme",
-        "savedPreferences": "Saved preferences:",
-        "code": "const preferencesAtom = atomWithStorage('user-preferences', defaultValues)"
-      }
-    },
-    "advanced": {
-      "title": "Advanced Concepts",
-      "description": "Information about advanced Jotai patterns",
-      "atomFamilies": {
-        "title": "Atom Families",
-        "description": "Create atoms dynamically based on parameters"
-      },
-      "asyncAtoms": {
-        "title": "Async Atoms",
-        "description": "Atoms that work with Promises and asynchronous data"
-      },
-      "loadable": {
-        "title": "Loadable",
-        "description": "Manage loading states for asynchronous atoms"
-      },
-      "splitAtoms": {
-        "title": "Split Atoms",
-        "description": "Split arrays into individual atoms"
-      },
-      "advantages": {
-        "title": "Jotai Advantages",
-        "atomic": "Granular state without over-rendering",
-        "typescript": "Strong typing by default",
-        "noBoilerplate": "Simple and direct syntax",
-        "suspense": "Works natively with Suspense",
-        "devtools": "Debugging support",
-        "serverSide": "Compatible with SSR/SSG"
-      }
-    }
-  },
   "auth": {
     "userMenu": "User menu",
     "logout": "Logout",
@@ -310,6 +32,59 @@
       "logout": "Logout",
       "demoInfo": "Demo Information",
       "demoDescription": "This is a mock authentication system for demonstration. In production, connect to a real authentication API."
+    }
+  },
+  "admin": {
+    "sidebar": {
+      "collapse": "Collapse menu",
+      "administrator": "Administrator"
+    },
+    "header": {
+      "crumbRoot": "Dashboard",
+      "search": "Search…",
+      "searchPlaceholder": "Search users, lists, orders, creators…",
+      "noResults": "No result found",
+      "notifications": "Notifications",
+      "toggleTheme": "Toggle theme",
+      "preferences": "Preferences",
+      "language": "Language",
+      "logout": "Log out"
+    },
+    "nav": {
+      "dashboard": "Overview",
+      "finance": "Finance"
+    },
+    "dashboard": {
+      "title": "Overview",
+      "subtitle": "Platform health — revenue, growth and items that need your attention.",
+      "export": "Export",
+      "chartMenu": "Chart options",
+      "alertsTitle": "Important alerts",
+      "seriesMarketplace": "Marketplace",
+      "seriesSubscriptions": "Subscriptions",
+      "seriesUsers": "Users",
+      "seriesCreators": "Creators",
+      "latestSales": "Latest sales",
+      "latestUsers": "Latest users",
+      "buyer": "Buyer",
+      "list": "List",
+      "amount": "Amount",
+      "status": "Status",
+      "name": "Name",
+      "type": "Type",
+      "joined": "Joined",
+      "revenueTitle": "Revenue",
+      "revenueSubtitle": "Marketplace + Subscriptions, composition by period",
+      "subscriptionsTitle": "Subscriptions",
+      "conversionRate": "Conversion rate to paid",
+      "growthTitle": "Growth",
+      "growthSubtitle": "Users and creators over the last 7 months",
+      "period7d": "7 days",
+      "period30d": "30 days",
+      "period90d": "90 days",
+      "chartErrorTitle": "Could not load the chart",
+      "chartErrorDescription": "The revenue series is temporarily unavailable. Try again in a few seconds.",
+      "chartErrorRetry": "Try again"
     }
   }
 }
