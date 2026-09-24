@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 export type DrawerBlock =
   | {
       kind: 'kv';
@@ -97,6 +99,20 @@ function TableBlock({ block }: { block: Extract<DrawerBlock, { kind: 'table' }> 
 }
 
 function TimelineBlock({ block }: { block: Extract<DrawerBlock, { kind: 'timeline' }> }) {
+  const { t } = useTranslation();
+
+  if (!block.events.length) {
+    return (
+      <EmptyBlock
+        block={{
+          kind: 'empty',
+          title: t('admin.drawer.noActivityTitle'),
+          description: t('admin.drawer.noActivityDescription'),
+        }}
+      />
+    );
+  }
+
   return (
     <div>
       {block.events.map((e, i) => (

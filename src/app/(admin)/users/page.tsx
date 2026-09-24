@@ -40,8 +40,8 @@ export default function UsersPage() {
   function handleSortChange(key: SortKey) {
     setSort((cur) => {
       if (cur.key === key) return { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' };
-      const column = SORT_COLUMNS.find((c) => c.key === key)!;
-      return { key, dir: column.defaultDir };
+      const defaultDir = SORT_COLUMNS.find((c) => c.key === key)?.defaultDir ?? 'asc';
+      return { key, dir: defaultDir };
     });
   }
 

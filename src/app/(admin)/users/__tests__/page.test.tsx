@@ -1,5 +1,5 @@
 // src/app/(admin)/users/__tests__/page.test.tsx
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import UsersPage from '../page';
@@ -7,7 +7,7 @@ import UsersPage from '../page';
 describe('UsersPage', () => {
   it('renders the heading and every mock user by default', () => {
     render(<UsersPage />);
-    expect(screen.getByText('Users & Creators')).toBeInTheDocument();
+    expect(screen.getByText('Usuários e criadores')).toBeInTheDocument();
     expect(screen.getByText('Camila Duarte')).toBeInTheDocument();
     expect(screen.getByText('Thiago Souza')).toBeInTheDocument();
   });
@@ -15,7 +15,7 @@ describe('UsersPage', () => {
   it('narrows the table when searching', async () => {
     const user = userEvent.setup();
     render(<UsersPage />);
-    await user.type(screen.getByPlaceholderText(/search by name or email/i), 'camila');
+    await user.type(screen.getByPlaceholderText(/buscar por nome ou e-mail/i), 'camila');
     expect(screen.getByText('Camila Duarte')).toBeInTheDocument();
     expect(screen.queryByText('Thiago Souza')).not.toBeInTheDocument();
   });
@@ -28,21 +28,21 @@ describe('UsersPage', () => {
         /^(Camila Duarte|Rafael Nogueira|Priscila Matos|Eduardo Lima|Marina Alves|Diego Fontes|Helena Cardoso|Bruno Tavares|Isabela Ramos|Thiago Souza)$/,
       )[i].textContent;
 
-    await user.click(screen.getByText('Name'));
+    await user.click(screen.getByText('Nome'));
     expect(nameOf(0)).toBe('Bruno Tavares'); // alphabetically first of the 10 seed names, ascending
 
-    await user.click(screen.getByText('Name'));
+    await user.click(screen.getByText('Nome'));
     expect(nameOf(0)).toBe('Thiago Souza'); // same column clicked again flips to descending
   });
 
   it('shows Clear filters only once a filter is active, and resets on click', async () => {
     const user = userEvent.setup();
     render(<UsersPage />);
-    expect(screen.queryByRole('button', { name: /clear filters/i })).not.toBeInTheDocument();
-    await user.type(screen.getByPlaceholderText(/search by name or email/i), 'camila');
-    const clearButton = screen.getByRole('button', { name: /clear filters/i });
+    expect(screen.queryByRole('button', { name: /limpar filtros/i })).not.toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText(/buscar por nome ou e-mail/i), 'camila');
+    const clearButton = screen.getByRole('button', { name: /limpar filtros/i });
     await user.click(clearButton);
-    expect(screen.queryByRole('button', { name: /clear filters/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /limpar filtros/i })).not.toBeInTheDocument();
     expect(screen.getByText('Thiago Souza')).toBeInTheDocument();
   });
 
@@ -50,31 +50,35 @@ describe('UsersPage', () => {
     const user = userEvent.setup();
     render(<UsersPage />);
     await user.click(screen.getByText('Camila Duarte'));
-    expect(screen.getByRole('tab', { name: 'Profile' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Perfil' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /close/i })); // drawer close icon button
+    await waitFor(() =>
+      expect(screen.queryByRole('tab', { name: 'Perfil' })).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('opens the reset-password dialog from the kebab menu', async () => {
     const user = userEvent.setup();
     render(<UsersPage />);
-    const menuButtons = screen.getAllByRole('button', { name: /actions for/i });
+    const menuButtons = screen.getAllByRole('button', { name: /ações para/i });
     await user.click(menuButtons[0]);
-    await user.click(screen.getByText('Reset password'));
-    expect(screen.getByText(/send.*a reset link/i)).toBeInTheDocument();
+    await user.click(screen.getByText('Redefinir senha'));
+    expect(screen.getByText(/envie a .* um link de redefinição/i)).toBeInTheDocument();
   });
 
   it('keeps the drawer open and up to date after saving a profile edit', async () => {
     const user = userEvent.setup();
     render(<UsersPage />);
     await user.click(screen.getByText('Camila Duarte'));
-    await user.click(screen.getByRole('button', { name: /edit profile/i }));
+    await user.click(screen.getByRole('button', { name: /editar perfil/i }));
     const nameInput = screen.getByDisplayValue('Camila Duarte');
     await user.clear(nameInput);
     await user.type(nameInput, 'Ana Souza');
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await user.click(screen.getByRole('button', { name: /salvar alterações/i }));
     // Drawer stays open (no onClose call on save) and now shows the updated name
     // instead of the stale pre-save value.
-    expect(screen.getByRole('tab', { name: 'Profile' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Perfil' })).toBeInTheDocument();
     expect(screen.getAllByText('Ana Souza').length).toBeGreaterThan(0);
     expect(screen.queryByText('Camila Duarte')).not.toBeInTheDocument();
     // Ana Souza's initials ('AS') differ from Camila Duarte's ('CD') — this

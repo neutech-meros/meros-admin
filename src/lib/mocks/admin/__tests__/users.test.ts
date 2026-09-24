@@ -45,6 +45,35 @@ describe('per-user tab data', () => {
     users.forEach((u) => expect(getUserHistory(u.id).length).toBeGreaterThan(0));
   });
 
+  it('dates every "Account created" history event on the same day as the user joined', () => {
+    const MONTHS = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    const historyDay = (time: string) => {
+      const [day, month, year] = time.split(',')[0].split(' ');
+      return `${day}/${String(MONTHS.indexOf(month) + 1).padStart(2, '0')}/${year}`;
+    };
+    const users = getUsers();
+    const checked = users.flatMap((u) =>
+      getUserHistory(u.id)
+        .filter((e) => e.title === 'Account created')
+        .map((e) => [u.id, historyDay(e.time)]),
+    );
+    expect(checked).toHaveLength(users.length);
+    expect(checked).toEqual(users.map((u) => [u.id, u.joined]));
+  });
+
   it('has at least one user with reports and most with none', () => {
     const users = getUsers();
     const withReports = users.filter((u) => getUserReports(u.id).length > 0);

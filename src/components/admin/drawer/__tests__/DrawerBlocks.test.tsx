@@ -49,6 +49,13 @@ describe('DrawerBlocks', () => {
     expect(screen.getByText('01 Jan 2026')).toBeInTheDocument();
   });
 
+  it('renders the empty state for a timeline block with no events', () => {
+    const blocks: DrawerBlock[] = [{ kind: 'timeline', events: [] }];
+    render(<DrawerBlocks blocks={blocks} />);
+    expect(screen.getByRole('heading', { name: 'Nenhuma atividade ainda' })).toBeInTheDocument();
+    expect(screen.getByText('Os eventos desta conta aparecerão aqui.')).toBeInTheDocument();
+  });
+
   it('renders an empty block with title and description', () => {
     const blocks: DrawerBlock[] = [
       { kind: 'empty', title: 'No reports', description: 'Nothing to show yet.' },

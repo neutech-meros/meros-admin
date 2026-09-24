@@ -46,6 +46,11 @@ function sortArrow(sort: SortState, key: SortKey): string {
   return sort.dir === 'asc' ? '▲' : '▼';
 }
 
+function ariaSort(sort: SortState, key: SortKey): 'ascending' | 'descending' | 'none' {
+  if (sort.key !== key) return 'none';
+  return sort.dir === 'asc' ? 'ascending' : 'descending';
+}
+
 export function UsersTable({
   users,
   sort,
@@ -71,16 +76,22 @@ export function UsersTable({
                 {SORT_COLUMNS.map(({ key }) => (
                   <TableHead
                     key={key}
-                    onClick={() => onSortChange(key)}
-                    className="cursor-pointer select-none"
+                    aria-sort={ariaSort(sort, key)}
+                    className="select-none"
                     style={{
                       color: sort.key === key ? 'var(--brand-600)' : 'var(--text-secondary)',
                     }}
                   >
-                    <span className="inline-flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onSortChange(key)}
+                      className="inline-flex cursor-pointer items-center gap-1 font-[inherit] text-inherit"
+                    >
                       {t(COLUMN_LABEL_KEY[key])}
-                      <span className="text-[9px]">{sortArrow(sort, key)}</span>
-                    </span>
+                      <span aria-hidden="true" className="text-[9px]">
+                        {sortArrow(sort, key)}
+                      </span>
+                    </button>
                   </TableHead>
                 ))}
                 <TableHead />
@@ -189,6 +200,7 @@ export function UsersTable({
                 <button
                   key={i}
                   type="button"
+                  disabled
                   className="h-7 w-7 rounded-md border"
                   style={{
                     borderColor: i === 1 ? 'transparent' : 'var(--border-subtle)',

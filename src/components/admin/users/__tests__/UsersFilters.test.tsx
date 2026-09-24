@@ -17,8 +17,57 @@ describe('UsersFilters', () => {
         onClear={jest.fn()}
       />,
     );
-    await user.type(screen.getByPlaceholderText(/search by name or email/i), 'a');
+    await user.type(screen.getByPlaceholderText(/buscar por nome ou e-mail/i), 'a');
     expect(onFiltersChange).toHaveBeenLastCalledWith({ ...DEFAULT_FILTERS, query: 'a' });
+  });
+
+  it('gives the search input an accessible name', () => {
+    render(
+      <UsersFilters
+        filters={DEFAULT_FILTERS}
+        onFiltersChange={jest.fn()}
+        showClear={false}
+        onClear={jest.fn()}
+      />,
+    );
+    expect(screen.getByRole('textbox', { name: 'Buscar usuários' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Buscar usuários')).toHaveAttribute(
+      'placeholder',
+      'Buscar por nome ou e-mail...',
+    );
+  });
+
+  it('renders translated account, plan and status option labels', () => {
+    render(
+      <UsersFilters
+        filters={DEFAULT_FILTERS}
+        onFiltersChange={jest.fn()}
+        showClear={false}
+        onClear={jest.fn()}
+      />,
+    );
+    const optionsOf = (title: RegExp) =>
+      Array.from((screen.getByTitle(title) as HTMLSelectElement).options).map((o) => [
+        o.value,
+        o.textContent,
+      ]);
+    expect(optionsOf(/filtrar por conta/i)).toEqual([
+      ['all', 'Todas as contas'],
+      ['Personal', 'Pessoal'],
+      ['Business', 'Empresarial'],
+    ]);
+    expect(optionsOf(/filtrar por plano/i)).toEqual([
+      ['all', 'Todos os planos'],
+      ['Free trial', 'Teste grátis'],
+      ['Freemium', 'Freemium'],
+      ['Premium', 'Premium'],
+    ]);
+    expect(optionsOf(/filtrar por status/i)).toEqual([
+      ['all', 'Todos os status'],
+      ['Active', 'Ativo'],
+      ['Deactivated', 'Desativado'],
+      ['Deleted', 'Excluído'],
+    ]);
   });
 
   it('calls onFiltersChange when the Account filter changes', async () => {
@@ -32,7 +81,7 @@ describe('UsersFilters', () => {
         onClear={jest.fn()}
       />,
     );
-    await user.selectOptions(screen.getByTitle(/filter by account/i), 'Business');
+    await user.selectOptions(screen.getByTitle(/filtrar por conta/i), 'Business');
     expect(onFiltersChange).toHaveBeenCalledWith({ ...DEFAULT_FILTERS, account: 'Business' });
   });
 
@@ -45,7 +94,7 @@ describe('UsersFilters', () => {
         onClear={jest.fn()}
       />,
     );
-    expect(screen.queryByRole('button', { name: /clear filters/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /limpar filtros/i })).not.toBeInTheDocument();
   });
 
   it('shows and wires the Clear filters button when showClear is true', async () => {
@@ -59,7 +108,7 @@ describe('UsersFilters', () => {
         onClear={onClear}
       />,
     );
-    await user.click(screen.getByRole('button', { name: /clear filters/i }));
+    await user.click(screen.getByRole('button', { name: /limpar filtros/i }));
     expect(onClear).toHaveBeenCalled();
   });
 });

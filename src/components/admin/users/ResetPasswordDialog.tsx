@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
 import { toast } from 'sonner';
 
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 interface ResetPasswordTarget {
   name: string;
@@ -28,12 +28,136 @@ function isValid(channel: Channel, value: string): boolean {
   return value.replace(/\D/g, '').length >= 8;
 }
 
+interface ChannelOptionProps {
+  groupName: string;
+  channel: Channel;
+  selected: boolean;
+  onSelect: () => void;
+  title: string;
+  editing: boolean;
+  value: string;
+  onValueChange: (value: string) => void;
+  valid: boolean;
+  emptyText: string;
+  placeholder: string;
+  inputLabel: string;
+  editLabel: string;
+  onEdit: () => void;
+  numeric?: boolean;
+}
+
+function ChannelOption({
+  groupName,
+  channel,
+  selected,
+  onSelect,
+  title,
+  editing,
+  value,
+  onValueChange,
+  valid,
+  emptyText,
+  placeholder,
+  inputLabel,
+  editLabel,
+  onEdit,
+  numeric = false,
+}: ChannelOptionProps) {
+  const radioId = `${groupName}-${channel}`;
+  const inputId = `${radioId}-input`;
+
+  return (
+    <div
+      className="relative grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-xl border px-3.5 py-3 has-[input[type=radio]:focus-visible]:outline-2 has-[input[type=radio]:focus-visible]:outline-offset-2"
+      style={{
+        borderColor: selected ? 'var(--brand-500)' : 'var(--border-subtle)',
+        background: selected ? 'var(--brand-100)' : 'var(--bg-elevated)',
+        outlineColor: 'var(--brand-500)',
+      }}
+    >
+      <label htmlFor={radioId} className="contents cursor-pointer">
+        <input
+          id={radioId}
+          type="radio"
+          name={groupName}
+          value={channel}
+          checked={selected}
+          onChange={onSelect}
+          className="sr-only"
+        />
+        <span
+          aria-hidden="true"
+          className="row-span-2 h-4 w-4 flex-shrink-0 cursor-pointer rounded-full"
+          style={{
+            border: selected ? '5px solid var(--brand-500)' : '1.5px solid var(--border-strong)',
+            background: selected ? 'var(--bg-elevated)' : 'transparent',
+          }}
+        />
+        <span className="col-start-2 row-start-1 block cursor-pointer text-[13.5px] font-medium">
+          {title}
+        </span>
+        {!editing && (
+          <span
+            className={`col-start-2 row-start-2 block cursor-pointer text-[12.5px]${numeric ? ' tabular-nums' : ''}`}
+            style={{ color: valid ? 'var(--text-secondary)' : 'var(--danger)' }}
+          >
+            {value || emptyText}
+          </span>
+        )}
+      </label>
+      {editing && (
+        <>
+          <label htmlFor={inputId} className="sr-only">
+            {inputLabel}
+          </label>
+          <input
+            id={inputId}
+            autoFocus
+            value={value}
+            onChange={(e) => onValueChange(e.target.value)}
+            placeholder={placeholder}
+            className="col-start-2 row-start-2 mt-1 w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] outline-none"
+            style={{
+              borderColor: 'var(--border-strong)',
+              background: 'var(--bg-elevated)',
+              color: 'var(--text-primary)',
+            }}
+          />
+        </>
+      )}
+      <button
+        type="button"
+        aria-label={editLabel}
+        onClick={onEdit}
+        className="col-start-3 row-span-2 row-start-1 flex-shrink-0 rounded-md p-1"
+        style={{ color: valid ? 'var(--text-secondary)' : 'var(--danger)' }}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width={15}
+          height={15}
+          stroke="currentColor"
+          fill="none"
+          strokeWidth={1.7}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4 20h4l10-10-4-4L4 16z" />
+          <path d="M13.5 6.5l4 4" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 export function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProps) {
   const { t } = useTranslation();
   const [channel, setChannel] = useState<Channel>('email');
   const [editing, setEditing] = useState<Channel | null>(null);
   const [emailDraft, setEmailDraft] = useState('');
   const [phoneDraft, setPhoneDraft] = useState('');
+  const groupName = useId();
 
   useEffect(() => {
     setChannel('email');
@@ -93,161 +217,60 @@ export function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProp
           <DialogTitle className="text-[17px] font-semibold tracking-tight">
             {t('admin.users.resetPassword.title')}
           </DialogTitle>
-          <div
+          <DialogDescription
             className="mt-1 text-[13px] leading-relaxed"
             style={{ color: 'var(--text-secondary)' }}
           >
             {t('admin.users.resetPassword.subtitle', { name: target.name })}
-          </div>
+          </DialogDescription>
         </div>
 
-        <div className="flex flex-col gap-2.5 px-6 pb-1 pt-5">
+        <div
+          role="radiogroup"
+          aria-labelledby={`${groupName}-label`}
+          className="flex flex-col gap-2.5 px-6 pb-1 pt-5"
+        >
           <div
+            id={`${groupName}-label`}
             className="text-[11px] font-semibold uppercase tracking-wide"
             style={{ color: 'var(--text-secondary)' }}
           >
             {t('admin.users.resetPassword.sendLinkTo')}
           </div>
 
-          <div
-            onClick={() => setChannel('email')}
-            className="flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3"
-            style={{
-              borderColor: channel === 'email' ? 'var(--brand-500)' : 'var(--border-subtle)',
-              background: channel === 'email' ? 'var(--brand-100)' : 'var(--bg-elevated)',
-            }}
-          >
-            <span
-              className="h-4 w-4 flex-shrink-0 rounded-full"
-              style={{
-                border:
-                  channel === 'email'
-                    ? '5px solid var(--brand-500)'
-                    : '1.5px solid var(--border-strong)',
-                background: channel === 'email' ? 'var(--bg-elevated)' : 'transparent',
-              }}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[13.5px] font-medium">
-                {t('admin.users.resetPassword.email')}
-              </span>
-              {editing === 'email' ? (
-                <input
-                  autoFocus
-                  value={emailDraft}
-                  onChange={(e) => setEmailDraft(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                  placeholder="name@mail.com"
-                  className="mt-1 w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] outline-none"
-                  style={{
-                    borderColor: 'var(--border-strong)',
-                    background: 'var(--bg-elevated)',
-                    color: 'var(--text-primary)',
-                  }}
-                />
-              ) : (
-                <span
-                  className="block text-[12.5px]"
-                  style={{ color: emailOk ? 'var(--text-secondary)' : 'var(--danger)' }}
-                >
-                  {emailDraft || t('admin.users.resetPassword.noEmail')}
-                </span>
-              )}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                startEdit('email');
-              }}
-              className="flex-shrink-0 rounded-md p-1"
-              style={{ color: emailOk ? 'var(--text-secondary)' : 'var(--danger)' }}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width={15}
-                height={15}
-                stroke="currentColor"
-                fill="none"
-                strokeWidth={1.7}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 20h4l10-10-4-4L4 16z" />
-                <path d="M13.5 6.5l4 4" />
-              </svg>
-            </button>
-          </div>
-
-          <div
-            onClick={() => setChannel('phone')}
-            className="flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3"
-            style={{
-              borderColor: channel === 'phone' ? 'var(--brand-500)' : 'var(--border-subtle)',
-              background: channel === 'phone' ? 'var(--brand-100)' : 'var(--bg-elevated)',
-            }}
-          >
-            <span
-              className="h-4 w-4 flex-shrink-0 rounded-full"
-              style={{
-                border:
-                  channel === 'phone'
-                    ? '5px solid var(--brand-500)'
-                    : '1.5px solid var(--border-strong)',
-                background: channel === 'phone' ? 'var(--bg-elevated)' : 'transparent',
-              }}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[13.5px] font-medium">
-                {t('admin.users.resetPassword.sms')}
-              </span>
-              {editing === 'phone' ? (
-                <input
-                  autoFocus
-                  value={phoneDraft}
-                  onChange={(e) => setPhoneDraft(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                  placeholder="+55 00 00000-0000"
-                  className="mt-1 w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] outline-none"
-                  style={{
-                    borderColor: 'var(--border-strong)',
-                    background: 'var(--bg-elevated)',
-                    color: 'var(--text-primary)',
-                  }}
-                />
-              ) : (
-                <span
-                  className="tabular-nums block text-[12.5px]"
-                  style={{ color: phoneOk ? 'var(--text-secondary)' : 'var(--danger)' }}
-                >
-                  {phoneDraft || t('admin.users.resetPassword.noPhone')}
-                </span>
-              )}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                startEdit('phone');
-              }}
-              className="flex-shrink-0 rounded-md p-1"
-              style={{ color: phoneOk ? 'var(--text-secondary)' : 'var(--danger)' }}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width={15}
-                height={15}
-                stroke="currentColor"
-                fill="none"
-                strokeWidth={1.7}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 20h4l10-10-4-4L4 16z" />
-                <path d="M13.5 6.5l4 4" />
-              </svg>
-            </button>
-          </div>
+          <ChannelOption
+            groupName={groupName}
+            channel="email"
+            selected={channel === 'email'}
+            onSelect={() => setChannel('email')}
+            title={t('admin.users.resetPassword.email')}
+            editing={editing === 'email'}
+            value={emailDraft}
+            onValueChange={setEmailDraft}
+            valid={emailOk}
+            emptyText={t('admin.users.resetPassword.noEmail')}
+            placeholder="name@mail.com"
+            inputLabel={t('admin.users.resetPassword.emailInputLabel')}
+            editLabel={t('admin.users.resetPassword.editEmail')}
+            onEdit={() => startEdit('email')}
+          />
+          <ChannelOption
+            groupName={groupName}
+            channel="phone"
+            selected={channel === 'phone'}
+            onSelect={() => setChannel('phone')}
+            title={t('admin.users.resetPassword.sms')}
+            editing={editing === 'phone'}
+            value={phoneDraft}
+            onValueChange={setPhoneDraft}
+            valid={phoneOk}
+            emptyText={t('admin.users.resetPassword.noPhone')}
+            placeholder="+55 00 00000-0000"
+            inputLabel={t('admin.users.resetPassword.phoneInputLabel')}
+            editLabel={t('admin.users.resetPassword.editPhone')}
+            onEdit={() => startEdit('phone')}
+            numeric
+          />
         </div>
 
         <div

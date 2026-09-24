@@ -1,27 +1,45 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
+import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as TabsPrimitive from '@radix-ui/react-tabs';
+import { z } from 'zod';
+
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { badgeTone } from '@/lib/admin/badge-tone';
 import { getUserHistory, getUserReports, getUserSubscriptions } from '@/lib/mocks/admin/users';
 import type { UserRecord } from '@/lib/mocks/admin/users';
 
 import { DrawerBlocks, type DrawerBlock } from '../drawer/DrawerBlocks';
 
-export interface ProfileDraft {
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  bio: string;
-}
+const profileSchema = z.object({
+  name: z.string().trim().min(1, 'admin.users.drawer.nameRequired'),
+  email: z
+    .string()
+    .trim()
+    .refine((value) => value === '' || z.string().email().safeParse(value).success, {
+      message: 'admin.users.drawer.invalidEmail',
+    }),
+  phone: z.string(),
+  location: z.string(),
+  bio: z.string(),
+});
+
+export type ProfileDraft = z.infer<typeof profileSchema>;
 
 type TabKey = 'perfil' | 'subscriptions' | 'historico' | 'denuncias';
 
 const TAB_KEYS: TabKey[] = ['perfil', 'subscriptions', 'historico', 'denuncias'];
+
+const BLOCK_TAB_KEYS = ['subscriptions', 'historico', 'denuncias'] as const;
+
+function isTabKey(value: string): value is TabKey {
+  return (TAB_KEYS as string[]).includes(value);
+}
 
 const TAB_LABEL_KEY: Record<TabKey, string> = {
   perfil: 'admin.users.drawer.tabProfile',
@@ -129,6 +147,119 @@ function tabBlocks(
   return [];
 }
 
+const FIELD_STYLE = {
+  borderColor: 'var(--border-subtle)',
+  background: 'var(--bg-elevated)',
+  color: 'var(--text-primary)',
+};
+
+const TEXT_FIELDS = [
+  ['name', 'admin.users.drawer.fullName'],
+  ['email', 'admin.users.drawer.email'],
+  ['phone', 'admin.users.drawer.phone'],
+  ['location', 'admin.users.drawer.location'],
+] as const;
+
+interface ProfileEditFormProps {
+  user: UserRecord;
+  onSave: (values: ProfileDraft) => void;
+  onCancel: () => void;
+}
+
+function ProfileEditForm({ user, onSave, onCancel }: ProfileEditFormProps) {
+  const { t } = useTranslation();
+  const idPrefix = useId();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ProfileDraft>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: draftFromUser(user),
+  });
+
+  return (
+    <form
+      noValidate
+      onSubmit={handleSubmit(onSave)}
+      className="flex flex-1 flex-col gap-4.5 overflow-y-auto px-6 py-6"
+    >
+      <div
+        className="text-[11px] font-semibold uppercase tracking-wide"
+        style={{ color: 'var(--text-secondary)' }}
+      >
+        {t('admin.users.drawer.editProfileTitle')}
+      </div>
+      {TEXT_FIELDS.map(([field, labelKey]) => {
+        const inputId = `${idPrefix}-${field}`;
+        const errorId = `${inputId}-error`;
+        const error = errors[field]?.message;
+        return (
+          <div key={field} className="flex flex-col gap-1.5">
+            <label
+              htmlFor={inputId}
+              className="text-xs font-medium"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              {t(labelKey)}
+            </label>
+            <input
+              id={inputId}
+              type={field === 'email' ? 'email' : 'text'}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? errorId : undefined}
+              {...register(field)}
+              className="rounded-[10px] border px-3 py-2.5 text-[13.5px] outline-none"
+              style={{
+                ...FIELD_STYLE,
+                borderColor: error ? 'var(--danger)' : FIELD_STYLE.borderColor,
+              }}
+            />
+            {error && (
+              <p id={errorId} className="text-xs" style={{ color: 'var(--danger)' }}>
+                {t(error)}
+              </p>
+            )}
+          </div>
+        );
+      })}
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor={`${idPrefix}-bio`}
+          className="text-xs font-medium"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {t('admin.users.drawer.bioSection')}
+        </label>
+        <textarea
+          id={`${idPrefix}-bio`}
+          {...register('bio')}
+          rows={4}
+          className="resize-y rounded-[10px] border px-3 py-2.5 text-[13.5px] outline-none"
+          style={FIELD_STYLE}
+        />
+      </div>
+      <div className="flex gap-2.5 pt-1">
+        <button
+          type="submit"
+          className="inline-flex items-center rounded-[10px] px-4.5 py-2.5 text-[13.5px] font-semibold text-white"
+          style={{ background: 'var(--brand-500)' }}
+        >
+          {t('admin.users.drawer.saveChanges')}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex items-center rounded-[10px] border px-4.5 py-2.5 text-[13.5px] font-medium"
+          style={{ borderColor: 'var(--border-subtle)' }}
+        >
+          {t('admin.users.drawer.cancel')}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 interface UserDetailDrawerProps {
   user: UserRecord | null;
   onClose: () => void;
@@ -139,12 +270,10 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
   const { t } = useTranslation();
   const [tab, setTab] = useState<TabKey>('perfil');
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<ProfileDraft | null>(null);
 
   useEffect(() => {
     setTab('perfil');
     setEditing(false);
-    setDraft(null);
   }, [user?.id]);
 
   if (!user) {
@@ -156,7 +285,6 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
   }
 
   const badge = badgeTone(user.type);
-  const currentDraft = draft ?? draftFromUser(user);
 
   const stats = [
     { label: t('admin.users.drawer.statPlan'), value: user.plan },
@@ -201,9 +329,9 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
                   {user.type}
                 </span>
               </div>
-              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <SheetDescription className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                 {user.email}
-              </div>
+              </SheetDescription>
             </div>
           </div>
         </div>
@@ -227,227 +355,175 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
           ))}
         </div>
 
-        <div
-          role="tablist"
-          className="flex flex-shrink-0 flex-wrap gap-1 border-b px-5"
-          style={{ borderColor: 'var(--border-subtle)' }}
+        <TabsPrimitive.Root
+          value={tab}
+          onValueChange={(value) => isTabKey(value) && setTab(value)}
+          className="flex min-h-0 flex-1 flex-col"
         >
-          {TAB_KEYS.map((key) => (
-            <button
-              key={key}
-              role="tab"
-              aria-selected={tab === key}
-              type="button"
-              onClick={() => setTab(key)}
-              className="flex-shrink-0 whitespace-nowrap px-3 py-2 text-[13.5px] font-medium"
-              style={{
-                color: tab === key ? 'var(--brand-500)' : 'var(--text-secondary)',
-                borderBottom: `2px solid ${tab === key ? 'var(--brand-500)' : 'transparent'}`,
-                marginBottom: '-1px',
-              }}
-            >
-              {t(TAB_LABEL_KEY[key])}
-            </button>
-          ))}
-        </div>
+          <TabsPrimitive.List
+            className="flex flex-shrink-0 flex-wrap gap-1 border-b px-5"
+            style={{ borderColor: 'var(--border-subtle)' }}
+          >
+            {TAB_KEYS.map((key) => (
+              <TabsPrimitive.Trigger
+                key={key}
+                value={key}
+                className="flex-shrink-0 whitespace-nowrap px-3 py-2 text-[13.5px] font-medium"
+                style={{
+                  color: tab === key ? 'var(--brand-500)' : 'var(--text-secondary)',
+                  borderBottom: `2px solid ${tab === key ? 'var(--brand-500)' : 'transparent'}`,
+                  marginBottom: '-1px',
+                }}
+              >
+                {t(TAB_LABEL_KEY[key])}
+              </TabsPrimitive.Trigger>
+            ))}
+          </TabsPrimitive.List>
 
-        {tab === 'perfil' ? (
-          !editing ? (
-            <div className="flex flex-1 flex-col gap-7 overflow-y-auto px-6 py-6">
-              <div>
-                <div
-                  className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  {t('admin.users.drawer.contactSection')}
-                </div>
-                {[
-                  [t('admin.users.drawer.fullName'), user.name],
-                  [t('admin.users.drawer.email'), user.email],
-                  [t('admin.users.drawer.phone'), user.phone],
-                  [t('admin.users.drawer.location'), user.location],
-                ].map(([label, value]) => (
+          <TabsPrimitive.Content
+            value="perfil"
+            className="flex min-h-0 flex-1 flex-col outline-none"
+          >
+            {!editing ? (
+              <div className="flex flex-1 flex-col gap-7 overflow-y-auto px-6 py-6">
+                <div>
                   <div
-                    key={label}
-                    className="flex items-baseline justify-between gap-4 border-b py-2.5 text-[13.5px]"
+                    className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {t('admin.users.drawer.contactSection')}
+                  </div>
+                  {[
+                    [t('admin.users.drawer.fullName'), user.name],
+                    [t('admin.users.drawer.email'), user.email],
+                    [t('admin.users.drawer.phone'), user.phone],
+                    [t('admin.users.drawer.location'), user.location],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="flex items-baseline justify-between gap-4 border-b py-2.5 text-[13.5px]"
+                      style={{ borderColor: 'var(--border-subtle)' }}
+                    >
+                      <div className="flex-shrink-0" style={{ color: 'var(--text-secondary)' }}>
+                        {label}
+                      </div>
+                      <div className="text-right font-medium">{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <div
+                    className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {t('admin.users.drawer.accountSection')}
+                  </div>
+                  <div
+                    className="flex items-center justify-between gap-4 border-b py-2.5 text-[13.5px]"
                     style={{ borderColor: 'var(--border-subtle)' }}
                   >
-                    <div className="flex-shrink-0" style={{ color: 'var(--text-secondary)' }}>
-                      {label}
+                    <div style={{ color: 'var(--text-secondary)' }}>
+                      {t('admin.users.drawer.accountType')}
                     </div>
-                    <div className="text-right font-medium">{value}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <div
-                  className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  {t('admin.users.drawer.accountSection')}
-                </div>
-                <div
-                  className="flex items-center justify-between gap-4 border-b py-2.5 text-[13.5px]"
-                  style={{ borderColor: 'var(--border-subtle)' }}
-                >
-                  <div style={{ color: 'var(--text-secondary)' }}>
-                    {t('admin.users.drawer.accountType')}
-                  </div>
-                  {/* `account` and `type` are independent fields in the source data
+                    {/* `account` and `type` are independent fields in the source data
                       model and may legitimately disagree for a given user (e.g. seed
                       `u8`: account 'Business' but type 'User') — this is not a bug to
                       reconcile, the header badge above intentionally reflects `type`
                       while this one reflects `account`. */}
-                  {(() => {
-                    const acctTone = badgeTone(user.account === 'Business' ? 'Creator' : 'User');
-                    return (
-                      <span
-                        className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
-                        style={{ color: acctTone.color, background: acctTone.background }}
-                      >
-                        {user.account === 'Business' ? 'Creator' : 'User'}
-                      </span>
-                    );
-                  })()}
-                </div>
-                <div
-                  className="flex items-baseline justify-between gap-4 border-b py-2.5 text-[13.5px]"
-                  style={{ borderColor: 'var(--border-subtle)' }}
-                >
-                  <div style={{ color: 'var(--text-secondary)' }}>
-                    {t('admin.users.drawer.plan')}
+                    {(() => {
+                      const acctTone = badgeTone(user.account === 'Business' ? 'Creator' : 'User');
+                      return (
+                        <span
+                          className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                          style={{ color: acctTone.color, background: acctTone.background }}
+                        >
+                          {user.account === 'Business' ? 'Creator' : 'User'}
+                        </span>
+                      );
+                    })()}
                   </div>
-                  <div className="text-right font-medium">{user.plan}</div>
-                </div>
-                <div
-                  className="flex items-baseline justify-between gap-4 border-b py-2.5 text-[13.5px]"
-                  style={{ borderColor: 'var(--border-subtle)' }}
-                >
-                  <div style={{ color: 'var(--text-secondary)' }}>
-                    {t('admin.users.drawer.joinedOn')}
+                  <div
+                    className="flex items-baseline justify-between gap-4 border-b py-2.5 text-[13.5px]"
+                    style={{ borderColor: 'var(--border-subtle)' }}
+                  >
+                    <div style={{ color: 'var(--text-secondary)' }}>
+                      {t('admin.users.drawer.plan')}
+                    </div>
+                    <div className="text-right font-medium">{user.plan}</div>
                   </div>
-                  <div className="tabular-nums text-right font-medium">{user.joined}</div>
-                </div>
-                <div
-                  className="flex items-center justify-between gap-4 border-b py-2.5 text-[13.5px]"
-                  style={{ borderColor: 'var(--border-subtle)' }}
-                >
-                  <div style={{ color: 'var(--text-secondary)' }}>
-                    {t('admin.users.drawer.status')}
+                  <div
+                    className="flex items-baseline justify-between gap-4 border-b py-2.5 text-[13.5px]"
+                    style={{ borderColor: 'var(--border-subtle)' }}
+                  >
+                    <div style={{ color: 'var(--text-secondary)' }}>
+                      {t('admin.users.drawer.joinedOn')}
+                    </div>
+                    <div className="tabular-nums text-right font-medium">{user.joined}</div>
                   </div>
-                  {(() => {
-                    const statusTone = badgeTone(user.status);
-                    return (
-                      <span
-                        className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
-                        style={{ color: statusTone.color, background: statusTone.background }}
-                      >
-                        {user.status}
-                      </span>
-                    );
-                  })()}
+                  <div
+                    className="flex items-center justify-between gap-4 border-b py-2.5 text-[13.5px]"
+                    style={{ borderColor: 'var(--border-subtle)' }}
+                  >
+                    <div style={{ color: 'var(--text-secondary)' }}>
+                      {t('admin.users.drawer.status')}
+                    </div>
+                    {(() => {
+                      const statusTone = badgeTone(user.status);
+                      return (
+                        <span
+                          className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                          style={{ color: statusTone.color, background: statusTone.background }}
+                        >
+                          {user.status}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <div
-                  className="mb-2 text-[11px] font-semibold uppercase tracking-wide"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  {t('admin.users.drawer.bioSection')}
+                <div>
+                  <div
+                    className="mb-2 text-[11px] font-semibold uppercase tracking-wide"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {t('admin.users.drawer.bioSection')}
+                  </div>
+                  <div className="text-[13.5px] leading-relaxed">
+                    {user.bio || t('admin.users.drawer.noBio')}
+                  </div>
                 </div>
-                <div className="text-[13.5px] leading-relaxed">
-                  {user.bio || t('admin.users.drawer.noBio')}
-                </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setDraft(draftFromUser(user));
-                  setEditing(true);
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="inline-flex w-fit items-center gap-2 rounded-[10px] border px-4 py-2.5 text-[13.5px] font-medium"
+                  style={{ borderColor: 'var(--border-subtle)' }}
+                >
+                  {t('admin.users.drawer.editProfile')}
+                </button>
+              </div>
+            ) : (
+              <ProfileEditForm
+                user={user}
+                onSave={(values) => {
+                  onSaveProfile(user, values);
+                  setEditing(false);
                 }}
-                className="inline-flex w-fit items-center gap-2 rounded-[10px] border px-4 py-2.5 text-[13.5px] font-medium"
-                style={{ borderColor: 'var(--border-subtle)' }}
-              >
-                {t('admin.users.drawer.editProfile')}
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-1 flex-col gap-4.5 overflow-y-auto px-6 py-6">
-              <div
-                className="text-[11px] font-semibold uppercase tracking-wide"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                {t('admin.users.drawer.editProfileTitle')}
-              </div>
-              {(
-                [
-                  ['name', t('admin.users.drawer.fullName')],
-                  ['email', t('admin.users.drawer.email')],
-                  ['phone', t('admin.users.drawer.phone')],
-                  ['location', t('admin.users.drawer.location')],
-                ] as const
-              ).map(([field, label]) => (
-                <div key={field} className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                    {label}
-                  </label>
-                  <input
-                    value={currentDraft[field]}
-                    onChange={(e) => setDraft({ ...currentDraft, [field]: e.target.value })}
-                    className="rounded-[10px] border px-3 py-2.5 text-[13.5px] outline-none"
-                    style={{
-                      borderColor: 'var(--border-subtle)',
-                      background: 'var(--bg-elevated)',
-                      color: 'var(--text-primary)',
-                    }}
-                  />
-                </div>
-              ))}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                  {t('admin.users.drawer.bioSection')}
-                </label>
-                <textarea
-                  value={currentDraft.bio}
-                  onChange={(e) => setDraft({ ...currentDraft, bio: e.target.value })}
-                  rows={4}
-                  className="resize-y rounded-[10px] border px-3 py-2.5 text-[13.5px] outline-none"
-                  style={{
-                    borderColor: 'var(--border-subtle)',
-                    background: 'var(--bg-elevated)',
-                    color: 'var(--text-primary)',
-                  }}
-                />
-              </div>
-              <div className="flex gap-2.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSaveProfile(user, currentDraft);
-                    setEditing(false);
-                  }}
-                  className="inline-flex items-center rounded-[10px] px-4.5 py-2.5 text-[13.5px] font-semibold text-white"
-                  style={{ background: 'var(--brand-500)' }}
-                >
-                  {t('admin.users.drawer.saveChanges')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditing(false)}
-                  className="inline-flex items-center rounded-[10px] border px-4.5 py-2.5 text-[13.5px] font-medium"
-                  style={{ borderColor: 'var(--border-subtle)' }}
-                >
-                  {t('admin.users.drawer.cancel')}
-                </button>
-              </div>
-            </div>
-          )
-        ) : (
-          <DrawerBlocks blocks={tabBlocks(user, tab, t)} />
-        )}
+                onCancel={() => setEditing(false)}
+              />
+            )}
+          </TabsPrimitive.Content>
+          {BLOCK_TAB_KEYS.map((key) => (
+            <TabsPrimitive.Content
+              key={key}
+              value={key}
+              className="flex min-h-0 flex-1 flex-col outline-none"
+            >
+              <DrawerBlocks blocks={tabBlocks(user, key, t)} />
+            </TabsPrimitive.Content>
+          ))}
+        </TabsPrimitive.Root>
       </SheetContent>
     </Sheet>
   );

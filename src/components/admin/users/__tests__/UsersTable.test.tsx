@@ -78,8 +78,57 @@ describe('UsersTable', () => {
         onDelete={jest.fn()}
       />,
     );
-    await user.click(screen.getByText('Followers'));
+    await user.click(screen.getByText('Seguidores'));
     expect(onSortChange).toHaveBeenCalledWith('followers');
+  });
+
+  it('exposes each sortable header as a keyboard-activatable button', async () => {
+    const user = userEvent.setup();
+    const onSortChange = jest.fn();
+    render(
+      <UsersTable
+        users={users}
+        sort={{ key: null, dir: 'desc' }}
+        onSortChange={onSortChange}
+        onRowClick={jest.fn()}
+        onViewProfile={jest.fn()}
+        onResetPassword={jest.fn()}
+        onDeactivate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    const nameButton = screen.getByRole('button', { name: /^nome/i });
+    await user.tab();
+    expect(nameButton).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(onSortChange).toHaveBeenLastCalledWith('name');
+    await user.tab();
+    expect(screen.getByRole('button', { name: /^conta/i })).toHaveFocus();
+    await user.keyboard(' ');
+    expect(onSortChange).toHaveBeenLastCalledWith('account');
+  });
+
+  it('reflects the current sort column and direction via aria-sort', () => {
+    const props = {
+      users,
+      onSortChange: jest.fn(),
+      onRowClick: jest.fn(),
+      onViewProfile: jest.fn(),
+      onResetPassword: jest.fn(),
+      onDeactivate: jest.fn(),
+      onDelete: jest.fn(),
+    };
+    const { rerender } = render(<UsersTable {...props} sort={{ key: 'followers', dir: 'asc' }} />);
+    const header = (name: RegExp) => screen.getByRole('columnheader', { name });
+    expect(header(/seguidores/i)).toHaveAttribute('aria-sort', 'ascending');
+    expect(header(/^nome/i)).toHaveAttribute('aria-sort', 'none');
+    expect(header(/^status/i)).toHaveAttribute('aria-sort', 'none');
+
+    rerender(<UsersTable {...props} sort={{ key: 'followers', dir: 'desc' }} />);
+    expect(header(/seguidores/i)).toHaveAttribute('aria-sort', 'descending');
+
+    rerender(<UsersTable {...props} sort={{ key: null, dir: 'desc' }} />);
+    expect(header(/seguidores/i)).toHaveAttribute('aria-sort', 'none');
   });
 
   it('calls onRowClick with the clicked user', async () => {
@@ -116,13 +165,13 @@ describe('UsersTable', () => {
         onDelete={jest.fn()}
       />,
     );
-    const menuButtons = screen.getAllByRole('button', { name: /actions for/i });
+    const menuButtons = screen.getAllByRole('button', { name: /ações para/i });
     await user.click(menuButtons[0]);
-    expect(screen.getByText('View profile')).toBeInTheDocument();
-    expect(screen.getByText('Reset password')).toBeInTheDocument();
-    expect(screen.getByText('Deactivate account')).toBeInTheDocument();
-    expect(screen.getByText('Delete account')).toBeInTheDocument();
-    await user.click(screen.getByText('Reset password'));
+    expect(screen.getByText('Ver perfil')).toBeInTheDocument();
+    expect(screen.getByText('Redefinir senha')).toBeInTheDocument();
+    expect(screen.getByText('Desativar conta')).toBeInTheDocument();
+    expect(screen.getByText('Excluir conta')).toBeInTheDocument();
+    await user.click(screen.getByText('Redefinir senha'));
     expect(onResetPassword).toHaveBeenCalledWith(users[0]);
   });
 
@@ -140,9 +189,27 @@ describe('UsersTable', () => {
         onDelete={jest.fn()}
       />,
     );
-    const menuButtons = screen.getAllByRole('button', { name: /actions for/i });
+    const menuButtons = screen.getAllByRole('button', { name: /ações para/i });
     await user.click(menuButtons[1]); // Rafael, Deactivated
-    expect(screen.getByText('Reactivate account')).toBeInTheDocument();
+    expect(screen.getByText('Reativar conta')).toBeInTheDocument();
+  });
+
+  it('renders the decorative pager buttons as non-interactive', () => {
+    render(
+      <UsersTable
+        users={users}
+        sort={{ key: null, dir: 'desc' }}
+        onSortChange={jest.fn()}
+        onRowClick={jest.fn()}
+        onViewProfile={jest.fn()}
+        onResetPassword={jest.fn()}
+        onDeactivate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    for (const label of ['‹', '1', '2', '3', '›']) {
+      expect(screen.getByRole('button', { name: label })).toBeDisabled();
+    }
   });
 
   it('renders the empty state when there are no users', () => {
@@ -158,6 +225,6 @@ describe('UsersTable', () => {
         onDelete={jest.fn()}
       />,
     );
-    expect(screen.getByText('No user found')).toBeInTheDocument();
+    expect(screen.getByText('Nenhum usuário encontrado')).toBeInTheDocument();
   });
 });

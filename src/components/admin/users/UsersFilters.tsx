@@ -1,10 +1,33 @@
 'use client';
 
+import { useId } from 'react';
+
 import { useTranslation } from 'react-i18next';
 
 import type { UserFilters } from '@/lib/admin/users-table';
 
 import { IconClose, IconSearch } from '../icons';
+
+type AccountOption = Exclude<UserFilters['account'], 'all'>;
+type PlanOption = Exclude<UserFilters['plan'], 'all'>;
+type StatusOption = Exclude<UserFilters['status'], 'all'>;
+
+const ACCOUNT_OPTIONS: Array<[AccountOption, string]> = [
+  ['Personal', 'admin.users.accountOptions.personal'],
+  ['Business', 'admin.users.accountOptions.business'],
+];
+
+const PLAN_OPTIONS: Array<[PlanOption, string]> = [
+  ['Free trial', 'admin.users.planOptions.freeTrial'],
+  ['Freemium', 'admin.users.planOptions.freemium'],
+  ['Premium', 'admin.users.planOptions.premium'],
+];
+
+const STATUS_OPTIONS: Array<[StatusOption, string]> = [
+  ['Active', 'admin.users.statusOptions.active'],
+  ['Deactivated', 'admin.users.statusOptions.deactivated'],
+  ['Deleted', 'admin.users.statusOptions.deleted'],
+];
 
 interface UsersFiltersProps {
   filters: UserFilters;
@@ -15,6 +38,7 @@ interface UsersFiltersProps {
 
 export function UsersFilters({ filters, onFiltersChange, showClear, onClear }: UsersFiltersProps) {
   const { t } = useTranslation();
+  const searchId = useId();
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2.5">
@@ -27,7 +51,11 @@ export function UsersFilters({ filters, onFiltersChange, showClear, onClear }: U
         }}
       >
         <IconSearch size={16} />
+        <label htmlFor={searchId} className="sr-only">
+          {t('admin.users.searchLabel')}
+        </label>
         <input
+          id={searchId}
           value={filters.query}
           onChange={(e) => onFiltersChange({ ...filters, query: e.target.value })}
           placeholder={t('admin.users.searchPlaceholder')}
@@ -50,8 +78,11 @@ export function UsersFilters({ filters, onFiltersChange, showClear, onClear }: U
         }}
       >
         <option value="all">{t('admin.users.allAccounts')}</option>
-        <option value="Personal">Personal</option>
-        <option value="Business">Business</option>
+        {ACCOUNT_OPTIONS.map(([value, labelKey]) => (
+          <option key={value} value={value}>
+            {t(labelKey)}
+          </option>
+        ))}
       </select>
 
       <select
@@ -68,9 +99,11 @@ export function UsersFilters({ filters, onFiltersChange, showClear, onClear }: U
         }}
       >
         <option value="all">{t('admin.users.allPlans')}</option>
-        <option value="Free trial">Free trial</option>
-        <option value="Freemium">Freemium</option>
-        <option value="Premium">Premium</option>
+        {PLAN_OPTIONS.map(([value, labelKey]) => (
+          <option key={value} value={value}>
+            {t(labelKey)}
+          </option>
+        ))}
       </select>
 
       <select
@@ -87,9 +120,11 @@ export function UsersFilters({ filters, onFiltersChange, showClear, onClear }: U
         }}
       >
         <option value="all">{t('admin.users.allStatuses')}</option>
-        <option value="Active">Active</option>
-        <option value="Deactivated">Deactivated</option>
-        <option value="Deleted">Deleted</option>
+        {STATUS_OPTIONS.map(([value, labelKey]) => (
+          <option key={value} value={value}>
+            {t(labelKey)}
+          </option>
+        ))}
       </select>
 
       {showClear && (
