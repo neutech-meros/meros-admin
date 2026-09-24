@@ -21,7 +21,7 @@
 
 ## Review Focus
 
-- **Sidebar collapse persists visual correctness at both widths** — collapsing to 72px must hide labels/chevrons (`display:none`) without breaking icon alignment, and a collapsed group's flyout must open positioned against the clicked row, not a fixed spot.
+- **Sidebar collapse persists visual correctness at both widths** — collapsing to 72px must hide labels/chevrons (`display:none`) without breaking icon alignment. The collapsed-group hover flyout is explicitly deferred out of Phase 1 (see Task 6's note) — a collapsed group's sub-items are simply unreachable until a later phase adds it; this is not a Phase 1 review item.
 - **Keyboard shortcut conflicts** — ⌘K/Ctrl+K must open the command palette from anywhere on the page (not just when the search box is focused) and Escape must close it; a reasonable person expects this to not fire while typing in an unrelated text field in a way that fights normal typing.
 - **Empty/edge states in ported data** — the two grid rows in the source markup (lines 552–557 and 690–693 of the extracted template) render empty in the reference; the port must not invent content for them, and revenue-chart "could not load" error state (`revError`) must be reachable and dismissible, not just decorative dead code.
 - **Locale coverage** — every `admin.sidebar.*`, `admin.header.*`, and `admin.dashboard.*` key (the UI-chrome keys, not the intentionally-partial `admin.nav.*` keys — see Global Constraints) must exist in all three locale files (`ptBR`, `enUS`, `esES`) with the same key structure; a key missing from just `enUS`/`esES` silently falls back to the raw key path in `react-i18next` (no `defaultValue` is passed for these) and is easy to miss when adding en/es after doing pt first.

@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+
+import { getMonthOptions } from '@/lib/mocks/admin/dashboard';
 
 // AlertsCard calls useRouter() from next/navigation, which throws
 // "invariant expected app router to be mounted" outside a real Next.js app
@@ -51,5 +53,18 @@ describe('DashboardPage', () => {
     render(<DashboardPage />);
     expect(screen.getByText('Alertas importantes')).toBeInTheDocument();
     expect(screen.getByText('Pagamento Stripe falhou')).toBeInTheDocument();
+  });
+
+  // Regression test: the month <select> used to call getMonthOptions() at render/module
+  // scope, which drifts between the build-time prerender and the client once the build
+  // month passes, causing a hydration mismatch. It's now populated from an effect after
+  // mount — this pins that the effect actually runs and fills the 12 options, instead of
+  // leaving the select silently empty.
+  it('populates the month select with 12 options after mount', () => {
+    render(<DashboardPage />);
+    const select = screen.getByRole('combobox');
+    const options = within(select).getAllByRole('option');
+    expect(options).toHaveLength(12);
+    expect(options[0]).toHaveTextContent(getMonthOptions()[0].label);
   });
 });
