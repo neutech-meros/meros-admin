@@ -200,6 +200,10 @@
         "active": "Activo",
         "deactivated": "Desactivado",
         "deleted": "Eliminado"
+      },
+      "roleOptions": {
+        "user": "Usuario",
+        "creator": "Creador"
       }
     },
     "drawer": {

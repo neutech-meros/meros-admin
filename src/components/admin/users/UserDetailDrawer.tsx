@@ -11,6 +11,7 @@ import { z } from 'zod';
 
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { badgeTone } from '@/lib/admin/badge-tone';
+import { ROLE_LABEL_KEY, STATUS_LABEL_KEY } from '@/lib/admin/users-table';
 import { getUserHistory, getUserReports, getUserSubscriptions } from '@/lib/mocks/admin/users';
 import type { UserRecord } from '@/lib/mocks/admin/users';
 
@@ -292,7 +293,7 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
     { label: t('admin.users.drawer.statFollowing'), value: user.following },
     {
       label: t('admin.users.drawer.statStatus'),
-      value: user.status,
+      value: t(STATUS_LABEL_KEY[user.status]),
       color: badgeTone(user.status).color,
     },
   ];
@@ -326,7 +327,7 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
                   className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
                   style={{ color: badge.color, background: badge.background }}
                 >
-                  {user.type}
+                  {t(ROLE_LABEL_KEY[user.type])}
                 </span>
               </div>
               <SheetDescription className="text-xs" style={{ color: 'var(--text-secondary)' }}>
@@ -432,13 +433,14 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
                       reconcile, the header badge above intentionally reflects `type`
                       while this one reflects `account`. */}
                     {(() => {
-                      const acctTone = badgeTone(user.account === 'Business' ? 'Creator' : 'User');
+                      const role = user.account === 'Business' ? 'Creator' : 'User';
+                      const acctTone = badgeTone(role);
                       return (
                         <span
                           className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
                           style={{ color: acctTone.color, background: acctTone.background }}
                         >
-                          {user.account === 'Business' ? 'Creator' : 'User'}
+                          {t(ROLE_LABEL_KEY[role])}
                         </span>
                       );
                     })()}
@@ -475,7 +477,7 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
                           className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
                           style={{ color: statusTone.color, background: statusTone.background }}
                         >
-                          {user.status}
+                          {t(STATUS_LABEL_KEY[user.status])}
                         </span>
                       );
                     })()}

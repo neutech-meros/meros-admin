@@ -14,6 +14,17 @@ export const DEFAULT_FILTERS: UserFilters = {
   status: 'all',
 };
 
+export const STATUS_LABEL_KEY: Record<UserRecord['status'], string> = {
+  Active: 'admin.users.statusOptions.active',
+  Deactivated: 'admin.users.statusOptions.deactivated',
+  Deleted: 'admin.users.statusOptions.deleted',
+};
+
+export const ROLE_LABEL_KEY: Record<UserRecord['type'], string> = {
+  User: 'admin.users.roleOptions.user',
+  Creator: 'admin.users.roleOptions.creator',
+};
+
 export type SortKey = 'name' | 'account' | 'plan' | 'followers' | 'joined' | 'status';
 export type SortDir = 'asc' | 'desc';
 

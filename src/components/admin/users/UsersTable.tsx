@@ -18,7 +18,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { badgeTone } from '@/lib/admin/badge-tone';
-import { type SortKey, type SortState, SORT_COLUMNS } from '@/lib/admin/users-table';
+import {
+  ROLE_LABEL_KEY,
+  type SortKey,
+  type SortState,
+  SORT_COLUMNS,
+  STATUS_LABEL_KEY,
+} from '@/lib/admin/users-table';
 import type { UserRecord } from '@/lib/mocks/admin/users';
 
 const COLUMN_LABEL_KEY: Record<SortKey, string> = {
@@ -99,7 +105,8 @@ export function UsersTable({
             </TableHeader>
             <TableBody>
               {users.map((u) => {
-                const acctTone = badgeTone(u.account === 'Business' ? 'Creator' : 'User');
+                const role = u.account === 'Business' ? 'Creator' : 'User';
+                const acctTone = badgeTone(role);
                 const statusTone = badgeTone(u.status);
                 return (
                   <TableRow key={u.id} onClick={() => onRowClick(u)} className="cursor-pointer">
@@ -124,7 +131,7 @@ export function UsersTable({
                         className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
                         style={{ color: acctTone.color, background: acctTone.background }}
                       >
-                        {u.account === 'Business' ? 'Creator' : 'User'}
+                        {t(ROLE_LABEL_KEY[role])}
                       </span>
                     </TableCell>
                     <TableCell>{u.plan}</TableCell>
@@ -135,7 +142,7 @@ export function UsersTable({
                         className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
                         style={{ color: statusTone.color, background: statusTone.background }}
                       >
-                        {u.status}
+                        {t(STATUS_LABEL_KEY[u.status])}
                       </span>
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
