@@ -10,11 +10,13 @@ export interface Reporter {
 
 export interface ReportedItem {
   id: string;
+  targetType?: 'LIST' | 'PLACE_IN_LIST' | 'PROFILE'; // present for real (API-backed) items, needed to call the decision endpoint
+  targetId?: string;
   title: string; // the flagged content's own title
   kind: string; // "Travel list" | "Comment" | "Profile" | …
   reason: string; // top-line reason shown in the queue row
   severity: ReportSeverity;
-  excerpt: string; // the flagged content/snippet itself
+  excerpt: string | null; // the flagged content/snippet itself; null when the target has none (e.g. a profile with no bio)
   where: string;
   owner: string;
   handle: string;

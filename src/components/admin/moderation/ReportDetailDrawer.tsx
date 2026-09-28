@@ -123,7 +123,9 @@ export function ReportDetailDrawer({ report, onClose, onKeep, onRemove }: Report
             {report.title}
           </div>
 
-          <Field label={t('admin.moderation.drawer.reportedContentLabel')}>{report.excerpt}</Field>
+          <Field label={t('admin.moderation.drawer.reportedContentLabel')}>
+            {report.excerpt ?? '—'}
+          </Field>
           <Field label={t('admin.moderation.drawer.contentTypeLabel')}>{report.kind}</Field>
           <Field label={t('admin.moderation.drawer.whereItLivesLabel')}>{report.where}</Field>
           <Field label={t('admin.moderation.drawer.accountLabel')}>

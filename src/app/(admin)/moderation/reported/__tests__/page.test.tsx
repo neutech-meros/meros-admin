@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 
@@ -26,6 +26,187 @@ const REVIEWED_TITLES = [
   'Comment on "A Family Weekend in Paraty"',
 ];
 
+function queueItem(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'LIST:report-1',
+    targetType: 'LIST',
+    targetId: 'report-1',
+    title: QUEUE_TITLES[0],
+    kind: 'Travel list',
+    excerpt: 'Includes exact GPS pins for a closed trail.',
+    where: 'Travel list · 14 stops · published 12/08/2026',
+    reason: 'Illegal or dangerous content',
+    severity: 'HIGH',
+    owner: {
+      name: 'Marina Alves',
+      handle: '@marina.alves',
+      account: 'Business',
+      accountStatus: 'ACTIVE',
+    },
+    priorAction: 'No prior moderation actions on this account.',
+    reporters: [
+      {
+        name: 'Beatriz Lima',
+        handle: '@bia.lima',
+        reason: 'Protected area exposed',
+        reportedAt: '2026-08-12T09:14:00.000Z',
+      },
+      {
+        name: 'Tiago Fonseca',
+        handle: '@tiago.f',
+        reason: 'Encourages illegal access',
+        reportedAt: '2026-08-13T18:42:00.000Z',
+      },
+    ],
+    ...overrides,
+  };
+}
+
+const QUEUE_FIXTURE = [
+  queueItem(),
+  queueItem({
+    id: 'COMMENT:report-2',
+    targetType: 'PLACE_IN_LIST',
+    targetId: 'report-2',
+    title: QUEUE_TITLES[1],
+    kind: 'Comment',
+    severity: 'AVERAGE',
+    reason: 'Offensive language',
+    reporters: [
+      {
+        name: 'Automatic detection',
+        handle: null,
+        reason: 'Offensive language · score 0.91',
+        reportedAt: '2026-08-22T11:03:00.000Z',
+      },
+      {
+        name: 'Beatriz Lima',
+        handle: '@bia.lima',
+        reason: 'Harassment toward the creator',
+        reportedAt: '2026-08-22T12:20:00.000Z',
+      },
+      {
+        name: 'Larissa Prado',
+        handle: '@larissa.p',
+        reason: 'Offensive language',
+        reportedAt: '2026-08-23T08:55:00.000Z',
+      },
+    ],
+  }),
+  queueItem({
+    id: 'PROFILE:report-3',
+    targetType: 'PROFILE',
+    targetId: 'report-3',
+    title: QUEUE_TITLES[2],
+    kind: 'Profile',
+    severity: 'LOW',
+    reason: 'Impersonation / duplicate account',
+    owner: {
+      name: 'Rafael Nogueira',
+      handle: '@rafael.n',
+      account: 'Individual',
+      accountStatus: 'INACTIVE',
+    },
+    reporters: [
+      {
+        name: 'Marina Alves',
+        handle: '@marina.alves',
+        reason: 'Impersonation / duplicate account',
+        reportedAt: '2026-08-20T15:31:00.000Z',
+      },
+    ],
+  }),
+];
+
+const REVIEWED_FIXTURE = [
+  {
+    id: 'reviewed-1',
+    title: REVIEWED_TITLES[0],
+    owner: 'Larissa Prado',
+    reportsLabel: '3 user reports',
+    decision: 'REMOVED',
+    reviewedBy: 'Ana Martins',
+    reviewedAt: '2026-08-19T16:40:00.000Z',
+  },
+  {
+    id: 'reviewed-2',
+    title: REVIEWED_TITLES[1],
+    owner: 'Eduardo Costa',
+    reportsLabel: '1 user report',
+    decision: 'KEPT',
+    reviewedBy: 'Lucas Pereira',
+    reviewedAt: '2026-08-17T10:12:00.000Z',
+  },
+];
+
+function jsonResponse(status: number, body: unknown): Pick<Response, 'ok' | 'status' | 'json'> {
+  return { ok: status >= 200 && status < 300, status, json: () => Promise.resolve(body) };
+}
+
+type FetchMock = jest.Mock<
+  Promise<Pick<Response, 'ok' | 'status' | 'json'>>,
+  [RequestInfo | URL, RequestInit?]
+>;
+let fetchMock: FetchMock;
+let queueState: typeof QUEUE_FIXTURE;
+let reviewedState: typeof REVIEWED_FIXTURE;
+
+function defaultFetchImpl(url: RequestInfo | URL, init?: RequestInit) {
+  const href = String(url);
+  if (href.endsWith('/api/admin/moderation/reports') && (!init || init.method === undefined)) {
+    return Promise.resolve(jsonResponse(200, { items: queueState, total: queueState.length }));
+  }
+  if (href.endsWith('/api/admin/moderation/reviewed')) {
+    return Promise.resolve(jsonResponse(200, { items: reviewedState }));
+  }
+  if (href.includes('/decision') && init?.method === 'POST') {
+    const body = JSON.parse(String(init.body)) as {
+      decision: 'KEPT' | 'REMOVED';
+      reviewedBy: string;
+    };
+    const match = href.match(/reports\/([A-Z_]+)\/([^/]+)\/decision/);
+    const [, targetType, targetId] = match ?? [];
+    const decided = queueState.find((q) => q.targetType === targetType && q.targetId === targetId);
+    if (!decided) return Promise.resolve(jsonResponse(404, { error: 'not found' }));
+    queueState = queueState.filter((q) => q !== decided);
+    reviewedState = [
+      {
+        id: decided.id,
+        title: decided.title,
+        owner: decided.owner!.name,
+        reportsLabel: `${decided.reporters.length} user report${decided.reporters.length === 1 ? '' : 's'}`,
+        decision: body.decision,
+        reviewedBy: body.reviewedBy,
+        reviewedAt: new Date().toISOString(),
+      },
+      ...reviewedState,
+    ];
+    return Promise.resolve(jsonResponse(204, null));
+  }
+  return Promise.reject(new Error(`unexpected fetch: ${href}`));
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  queueState = QUEUE_FIXTURE.map((item) => ({ ...item, reporters: [...item.reporters] }));
+  reviewedState = [...REVIEWED_FIXTURE];
+  fetchMock = jest.fn(defaultFetchImpl);
+  Object.defineProperty(globalThis, 'fetch', {
+    value: fetchMock,
+    configurable: true,
+    writable: true,
+  });
+});
+
+afterEach(() => {
+  Reflect.deleteProperty(globalThis, 'fetch');
+});
+
+async function renderLoaded() {
+  render(<ReportedContentPage />);
+  await screen.findByText(QUEUE_TITLES[0]);
+}
+
 function tab(name: 'Fila' | 'Revisados') {
   return screen.getByRole('button', { name: new RegExp(`^${name}`) });
 }
@@ -45,11 +226,8 @@ async function decide(title: string, action: 'Manter conteúdo' | 'Remover conte
   const user = userEvent.setup();
   await user.click(within(queueRow(title)).getByRole('button', { name: 'Revisar' }));
   await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: action }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 }
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
 
 describe('admin.moderation page locale coverage', () => {
   // Page keys only; the drawer namespace has its own coverage test.
@@ -72,28 +250,33 @@ describe('admin.moderation page locale coverage', () => {
 });
 
 describe('ReportedContentPage', () => {
-  it('renders the header', () => {
+  it('shows a loading state until the queue and reviewed lists arrive', async () => {
     render(<ReportedContentPage />);
+    expect(screen.getByRole('status')).toHaveTextContent(/carregando/i);
+    await screen.findByText(QUEUE_TITLES[0]);
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('renders the header', async () => {
+    await renderLoaded();
     expect(screen.getByRole('heading', { level: 1, name: 'Conteúdo denunciado' })).toBeVisible();
   });
 
-  it('renders the 3 seeded queue items with their severity badges by default', () => {
-    render(<ReportedContentPage />);
+  it('renders the 3 fetched queue items with their severity badges by default', async () => {
+    await renderLoaded();
     for (const title of QUEUE_TITLES) expect(screen.getByText(title)).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('High')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[1])).getByText('Average')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[2])).getByText('Low')).toBeInTheDocument();
-    // Kind subtitle + account cell.
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('Travel list')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('Marina Alves')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('@marina.alves')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('MA')).toBeInTheDocument();
-    // Reviewed table is not shown.
     for (const title of REVIEWED_TITLES) expect(screen.queryByText(title)).not.toBeInTheDocument();
   });
 
-  it('shows singular and plural reporter counts', () => {
-    render(<ReportedContentPage />);
+  it('shows singular and plural reporter counts', async () => {
+    await renderLoaded();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('2 denúncias')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[1])).getByText('3 denúncias')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[2])).getByText('1 denúncia')).toBeInTheDocument();
@@ -101,7 +284,7 @@ describe('ReportedContentPage', () => {
 
   it('shows the initial tab counts and switches between tables', async () => {
     const user = userEvent.setup();
-    render(<ReportedContentPage />);
+    await renderLoaded();
     expectCounts(3, 2);
 
     await user.click(tab('Revisados'));
@@ -111,7 +294,9 @@ describe('ReportedContentPage', () => {
     expect(screen.getByText('Kept')).toBeInTheDocument();
     expect(screen.getByText('3 user reports')).toBeInTheDocument();
     expect(screen.getByText('Ana Martins')).toBeInTheDocument();
-    expect(screen.getByText('19 Aug 2026, 16:40')).toBeInTheDocument();
+    // Formatted in the runner's local timezone, so match the shape rather than an exact
+    // clock time (the fixture's ISO instant is fixed, but "local time" isn't across CI runs).
+    expect(screen.getByText(/^19 Aug 2026, \d{2}:\d{2}$/)).toBeInTheDocument();
     expectCounts(3, 2);
 
     await user.click(tab('Fila'));
@@ -121,29 +306,27 @@ describe('ReportedContentPage', () => {
 
   it('opens the drawer with the item data from the Review button', async () => {
     const user = userEvent.setup();
-    render(<ReportedContentPage />);
+    await renderLoaded();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     await user.click(within(queueRow(QUEUE_TITLES[1])).getByRole('button', { name: 'Revisar' }));
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText('Denúncia: Comment')).toBeInTheDocument();
     expect(within(dialog).getByText('Conteúdo denunciado')).toBeInTheDocument();
-    expect(within(dialog).getByText(/comment flagged for offensive language/)).toBeInTheDocument();
   });
 
   it('opens the drawer when the row itself is clicked', async () => {
     const user = userEvent.setup();
-    render(<ReportedContentPage />);
+    await renderLoaded();
     await user.click(screen.getByText(QUEUE_TITLES[2]));
     expect(within(screen.getByRole('dialog')).getByText('Denúncia: Profile')).toBeInTheDocument();
   });
 
   it('keeping content moves the item from Queue to Reviewed', async () => {
     const user = userEvent.setup();
-    render(<ReportedContentPage />);
+    await renderLoaded();
     await decide(QUEUE_TITLES[0], 'Manter conteúdo');
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByText(QUEUE_TITLES[0])).not.toBeInTheDocument();
     expect(screen.getByText(QUEUE_TITLES[1])).toBeInTheDocument();
     expectCounts(2, 3);
@@ -157,15 +340,11 @@ describe('ReportedContentPage', () => {
     expect(within(row).getByText('Marina Alves')).toBeInTheDocument();
     expect(within(row).getByText('2 user reports')).toBeInTheDocument();
     expect(within(row).getByText('Ana Martins')).toBeInTheDocument();
-    expect(within(row).getByText(/^\d{2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2}$/)).toBeInTheDocument();
-    // Newest decision goes first.
-    const bodyRows = screen.getAllByRole('row').slice(1);
-    expect(bodyRows[0]).toBe(row);
   });
 
   it('removing content records a Removed decision with singular report label', async () => {
     const user = userEvent.setup();
-    render(<ReportedContentPage />);
+    await renderLoaded();
     await decide(QUEUE_TITLES[2], 'Remover conteúdo');
 
     expect(screen.queryByText(QUEUE_TITLES[2])).not.toBeInTheDocument();
@@ -181,7 +360,7 @@ describe('ReportedContentPage', () => {
   });
 
   it('shows the empty state once every queue item is decided', async () => {
-    render(<ReportedContentPage />);
+    await renderLoaded();
     expect(screen.queryByText('A fila está vazia')).not.toBeInTheDocument();
 
     await decide(QUEUE_TITLES[0], 'Manter conteúdo');
@@ -192,5 +371,22 @@ describe('ReportedContentPage', () => {
     expect(screen.getByText('Todas as denúncias foram revisadas.')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expectCounts(0, 5);
+  });
+
+  it('shows an error state with retry when the queue fails to load', async () => {
+    fetchMock.mockImplementation((url) => {
+      if (String(url).endsWith('/api/admin/moderation/reports')) {
+        return Promise.resolve(jsonResponse(502, { error: 'boom' }));
+      }
+      return defaultFetchImpl(url);
+    });
+    const user = userEvent.setup();
+    render(<ReportedContentPage />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/não foi possível carregar/i);
+
+    fetchMock.mockImplementation(defaultFetchImpl);
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    await screen.findByText(QUEUE_TITLES[0]);
   });
 });

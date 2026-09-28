@@ -110,6 +110,10 @@
       "reviewedEmptyDescription": "Decisions you take in the queue — kept or removed — show up here.",
       "toastKept": "Content kept",
       "toastRemoved": "Content removed",
+      "toastDecisionFailed": "Couldn't record the decision",
+      "loading": "Loading reports...",
+      "loadError": "Couldn't load the moderation queue. Please try again later.",
+      "retry": "Try again",
       "drawer": {
         "title": "{{kind}} reported",
         "reportedContentLabel": "Reported content",

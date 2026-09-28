@@ -110,6 +110,10 @@
       "reviewedEmptyDescription": "As decisões tomadas na fila — mantido ou removido — aparecem aqui.",
       "toastKept": "Conteúdo mantido",
       "toastRemoved": "Conteúdo removido",
+      "toastDecisionFailed": "Não foi possível registrar a decisão",
+      "loading": "Carregando denúncias...",
+      "loadError": "Não foi possível carregar a fila de moderação. Tente novamente mais tarde.",
+      "retry": "Tentar novamente",
       "drawer": {
         "title": "Denúncia: {{kind}}",
         "reportedContentLabel": "Conteúdo denunciado",

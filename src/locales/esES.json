@@ -110,6 +110,10 @@
       "reviewedEmptyDescription": "Las decisiones que tomes en la cola — mantenido o eliminado — aparecen aquí.",
       "toastKept": "Contenido mantenido",
       "toastRemoved": "Contenido eliminado",
+      "toastDecisionFailed": "No se pudo registrar la decisión",
+      "loading": "Cargando denuncias...",
+      "loadError": "No se pudo cargar la cola de moderación. Inténtalo de nuevo más tarde.",
+      "retry": "Intentar de nuevo",
       "drawer": {
         "title": "Denuncia: {{kind}}",
         "reportedContentLabel": "Contenido denunciado",
