@@ -85,6 +85,47 @@
       "chartErrorTitle": "Could not load the chart",
       "chartErrorDescription": "The revenue series is temporarily unavailable. Try again in a few seconds.",
       "chartErrorRetry": "Try again"
+    },
+    "moderation": {
+      "title": "Conteúdo denunciado",
+      "subtitle": "Conteúdo denunciado como ilegal, ilícito ou abusivo — por usuários e pela detecção automática.",
+      "tabQueue": "Fila",
+      "tabReviewed": "Revisados",
+      "colFlaggedItem": "Item sinalizado",
+      "colReason": "Motivo",
+      "colAccount": "Conta",
+      "colReportedBy": "Denunciado por",
+      "colSeverity": "Severidade",
+      "colItem": "Conteúdo",
+      "colReports": "Denúncias",
+      "colDecision": "Decisão",
+      "colReviewedBy": "Revisado por",
+      "colWhen": "Quando",
+      "review": "Revisar",
+      "reportCount_one": "{{count}} denúncia",
+      "reportCount_other": "{{count}} denúncias",
+      "queueEmptyTitle": "A fila está vazia",
+      "queueEmptyDescription": "Todas as denúncias foram revisadas.",
+      "reviewedEmptyTitle": "Nada revisado ainda",
+      "reviewedEmptyDescription": "As decisões tomadas na fila — mantido ou removido — aparecem aqui.",
+      "toastKept": "Conteúdo mantido",
+      "toastRemoved": "Conteúdo removido",
+      "drawer": {
+        "title": "Denúncia: {{kind}}",
+        "reportedContentLabel": "Conteúdo denunciado",
+        "contentTypeLabel": "Tipo de conteúdo",
+        "whereItLivesLabel": "Onde está publicado",
+        "accountLabel": "Conta",
+        "accountLine": "{{owner}} · {{handle}} · {{account}} · conta {{status}}",
+        "reasonLabel": "Motivo",
+        "reportedBy_one": "Denunciado por {{count}} usuário",
+        "reportedBy_other": "Denunciado por {{count}} usuários",
+        "accountHistoryLabel": "Histórico da conta",
+        "removeContent": "Remover conteúdo",
+        "keepContent": "Manter conteúdo",
+        "openAccount": "Abrir conta",
+        "openAccountUnavailable": "{{owner}} ({{handle}}) ainda não está disponível nesta sessão — o vínculo com a conta chega com a integração de Users & Creators."
+      }
     }
   }
 }

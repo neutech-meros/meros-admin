@@ -85,6 +85,47 @@
       "chartErrorTitle": "Could not load the chart",
       "chartErrorDescription": "The revenue series is temporarily unavailable. Try again in a few seconds.",
       "chartErrorRetry": "Try again"
+    },
+    "moderation": {
+      "title": "Reported content",
+      "subtitle": "Content reported as illegal, illicit or abusive — by users and by automatic detection.",
+      "tabQueue": "Queue",
+      "tabReviewed": "Reviewed",
+      "colFlaggedItem": "Flagged item",
+      "colReason": "Reason",
+      "colAccount": "Account",
+      "colReportedBy": "Reported by",
+      "colSeverity": "Severity",
+      "colItem": "Item",
+      "colReports": "Reports",
+      "colDecision": "Decision",
+      "colReviewedBy": "Reviewed by",
+      "colWhen": "When",
+      "review": "Review",
+      "reportCount_one": "{{count}} report",
+      "reportCount_other": "{{count}} reports",
+      "queueEmptyTitle": "Queue is empty",
+      "queueEmptyDescription": "Every report has been reviewed.",
+      "reviewedEmptyTitle": "Nothing reviewed yet",
+      "reviewedEmptyDescription": "Decisions you take in the queue — kept or removed — show up here.",
+      "toastKept": "Content kept",
+      "toastRemoved": "Content removed",
+      "drawer": {
+        "title": "{{kind}} reported",
+        "reportedContentLabel": "Reported content",
+        "contentTypeLabel": "Content type",
+        "whereItLivesLabel": "Where it lives",
+        "accountLabel": "Account",
+        "accountLine": "{{owner}} · {{handle}} · {{account}} · account {{status}}",
+        "reasonLabel": "Reason",
+        "reportedBy_one": "Reported by {{count}} user",
+        "reportedBy_other": "Reported by {{count}} users",
+        "accountHistoryLabel": "Account history",
+        "removeContent": "Remove content",
+        "keepContent": "Keep content",
+        "openAccount": "Open account",
+        "openAccountUnavailable": "{{owner}} ({{handle}}) is not available in this session yet — account cross-linking lands with the Users & Creators integration."
+      }
     }
   }
 }
