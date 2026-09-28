@@ -18,7 +18,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import type { ReportedItem } from '@/lib/admin/moderation';
-import { ACCOUNT_STATUS_I18N_KEY, SEVERITY_I18N_KEY } from '@/lib/admin/moderation-labels';
+import {
+  ACCOUNT_STATUS_I18N_KEY,
+  ACCOUNT_TYPE_I18N_KEY,
+  reasonLabel,
+  SEVERITY_I18N_KEY,
+  targetKindLabel,
+  whereItLivesLabel,
+} from '@/lib/admin/moderation-labels';
 import { statusStyle } from '@/lib/admin/status-styles';
 
 interface ReportDetailDrawerProps {
@@ -103,9 +110,11 @@ export function ReportDetailDrawer({ report, onClose, onKeep, onRemove }: Report
   }
 
   const severity = statusStyle(report.severity);
+  const kind = targetKindLabel(t, report.targetType);
   const accountStatusText = report.accountStatus
     ? t(ACCOUNT_STATUS_I18N_KEY[report.accountStatus])
     : '—';
+  const accountTypeText = report.accountType ? t(ACCOUNT_TYPE_I18N_KEY[report.accountType]) : '—';
   const priorRemovalsText =
     report.priorRemovals === 0
       ? t('admin.moderation.drawer.accountHistoryNone')
@@ -125,7 +134,7 @@ export function ReportDetailDrawer({ report, onClose, onKeep, onRemove }: Report
                 className="text-lg font-semibold"
                 style={{ color: 'var(--text-primary)' }}
               >
-                {t('admin.moderation.drawer.title', { kind: report.kind })}
+                {t('admin.moderation.drawer.title', { kind })}
               </SheetTitle>
               <span
                 className="inline-flex items-center px-2.5 py-0.5"
@@ -166,17 +175,21 @@ export function ReportDetailDrawer({ report, onClose, onKeep, onRemove }: Report
             <Field label={t('admin.moderation.drawer.reportedContentLabel')}>
               {report.excerpt ?? '—'}
             </Field>
-            <Field label={t('admin.moderation.drawer.contentTypeLabel')}>{report.kind}</Field>
-            <Field label={t('admin.moderation.drawer.whereItLivesLabel')}>{report.where}</Field>
+            <Field label={t('admin.moderation.drawer.contentTypeLabel')}>{kind}</Field>
+            <Field label={t('admin.moderation.drawer.whereItLivesLabel')}>
+              {whereItLivesLabel(t, report)}
+            </Field>
             <Field label={t('admin.moderation.drawer.accountLabel')}>
               {t('admin.moderation.drawer.accountLine', {
                 owner: report.owner,
                 handle: report.handle,
-                account: report.account,
+                account: accountTypeText,
                 status: accountStatusText,
               })}
             </Field>
-            <Field label={t('admin.moderation.drawer.reasonLabel')}>{report.reason}</Field>
+            <Field label={t('admin.moderation.drawer.reasonLabel')}>
+              {reasonLabel(t, report.reason)}
+            </Field>
 
             <div className="pt-4 pb-1">
               <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -202,7 +215,8 @@ export function ReportDetailDrawer({ report, onClose, onKeep, onRemove }: Report
                     </span>
                   </div>
                   <div className="mt-1 text-sm" style={{ color: 'var(--text-primary)' }}>
-                    {r.reason}
+                    {reasonLabel(t, r.reason)}
+                    {r.details ? ` — ${r.details}` : ''}
                   </div>
                 </li>
               ))}

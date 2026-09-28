@@ -19,27 +19,34 @@ const baseReport: ReportedItem = {
   targetType: 'LIST',
   targetId: 'list-42',
   title: 'Hidden waterfalls of Chapada',
-  kind: 'Travel list',
-  reason: 'Illegal or dangerous content',
+  reason: 'inappropriate_content',
   severity: 'High',
   excerpt: 'Includes exact GPS pins for a closed trail.',
-  where: 'Travel list · 9 stops · published 01/08/2026',
+  itemCount: 9,
+  publishedAt: '01/08/2026',
+  listTitle: null,
+  venueCity: null,
+  venueCountry: null,
+  bio: null,
+  profileCreatedAt: null,
   owner: 'Marina Alves',
   handle: '@marina.alves',
-  account: 'Business',
+  accountType: 'BUSINESS',
   accountStatus: 'ACTIVE',
   priorRemovals: 1,
   reporters: [
     {
       name: 'Beatriz Lima',
       handle: '@bia.lima',
-      reason: 'Protected area exposed',
+      reason: 'inappropriate_content',
+      details: 'Protected area exposed',
       date: '12 Aug 2026, 09:14',
     },
     {
       name: 'Tiago Fonseca',
       handle: '@tiago.f',
-      reason: 'Encourages illegal access',
+      reason: 'inappropriate_content',
+      details: 'Encourages illegal access',
       date: '13 Aug 2026, 18:42',
     },
   ],
@@ -92,28 +99,28 @@ describe('ReportDetailDrawer', () => {
   it('renders every block of the report', () => {
     renderDrawer(baseReport);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('Denúncia: Travel list')).toBeInTheDocument();
+    expect(screen.getByText('Denúncia: Lista de viagem')).toBeInTheDocument();
     expect(screen.getByText('Alta')).toBeInTheDocument();
     // Title appears in both the header description and the cover block.
     expect(screen.getAllByText('Hidden waterfalls of Chapada')).toHaveLength(2);
     expect(screen.getByText('Conteúdo denunciado')).toBeInTheDocument();
     expect(screen.getByText('Includes exact GPS pins for a closed trail.')).toBeInTheDocument();
     expect(screen.getByText('Tipo de conteúdo')).toBeInTheDocument();
-    expect(screen.getByText('Travel list')).toBeInTheDocument();
+    expect(screen.getByText('Lista de viagem')).toBeInTheDocument();
     expect(screen.getByText('Onde está publicado')).toBeInTheDocument();
-    expect(screen.getByText('Travel list · 9 stops · published 01/08/2026')).toBeInTheDocument();
+    expect(screen.getByText('9 paradas · publicada em 01/08/2026')).toBeInTheDocument();
     expect(screen.getByText('Conta')).toBeInTheDocument();
     expect(
-      screen.getByText('Marina Alves · @marina.alves · Business · conta ativa'),
+      screen.getByText('Marina Alves · @marina.alves · Empresarial · conta ativa'),
     ).toBeInTheDocument();
     expect(screen.getByText('Motivo')).toBeInTheDocument();
-    expect(screen.getByText('Illegal or dangerous content')).toBeInTheDocument();
+    expect(screen.getByText('Conteúdo inadequado')).toBeInTheDocument();
     expect(screen.getByText('Denunciado por 2 usuários')).toBeInTheDocument();
     expect(screen.getByText('Beatriz Lima')).toBeInTheDocument();
-    expect(screen.getByText('Protected area exposed')).toBeInTheDocument();
+    expect(screen.getByText('Conteúdo inadequado — Protected area exposed')).toBeInTheDocument();
     expect(screen.getByText('12 Aug 2026, 09:14')).toBeInTheDocument();
     expect(screen.getByText('Tiago Fonseca')).toBeInTheDocument();
-    expect(screen.getByText('Encourages illegal access')).toBeInTheDocument();
+    expect(screen.getByText('Conteúdo inadequado — Encourages illegal access')).toBeInTheDocument();
     expect(screen.getByText('Histórico da conta')).toBeInTheDocument();
     expect(screen.getByText('1 ação de moderação anterior nesta conta.')).toBeInTheDocument();
   });
@@ -131,8 +138,14 @@ describe('ReportDetailDrawer', () => {
   it('falls back to a dash when the account has no resolvable status', () => {
     renderDrawer({ ...baseReport, accountStatus: null });
     expect(
-      screen.getByText('Marina Alves · @marina.alves · Business · conta —'),
+      screen.getByText('Marina Alves · @marina.alves · Empresarial · conta —'),
     ).toBeInTheDocument();
+  });
+
+  it('falls back to a dash for kind and account type when unresolvable', () => {
+    renderDrawer({ ...baseReport, targetType: undefined, accountType: null });
+    expect(screen.getByText('Denúncia: —')).toBeInTheDocument();
+    expect(screen.getByText('Marina Alves · @marina.alves · — · conta ativa')).toBeInTheDocument();
   });
 
   it('uses the singular heading for exactly one reporter', () => {

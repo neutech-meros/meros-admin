@@ -1,27 +1,37 @@
 export type ReportSeverity = 'High' | 'Average' | 'Low';
 export type ReportDecision = 'Kept' | 'Removed';
 export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DELETED';
+export type AccountType = 'INDIVIDUAL' | 'BUSINESS';
+export type TargetType = 'LIST' | 'PLACE_IN_LIST' | 'PROFILE';
 
 export interface Reporter {
   name: string; // "Automatic detection" for AI-flagged reports
   handle: string; // "AI moderation" for AI-flagged reports
-  reason: string;
+  reason: string; // raw reason code, e.g. "spam_or_misleading" — translate via REASON_I18N_KEY
+  details: string | null; // reporter's free-text explanation; only ever present for the "other" reason code
   date: string; // display string, e.g. "12 Aug 2026, 09:14"
 }
 
 export interface ReportedItem {
   id: string;
-  targetType?: 'LIST' | 'PLACE_IN_LIST' | 'PROFILE'; // present for real (API-backed) items, needed to call the decision endpoint
+  targetType?: TargetType; // present for real (API-backed) items, needed to call the decision endpoint
   targetId?: string;
   title: string; // the flagged content's own title
-  kind: string; // "Travel list" | "Comment" | "Profile" | …
-  reason: string; // top-line reason shown in the queue row
+  reason: string; // raw reason code (top-line, shown in the queue row) — translate via REASON_I18N_KEY
   severity: ReportSeverity;
   excerpt: string | null; // the flagged content/snippet itself; null when the target has none (e.g. a profile with no bio)
-  where: string;
+  // Structured "where it lives" fields — the API sends no pre-composed English prose; this
+  // screen composes its own translated summary from whichever of these apply to targetType.
+  itemCount: number | null; // LIST: number of stops
+  publishedAt: string | null; // LIST: display string
+  listTitle: string | null; // PLACE_IN_LIST: the containing list's title
+  venueCity: string | null; // PLACE_IN_LIST
+  venueCountry: string | null; // PLACE_IN_LIST
+  bio: string | null; // PROFILE
+  profileCreatedAt: string | null; // PROFILE: display string
   owner: string;
   handle: string;
-  account: string; // "Business" | "Individual" — the API has no "Creator · Verified"/"Traveler" style label; see MER-795's spec
+  accountType: AccountType | null; // null when the target has no resolvable owner; translate via ACCOUNT_TYPE_I18N_KEY
   accountStatus: AccountStatus | null; // null when the target has no resolvable owner
   priorRemovals: number; // count of prior "Removed" decisions on this account; 0 means none
   reporters: Reporter[];

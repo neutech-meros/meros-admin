@@ -23,7 +23,12 @@ import {
   toReportedItem,
   toReviewedItem,
 } from '@/lib/admin/moderation-api';
-import { DECISION_I18N_KEY, SEVERITY_I18N_KEY } from '@/lib/admin/moderation-labels';
+import {
+  DECISION_I18N_KEY,
+  reasonLabel,
+  SEVERITY_I18N_KEY,
+  targetKindLabel,
+} from '@/lib/admin/moderation-labels';
 import { statusStyle } from '@/lib/admin/status-styles';
 
 type Tab = 'queue' | 'reviewed';
@@ -327,10 +332,13 @@ export default function ReportedContentPage() {
                         style={ROW_STYLE}
                       >
                         <TableCell className={`${CELL_CLASS} max-w-[320px]`}>
-                          <TwoLineCell primary={report.title} secondary={report.kind} />
+                          <TwoLineCell
+                            primary={report.title}
+                            secondary={targetKindLabel(t, report.targetType)}
+                          />
                         </TableCell>
                         <TableCell className={CELL_CLASS} style={{ color: 'var(--text-primary)' }}>
-                          {report.reason}
+                          {reasonLabel(t, report.reason)}
                         </TableCell>
                         <TableCell className={CELL_CLASS}>
                           <div className="flex items-center gap-2.5">

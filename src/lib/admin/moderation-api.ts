@@ -15,11 +15,13 @@ const targetTypeSchema = z.enum(['LIST', 'PLACE_IN_LIST', 'PROFILE']);
 const severitySchema = z.enum(['HIGH', 'AVERAGE', 'LOW']);
 const decisionSchema = z.enum(['KEPT', 'REMOVED']);
 const accountStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED']);
+const accountTypeSchema = z.enum(['INDIVIDUAL', 'BUSINESS']);
 
 const reporterSchema = z.object({
   name: z.string(),
   handle: z.string().nullable(),
   reason: z.string(),
+  details: z.string().nullable(),
   reportedAt: z.string().datetime({ offset: true }),
 });
 
@@ -28,16 +30,21 @@ const queueItemSchema = z.object({
   targetType: targetTypeSchema,
   targetId: z.string(),
   title: z.string(),
-  kind: z.string(),
   excerpt: z.string().nullable(),
-  where: z.string().nullable(),
+  itemCount: z.number().nullable(),
+  publishedAt: z.string().datetime({ offset: true }).nullable(),
+  listTitle: z.string().nullable(),
+  venueCity: z.string().nullable(),
+  venueCountry: z.string().nullable(),
+  bio: z.string().nullable(),
+  profileCreatedAt: z.string().datetime({ offset: true }).nullable(),
   reason: z.string(),
   severity: severitySchema,
   owner: z
     .object({
       name: z.string(),
       handle: z.string().nullable(),
-      account: z.string(),
+      accountType: accountTypeSchema,
       accountStatus: accountStatusSchema,
     })
     .nullable(),
@@ -89,12 +96,11 @@ const DECISION_LABEL: Record<z.infer<typeof decisionSchema>, ReportDecision> = {
   REMOVED: 'Removed',
 };
 
-// The API returns the account type ('Business'/'Individual') and the raw account status
-// (e.g. 'ACTIVE') as-is — it has no "Creator · Verified"/"Traveler" style label, since
-// those concepts (creator status, verification) live in the Users & Creators screen's own
-// data model, not in the moderation API. Shown as-is rather than invented; see MER-795's
-// spec for the full note on this mismatch. accountStatus is kept as the raw enum value
-// (not pre-translated) so the caller can render it through i18n.
+// The API sends only structured, non-prose fields (raw account type/status enums, a reason
+// code, and per-target-kind data like itemCount/venueCity/bio) — no pre-composed English
+// text. Translation and composition into a "where it lives" summary happen entirely in the
+// UI layer (moderation-labels.ts, ReportDetailDrawer) so every locale renders correctly, not
+// just English. See MER-795's spec for the full history of this contract.
 export function toReportedItem(
   raw: QueueItem,
   index: number,
@@ -106,20 +112,26 @@ export function toReportedItem(
     targetType: raw.targetType,
     targetId: raw.targetId,
     title: raw.title,
-    kind: raw.kind,
     reason: raw.reason,
     severity: SEVERITY_LABEL[raw.severity],
     excerpt: raw.excerpt,
-    where: raw.where ?? '—',
+    itemCount: raw.itemCount,
+    publishedAt: raw.publishedAt ? formatDateTime(raw.publishedAt) : null,
+    listTitle: raw.listTitle,
+    venueCity: raw.venueCity,
+    venueCountry: raw.venueCountry,
+    bio: raw.bio,
+    profileCreatedAt: raw.profileCreatedAt ? formatDateTime(raw.profileCreatedAt) : null,
     owner: ownerName,
     handle: raw.owner?.handle ?? '',
-    account: raw.owner?.account ?? '—',
+    accountType: raw.owner?.accountType ?? null,
     accountStatus: raw.owner?.accountStatus ?? null,
     priorRemovals: raw.priorRemovals,
     reporters: raw.reporters.map((r) => ({
       name: r.name,
       handle: r.handle ?? '',
       reason: r.reason,
+      details: r.details,
       date: formatDateTime(r.reportedAt),
     })),
     initials: initialsOf(ownerName),

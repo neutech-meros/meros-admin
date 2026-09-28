@@ -36,15 +36,20 @@ function queueItem(overrides: Record<string, unknown> = {}) {
     targetType: 'LIST',
     targetId: 'report-1',
     title: QUEUE_TITLES[0],
-    kind: 'Travel list',
     excerpt: 'Includes exact GPS pins for a closed trail.',
-    where: 'Travel list · 14 stops · published 12/08/2026',
-    reason: 'Illegal or dangerous content',
+    itemCount: 14,
+    publishedAt: '2026-08-01T00:00:00.000Z',
+    listTitle: null,
+    venueCity: null,
+    venueCountry: null,
+    bio: null,
+    profileCreatedAt: null,
+    reason: 'inappropriate_content',
     severity: 'HIGH',
     owner: {
       name: 'Marina Alves',
       handle: '@marina.alves',
-      account: 'Business',
+      accountType: 'BUSINESS',
       accountStatus: 'ACTIVE',
     },
     priorRemovals: 0,
@@ -52,13 +57,15 @@ function queueItem(overrides: Record<string, unknown> = {}) {
       {
         name: 'Beatriz Lima',
         handle: '@bia.lima',
-        reason: 'Protected area exposed',
+        reason: 'inappropriate_content',
+        details: 'Protected area exposed',
         reportedAt: '2026-08-12T09:14:00.000Z',
       },
       {
         name: 'Tiago Fonseca',
         handle: '@tiago.f',
-        reason: 'Encourages illegal access',
+        reason: 'inappropriate_content',
+        details: 'Encourages illegal access',
         reportedAt: '2026-08-13T18:42:00.000Z',
       },
     ],
@@ -69,30 +76,38 @@ function queueItem(overrides: Record<string, unknown> = {}) {
 const QUEUE_FIXTURE = [
   queueItem(),
   queueItem({
-    id: 'COMMENT:report-2',
+    id: 'PLACE_IN_LIST:report-2',
     targetType: 'PLACE_IN_LIST',
     targetId: 'report-2',
     title: QUEUE_TITLES[1],
-    kind: 'Comment',
+    excerpt: null,
+    itemCount: null,
+    publishedAt: null,
+    listTitle: 'Vale dos Vinhedos wineries',
+    venueCity: 'Bento Gonçalves',
+    venueCountry: 'BR',
     severity: 'AVERAGE',
-    reason: 'Offensive language',
+    reason: 'spam_or_misleading',
     reporters: [
       {
         name: 'Automatic detection',
         handle: null,
-        reason: 'Offensive language · score 0.91',
+        reason: 'spam_or_misleading',
+        details: 'score 0.91',
         reportedAt: '2026-08-22T11:03:00.000Z',
       },
       {
         name: 'Beatriz Lima',
         handle: '@bia.lima',
-        reason: 'Harassment toward the creator',
+        reason: 'inappropriate_content',
+        details: null,
         reportedAt: '2026-08-22T12:20:00.000Z',
       },
       {
         name: 'Larissa Prado',
         handle: '@larissa.p',
-        reason: 'Offensive language',
+        reason: 'spam_or_misleading',
+        details: null,
         reportedAt: '2026-08-23T08:55:00.000Z',
       },
     ],
@@ -102,20 +117,25 @@ const QUEUE_FIXTURE = [
     targetType: 'PROFILE',
     targetId: 'report-3',
     title: QUEUE_TITLES[2],
-    kind: 'Profile',
+    excerpt: null,
+    itemCount: null,
+    publishedAt: null,
+    bio: 'Traveler and photographer',
+    profileCreatedAt: '2026-01-01T00:00:00.000Z',
     severity: 'LOW',
-    reason: 'Impersonation / duplicate account',
+    reason: 'other',
     owner: {
       name: 'Rafael Nogueira',
       handle: '@rafael.n',
-      account: 'Individual',
+      accountType: 'INDIVIDUAL',
       accountStatus: 'INACTIVE',
     },
     reporters: [
       {
         name: 'Marina Alves',
         handle: '@marina.alves',
-        reason: 'Impersonation / duplicate account',
+        reason: 'other',
+        details: 'Impersonation / duplicate account',
         reportedAt: '2026-08-20T15:31:00.000Z',
       },
     ],
@@ -285,7 +305,7 @@ describe('ReportedContentPage', () => {
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('Alta')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[1])).getByText('Média')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[2])).getByText('Baixa')).toBeInTheDocument();
-    expect(within(queueRow(QUEUE_TITLES[0])).getByText('Travel list')).toBeInTheDocument();
+    expect(within(queueRow(QUEUE_TITLES[0])).getByText('Lista de viagem')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('Marina Alves')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('@marina.alves')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('MA')).toBeInTheDocument();
@@ -326,7 +346,7 @@ describe('ReportedContentPage', () => {
 
     await user.click(within(queueRow(QUEUE_TITLES[1])).getByRole('button', { name: 'Revisar' }));
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText('Denúncia: Comment')).toBeInTheDocument();
+    expect(within(dialog).getByText('Denúncia: Lugar')).toBeInTheDocument();
     expect(within(dialog).getByText('Conteúdo denunciado')).toBeInTheDocument();
   });
 
@@ -334,7 +354,7 @@ describe('ReportedContentPage', () => {
     const user = userEvent.setup();
     await renderLoaded();
     await user.click(screen.getByText(QUEUE_TITLES[2]));
-    expect(within(screen.getByRole('dialog')).getByText('Denúncia: Profile')).toBeInTheDocument();
+    expect(within(screen.getByRole('dialog')).getByText('Denúncia: Perfil')).toBeInTheDocument();
   });
 
   it('keeping content moves the item from Queue to Reviewed', async () => {
