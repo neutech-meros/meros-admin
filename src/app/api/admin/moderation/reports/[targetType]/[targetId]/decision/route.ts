@@ -32,6 +32,14 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: 'Invalid target' }, { status: 400 });
     }
 
+    // Cheap CSRF hardening until real admin auth lands: a cross-site form POST (which can
+    // fire without a CORS preflight) can only set simple Content-Types like text/plain, so
+    // requiring application/json here blocks that vector even under the fail-open dev flag.
+    const contentType = request.headers.get('content-type') ?? '';
+    if (!contentType.toLowerCase().includes('application/json')) {
+      return NextResponse.json({ error: 'Unsupported content type' }, { status: 415 });
+    }
+
     let rawBody: unknown;
     try {
       rawBody = await request.json();

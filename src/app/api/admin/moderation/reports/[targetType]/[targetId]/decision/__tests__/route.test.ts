@@ -72,6 +72,22 @@ describe('POST /api/admin/moderation/reports/:targetType/:targetId/decision', ()
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it('returns 415 without reaching upstream for a non-JSON content type', async () => {
+    global.fetch = jest.fn();
+
+    const res = await POST(
+      new Request(URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ decision: 'KEPT' }),
+      }),
+      { params: params() },
+    );
+
+    expect(res.status).toBe(415);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('returns 400 without reaching upstream for malformed JSON', async () => {
     global.fetch = jest.fn();
 
