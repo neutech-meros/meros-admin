@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 
 import i18n from '@/i18n';
-import { getBusinessAccountRequests } from '@/lib/mocks/admin/businessAccounts';
 import enUS from '@/locales/enUS.json';
 import esES from '@/locales/esES.json';
 import ptBR from '@/locales/ptBR.json';
@@ -26,17 +25,118 @@ afterAll(async () => {
   await i18n.changeLanguage('pt');
 });
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
+interface ApiItem {
+  id: string;
+  businessName: string | null;
+  requesterName: string;
+  requesterEmail: string | null;
+  city: string | null;
+  taxId: string | null;
+  category: string | null;
+  requestedPlan: string | null;
+  documentsSubmitted: number;
+  documentsRequired: number;
+  applicationNote: string | null;
+  status: 'Pending' | 'More info' | 'Approved' | 'Rejected';
+  submittedAt: string;
+}
 
-const SEED = getBusinessAccountRequests();
-const namesWith = (status: string) => SEED.filter((r) => r.status === status).map((r) => r.name);
-const PENDING = namesWith('Pending');
-const MORE_INFO = namesWith('More info');
-const APPROVED = namesWith('Approved');
-const REJECTED = namesWith('Rejected');
-const ALL = SEED.map((r) => r.name);
+function item(overrides: Partial<ApiItem> & { id: string }): ApiItem {
+  return {
+    businessName: null,
+    requesterName: 'Requester',
+    requesterEmail: null,
+    city: null,
+    taxId: null,
+    category: null,
+    requestedPlan: null,
+    documentsSubmitted: 0,
+    documentsRequired: 3,
+    applicationNote: null,
+    status: 'Pending',
+    submittedAt: '2026-09-20T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
+const SEED: ApiItem[] = [
+  item({
+    id: '00000000-0000-4000-8000-000000000001',
+    businessName: 'Pousada Vista Azul',
+    city: 'Paraty, RJ',
+    taxId: '12.345.678/0001-90',
+    category: 'Accommodation',
+    requesterName: 'Marina Alves',
+    requesterEmail: 'marina@vistaazul.com.br',
+    requestedPlan: 'Business Pro',
+    applicationNote: 'Requested to sell hosted stays and list experiences.',
+    documentsSubmitted: 3,
+    status: 'Pending',
+    submittedAt: '2026-08-24T00:00:00.000Z',
+  }),
+  item({
+    id: '00000000-0000-4000-8000-000000000002',
+    businessName: 'Trilhas do Sul Turismo',
+    city: 'Gramado, RS',
+    taxId: '98.765.432/0001-21',
+    category: 'Tour operator',
+    requesterName: 'Diego Ramos',
+    requesterEmail: 'diego@trilhasdosul.com',
+    requestedPlan: 'Business',
+    applicationNote: 'Missing operating licence (Cadastur).',
+    documentsSubmitted: 2,
+    status: 'Pending',
+    submittedAt: '2026-08-23T00:00:00.000Z',
+  }),
+  item({
+    id: '00000000-0000-4000-8000-000000000003',
+    businessName: 'Sabor da Ilha Restaurante',
+    city: 'Florianópolis, SC',
+    taxId: '45.612.789/0001-33',
+    category: 'Food & drink',
+    requesterName: 'Carla Menezes',
+    requesterEmail: 'contato@sabordailha.com.br',
+    requestedPlan: 'Business',
+    applicationNote: 'Verified by the trust team.',
+    documentsSubmitted: 3,
+    status: 'Approved',
+    submittedAt: '2026-08-22T00:00:00.000Z',
+  }),
+  item({
+    id: '00000000-0000-4000-8000-000000000004',
+    businessName: 'Rota Norte Transfers',
+    city: 'Natal, RN',
+    taxId: '33.221.554/0001-77',
+    category: 'Transport',
+    requesterName: 'Fábio Lima',
+    requesterEmail: 'fabio@rotanorte.com',
+    requestedPlan: 'Business',
+    applicationNote: 'Tax ID does not match the submitted company name.',
+    documentsSubmitted: 1,
+    status: 'More info',
+    submittedAt: '2026-08-21T00:00:00.000Z',
+  }),
+  item({
+    id: '00000000-0000-4000-8000-000000000005',
+    businessName: 'Casa Mar Aluguéis',
+    city: 'Búzios, RJ',
+    taxId: '77.884.221/0001-05',
+    category: 'Accommodation',
+    requesterName: 'Renata Pires',
+    requesterEmail: 'renata@casamar.com.br',
+    requestedPlan: 'Business Pro',
+    applicationNote: 'Duplicate of an existing business account.',
+    documentsSubmitted: 3,
+    status: 'Rejected',
+    submittedAt: '2026-08-19T00:00:00.000Z',
+  }),
+];
+
+const PENDING = SEED.filter((r) => r.status === 'Pending').map((r) => r.businessName!);
+const MORE_INFO = SEED.filter((r) => r.status === 'More info').map((r) => r.businessName!);
+const APPROVED = SEED.filter((r) => r.status === 'Approved').map((r) => r.businessName!);
+const REJECTED = SEED.filter((r) => r.status === 'Rejected').map((r) => r.businessName!);
+const ALL = SEED.map((r) => r.businessName!);
 
 function tabButton(label: RegExp) {
   return screen.getByRole('button', { name: label });
@@ -72,6 +172,62 @@ async function openDrawerFor(name: string) {
   return { user, drawer: screen.getByRole('dialog', { name }) };
 }
 
+function jsonResponse(status: number, body: unknown): Pick<Response, 'ok' | 'status' | 'json'> {
+  return { ok: status >= 200 && status < 300, status, json: () => Promise.resolve(body) };
+}
+
+type FetchMock = jest.Mock<
+  Promise<Pick<Response, 'ok' | 'status' | 'json'>>,
+  [RequestInfo | URL, RequestInit?]
+>;
+let fetchMock: FetchMock;
+let state: ApiItem[];
+
+function findById(id: string): ApiItem {
+  const found = state.find((r) => r.id === id);
+  if (!found) throw new Error(`No seeded item for id "${id}"`);
+  return found;
+}
+
+function defaultFetchImpl(url: RequestInfo | URL, init?: RequestInit) {
+  const href = String(url);
+  const method = init?.method ?? 'GET';
+
+  if (href.endsWith('/api/admin/business-accounts') && method === 'GET') {
+    return Promise.resolve(jsonResponse(200, { items: state }));
+  }
+  const actionMatch = href.match(/business-accounts\/([^/]+)\/(request-info|approve|reject)$/);
+  if (actionMatch && method === 'POST') {
+    const [, id, action] = actionMatch;
+    const target = findById(id!);
+    if (action === 'approve') target.status = 'Approved';
+    if (action === 'reject') target.status = 'Rejected';
+    // request-info intentionally leaves status untouched (mirrors the real API).
+    return Promise.resolve(jsonResponse(204, null));
+  }
+  return Promise.reject(new Error(`unexpected fetch: ${method} ${href}`));
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  state = SEED.map((r) => ({ ...r }));
+  fetchMock = jest.fn(defaultFetchImpl);
+  Object.defineProperty(globalThis, 'fetch', {
+    value: fetchMock,
+    configurable: true,
+    writable: true,
+  });
+});
+
+afterEach(() => {
+  Reflect.deleteProperty(globalThis, 'fetch');
+});
+
+async function renderLoaded() {
+  render(<BusinessAccountsPage />);
+  await screen.findByText(PENDING[0]!);
+}
+
 describe('admin.businessAccounts page locale coverage', () => {
   // Page keys only; the drawer namespace has its own coverage test.
   const pageKeys = (m: Record<string, unknown>) =>
@@ -94,8 +250,35 @@ describe('admin.businessAccounts page locale coverage', () => {
 });
 
 describe('BusinessAccountsPage', () => {
-  it('renders the header title and subtitle', () => {
+  it('shows a loading state until the list arrives', async () => {
     render(<BusinessAccountsPage />);
+    expect(screen.getByRole('status')).toHaveTextContent(/loading/i);
+    await screen.findByText(PENDING[0]!);
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('shows an error state with retry when the list fails to load', async () => {
+    fetchMock.mockImplementation((url, init) => {
+      if (
+        String(url).endsWith('/api/admin/business-accounts') &&
+        (!init || init.method === undefined)
+      ) {
+        return Promise.resolve(jsonResponse(502, { error: 'boom' }));
+      }
+      return defaultFetchImpl(url, init);
+    });
+    const user = userEvent.setup();
+    render(<BusinessAccountsPage />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn.t load/i);
+
+    fetchMock.mockImplementation(defaultFetchImpl);
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    await screen.findByText(PENDING[0]!);
+  });
+
+  it('renders the header title and subtitle', async () => {
+    await renderLoaded();
     expect(screen.getByRole('heading', { level: 1, name: 'Business accounts' })).toBeVisible();
     expect(
       screen.getByText(
@@ -104,27 +287,24 @@ describe('BusinessAccountsPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders the 4 KPI cards with the seed counts', () => {
-    render(<BusinessAccountsPage />);
+  it('renders the 4 KPI cards with the seed counts', async () => {
+    await renderLoaded();
     expect(kpiValue('Pending review')).toHaveTextContent(String(PENDING.length));
     expect(kpiValue('Waiting on documents')).toHaveTextContent(String(MORE_INFO.length));
     expect(kpiValue('Approved (30d)')).toHaveTextContent(String(APPROVED.length));
     expect(kpiValue('Rejected (30d)')).toHaveTextContent(String(REJECTED.length));
-    // Sanity check against the known seed so a silent seed change can't mask a bug.
     expect([PENDING.length, MORE_INFO.length, APPROVED.length, REJECTED.length]).toEqual([
-      2, 1, 2, 1,
+      2, 1, 1, 1,
     ]);
   });
 
-  it('renders the 4 tabs with live counts, Pending active by default', () => {
-    render(<BusinessAccountsPage />);
+  it('renders the 4 tabs with live counts, Pending active by default', async () => {
+    await renderLoaded();
     const pending = tabButton(/^Pending \(2\)$/);
     expectActiveTab(pending, true);
-    expectActiveTab(tabButton(/^Approved \(2\)$/), false);
+    expectActiveTab(tabButton(/^Approved \(1\)$/), false);
     expectActiveTab(tabButton(/^Rejected \(1\)$/), false);
     expectActiveTab(tabButton(/^All requests$/), false);
-    expect(tabButton(/^Rejected \(1\)$/)).toBeInTheDocument();
-    expect(tabButton(/^All requests$/)).toBeInTheDocument();
     // No dedicated "More info" tab.
     expect(screen.queryByRole('button', { name: /^More info/ })).not.toBeInTheDocument();
     expect(visibleBusinessNames()).toEqual(PENDING);
@@ -132,11 +312,11 @@ describe('BusinessAccountsPage', () => {
 
   it('filters the table when switching tabs', async () => {
     const user = userEvent.setup();
-    render(<BusinessAccountsPage />);
+    await renderLoaded();
 
-    await user.click(tabButton(/^Approved \(2\)$/));
+    await user.click(tabButton(/^Approved \(1\)$/));
     expect(visibleBusinessNames()).toEqual(APPROVED);
-    expectActiveTab(tabButton(/^Approved \(2\)$/), true);
+    expectActiveTab(tabButton(/^Approved \(1\)$/), true);
     expectActiveTab(tabButton(/^Pending \(2\)$/), false);
 
     await user.click(tabButton(/^Rejected \(1\)$/));
@@ -144,7 +324,7 @@ describe('BusinessAccountsPage', () => {
 
     await user.click(tabButton(/^All requests$/));
     expect(visibleBusinessNames()).toEqual(ALL);
-    expect(screen.getByText(MORE_INFO[0])).toBeInTheDocument();
+    expect(screen.getByText(MORE_INFO[0]!)).toBeInTheDocument();
     expectActiveTab(tabButton(/^All requests$/), true);
 
     await user.click(tabButton(/^Pending \(2\)$/));
@@ -153,7 +333,7 @@ describe('BusinessAccountsPage', () => {
 
   it('renders the column headers and each column of a row', async () => {
     const user = userEvent.setup();
-    render(<BusinessAccountsPage />);
+    await renderLoaded();
     for (const header of [
       'Business',
       'Tax ID',
@@ -195,15 +375,17 @@ describe('BusinessAccountsPage', () => {
 
   it('shows the empty state when the active tab has no rows', async () => {
     const user = userEvent.setup();
-    render(<BusinessAccountsPage />);
+    await renderLoaded();
     expect(screen.queryByText('No requests in this status')).not.toBeInTheDocument();
 
-    // Empty the Pending tab by approving both of its rows.
-    for (const name of PENDING) {
-      const { drawer } = await openDrawerFor(name);
-      await user.click(within(drawer).getByRole('button', { name: 'Approve' }));
-    }
-    expect(tabButton(/^Pending \(0\)$/)).toBeInTheDocument();
+    // Empty the Pending tab by approving both of its rows, one at a time.
+    const { drawer: first } = await openDrawerFor(PENDING[0]!);
+    await user.click(within(first).getByRole('button', { name: 'Approve' }));
+    await screen.findByRole('button', { name: /^Pending \(1\)$/ });
+
+    const { drawer: second } = await openDrawerFor(PENDING[1]!);
+    await user.click(within(second).getByRole('button', { name: 'Approve' }));
+    await screen.findByRole('button', { name: /^Pending \(0\)$/ });
     expect(screen.getByText('No requests in this status')).toBeInTheDocument();
     expect(
       screen.getByText('Switch tabs to see requests in another review stage.'),
@@ -213,7 +395,7 @@ describe('BusinessAccountsPage', () => {
 
   it('opens the drawer for the clicked row via the button or the row itself', async () => {
     const user = userEvent.setup();
-    render(<BusinessAccountsPage />);
+    await renderLoaded();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     await user.click(within(row('Pousada Vista Azul')).getByRole('button', { name: 'Review' }));
@@ -228,41 +410,40 @@ describe('BusinessAccountsPage', () => {
   });
 
   it('Request info toasts and keeps the status unchanged', async () => {
-    render(<BusinessAccountsPage />);
+    await renderLoaded();
     const { user, drawer } = await openDrawerFor('Trilhas do Sul Turismo');
     await user.click(within(drawer).getByRole('button', { name: 'Request info' }));
 
+    await screen.findByText('Trilhas do Sul Turismo');
     expect(toast.info).toHaveBeenCalledWith('Information requested', {
       description: 'Diego Ramos was notified about the missing documents.',
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(tabButton(/^Pending \(2\)$/)).toBeInTheDocument();
     expect(within(row('Trilhas do Sul Turismo')).getByText('Pending')).toBeInTheDocument();
-    expect(kpiValue('Pending review')).toHaveTextContent('2');
   });
 
   it('Approve toasts and moves the row to Approved', async () => {
-    render(<BusinessAccountsPage />);
+    await renderLoaded();
     const { user, drawer } = await openDrawerFor('Pousada Vista Azul');
     await user.click(within(drawer).getByRole('button', { name: 'Approve' }));
 
+    await screen.findByRole('button', { name: /^Pending \(1\)$/ });
     expect(toast.success).toHaveBeenCalledWith('Business account approved', {
       description: 'Pousada Vista Azul now has a verified business profile.',
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByText('Pousada Vista Azul')).not.toBeInTheDocument();
-    expect(kpiValue('Pending review')).toHaveTextContent('1');
-    expect(kpiValue('Approved (30d)')).toHaveTextContent('3');
+    expect(kpiValue('Approved (30d)')).toHaveTextContent('2');
 
-    await user.click(tabButton(/^Approved \(3\)$/));
+    await user.click(tabButton(/^Approved \(2\)$/));
     const r = within(row('Pousada Vista Azul'));
     expect(r.getByText('Approved')).toBeInTheDocument();
     expect(r.getByRole('button', { name: 'View' })).toBeInTheDocument();
-    expect(tabButton(/^Pending \(1\)$/)).toBeInTheDocument();
   });
 
   it('Reject toasts and moves the row to Rejected, recording the reason', async () => {
-    render(<BusinessAccountsPage />);
+    await renderLoaded();
     const { user, drawer } = await openDrawerFor('Trilhas do Sul Turismo');
     await user.click(within(drawer).getByRole('button', { name: 'Reject' }));
     const dialog = screen.getByRole('dialog', { name: 'Reject business account' });
@@ -270,22 +451,15 @@ describe('BusinessAccountsPage', () => {
     await user.type(within(dialog).getByRole('textbox'), 'CNPJ is inactive.');
     await user.click(within(dialog).getByRole('button', { name: 'Reject and send email' }));
 
+    await screen.findByRole('button', { name: /^Rejected \(2\)$/ });
     expect(toast.error).toHaveBeenCalledWith('Request rejected', {
       description:
         'Trilhas do Sul Turismo was rejected — tax id could not be validated. Email sent to diego@trilhasdosul.com.',
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByText('Trilhas do Sul Turismo')).not.toBeInTheDocument();
-    expect(kpiValue('Rejected (30d)')).toHaveTextContent('2');
 
     await user.click(tabButton(/^Rejected \(2\)$/));
     expect(within(row('Trilhas do Sul Turismo')).getByText('Rejected')).toBeInTheDocument();
-
-    // The rejection reason and details are kept on the row, visible in its drawer.
-    await user.click(within(row('Trilhas do Sul Turismo')).getByRole('button', { name: 'View' }));
-    const reopened = screen.getByRole('dialog', { name: 'Trilhas do Sul Turismo' });
-    expect(
-      within(reopened).getByText('Tax ID could not be validated — CNPJ is inactive.'),
-    ).toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
@@ -20,11 +20,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { statusStyle } from '@/lib/admin/status-styles';
 import {
-  getBusinessAccountRequests,
-  type BusinessAccountRequest,
-  type BusinessAccountRequestStatus,
+  BusinessAccountApiError,
+  approveBusinessAccount,
+  fetchBusinessAccountRequests,
+  rejectBusinessAccount,
+  requestBusinessAccountInfo,
+} from '@/lib/admin/business-accounts-api';
+import { statusStyle } from '@/lib/admin/status-styles';
+import type {
+  BusinessAccountRequest,
+  BusinessAccountRequestStatus,
 } from '@/lib/mocks/admin/businessAccounts';
 
 const K = 'admin.businessAccounts';
@@ -32,8 +38,9 @@ const K = 'admin.businessAccounts';
 // "More info" rows have no tab of their own (the mockup never renders one); they only show
 // up under "All requests".
 type Tab = 'Pending' | 'Approved' | 'Rejected' | 'all';
+type LoadStatus = 'loading' | 'loaded' | 'error';
 
-const COMPLETE_DOCS = '3 of 3';
+const COMPLETE_DOCS_PATTERN = / of /;
 
 const HEAD_STYLE: CSSProperties = { color: 'var(--text-secondary)' };
 const HEAD_CLASS = 'px-4 text-xs font-medium tracking-wide uppercase';
@@ -45,6 +52,17 @@ const CARD_STYLE: CSSProperties = {
   border: '1px solid var(--border-subtle)',
   background: 'var(--bg-elevated)',
 };
+
+// Locale-aware, matching this app's other real-data screens: renders in the admin's current
+// UI language rather than always English.
+function formatDateTime(iso: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(iso));
+}
+
+function docsIncomplete(docs: string): boolean {
+  const [submitted, required] = docs.split(COMPLETE_DOCS_PATTERN).map(Number);
+  return Number.isFinite(submitted) && Number.isFinite(required) && submitted < required;
+}
 
 function KpiCard({ label, value, color }: { label: string; value: number; color?: string }) {
   return (
@@ -128,10 +146,42 @@ function EmptyState({ title, description }: { title: string; description: string
 }
 
 export default function BusinessAccountsPage() {
-  const { t } = useTranslation();
-  const [accounts, setAccounts] = useState(() => getBusinessAccountRequests());
+  const { t, i18n } = useTranslation();
+  const [accounts, setAccounts] = useState<BusinessAccountRequest[]>([]);
+  const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [tab, setTab] = useState<Tab>('Pending');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadStatus('loading');
+    fetchBusinessAccountRequests((iso) => formatDateTime(iso, i18n.language))
+      .then((items) => {
+        if (cancelled) return;
+        setAccounts(items);
+        setLoadStatus('loaded');
+      })
+      .catch(() => {
+        if (!cancelled) setLoadStatus('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadAttempt, i18n.language]);
+
+  function handleRetry() {
+    setLoadAttempt((attempt) => attempt + 1);
+  }
+
+  async function reload() {
+    try {
+      const items = await fetchBusinessAccountRequests((iso) => formatDateTime(iso, i18n.language));
+      setAccounts(items);
+    } catch {
+      toast.error(t(`${K}.toastRefreshFailed`));
+    }
+  }
 
   // Looked up fresh each render so the drawer always reflects the latest state.
   const selected = accounts.find((a) => a.id === selectedId) ?? null;
@@ -139,47 +189,74 @@ export default function BusinessAccountsPage() {
     accounts.filter((a) => a.status === status).length;
   const rows = tab === 'all' ? accounts : accounts.filter((a) => a.status === tab);
 
-  const updateAccount = (id: string, patch: Partial<BusinessAccountRequest>) => {
-    setAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
-  };
+  async function runAction(
+    actionLabel: string,
+    action: () => Promise<void>,
+    onSuccess: () => void,
+  ) {
+    setSelectedId(null);
+    try {
+      await action();
+    } catch (error) {
+      const message =
+        error instanceof BusinessAccountApiError
+          ? error.message
+          : t(`${K}.toastActionFailedDescription`);
+      toast.error(t(`${K}.toastActionFailedTitle`, { action: actionLabel }), {
+        description: message,
+      });
+      return;
+    }
+    onSuccess();
+    await reload();
+  }
 
   const handleRequestInfo = (id: string) => {
     const account = accounts.find((a) => a.id === id);
     if (!account) return;
-    // Matches the mockup: requesting info notifies the requester but doesn't change status.
-    toast.info(t(`${K}.toastInfoTitle`), {
-      description: t(`${K}.toastInfoDescription`, { requester: account.requester }),
-    });
+    void runAction(
+      t(`${K}.drawer.requestInfo`),
+      () => requestBusinessAccountInfo(id),
+      () => {
+        toast.info(t(`${K}.toastInfoTitle`), {
+          description: t(`${K}.toastInfoDescription`, { requester: account.requester }),
+        });
+      },
+    );
   };
 
   const handleApprove = (id: string) => {
     const account = accounts.find((a) => a.id === id);
     if (!account) return;
-    updateAccount(id, { status: 'Approved' });
-    toast.success(t(`${K}.toastApprovedTitle`), {
-      description: t(`${K}.toastApprovedDescription`, { name: account.name }),
-    });
+    void runAction(
+      t(`${K}.drawer.approve`),
+      () => approveBusinessAccount(id),
+      () => {
+        toast.success(t(`${K}.toastApprovedTitle`), {
+          description: t(`${K}.toastApprovedDescription`, { name: account.name }),
+        });
+      },
+    );
   };
 
-  const handleReject = (id: string, reason: RejectReason, details: string | null) => {
+  const handleReject = (id: string, reason: RejectReason, note: string | null) => {
     const account = accounts.find((a) => a.id === id);
     if (!account) return;
-    // Judgment call: the rejection reason (plus any details) replaces the review note, the
-    // same convention the seeded Rejected row follows (its note is its rejection reason).
-    // The canonical English reason is stored, like the rest of the mock data.
-    updateAccount(id, {
-      status: 'Rejected',
-      note: details ? `${reason} — ${details}` : reason,
-    });
     const reasonKey = REJECT_REASONS.find((r) => r.value === reason)?.i18nKey;
     const reasonLabel = reasonKey ? t(`${K}.drawer.${reasonKey}`) : reason;
-    toast.error(t(`${K}.toastRejectedTitle`), {
-      description: t(`${K}.toastRejectedDescription`, {
-        name: account.name,
-        reason: reasonLabel.toLowerCase(),
-        email: account.email,
-      }),
-    });
+    void runAction(
+      t(`${K}.drawer.reject`),
+      () => rejectBusinessAccount(id, reason, note),
+      () => {
+        toast.error(t(`${K}.toastRejectedTitle`), {
+          description: t(`${K}.toastRejectedDescription`, {
+            name: account.name,
+            reason: reasonLabel.toLowerCase(),
+            email: account.email,
+          }),
+        });
+      },
+    );
   };
 
   const tabs: Array<{ value: Tab; label: string }> = [
@@ -198,128 +275,169 @@ export default function BusinessAccountsPage() {
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-4 gap-6">
-        <KpiCard label={t(`${K}.kpiPending`)} value={countOf('Pending')} color="var(--warning)" />
-        <KpiCard label={t(`${K}.kpiWaitingDocuments`)} value={countOf('More info')} />
-        <KpiCard label={t(`${K}.kpiApproved`)} value={countOf('Approved')} color="var(--success)" />
-        <KpiCard label={t(`${K}.kpiRejected`)} value={countOf('Rejected')} color="var(--danger)" />
-      </div>
+      {loadStatus !== 'loaded' ? (
+        <div
+          role={loadStatus === 'error' ? 'alert' : 'status'}
+          className="rounded-[14px] border px-6 py-16 text-center text-[13.5px]"
+          style={{
+            borderColor: 'var(--border-subtle)',
+            background: 'var(--bg-elevated)',
+            color: loadStatus === 'error' ? 'var(--danger)' : 'var(--text-secondary)',
+          }}
+        >
+          {loadStatus === 'error' ? (
+            <>
+              <div>{t(`${K}.loadError`)}</div>
+              <button
+                type="button"
+                onClick={handleRetry}
+                className="mt-4 inline-flex items-center rounded-[10px] border px-4 py-2 text-[13.5px] font-medium"
+                style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+              >
+                {t(`${K}.retry`)}
+              </button>
+            </>
+          ) : (
+            t(`${K}.loading`)
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="mb-6 grid grid-cols-4 gap-6">
+            <KpiCard
+              label={t(`${K}.kpiPending`)}
+              value={countOf('Pending')}
+              color="var(--warning)"
+            />
+            <KpiCard label={t(`${K}.kpiWaitingDocuments`)} value={countOf('More info')} />
+            <KpiCard
+              label={t(`${K}.kpiApproved`)}
+              value={countOf('Approved')}
+              color="var(--success)"
+            />
+            <KpiCard
+              label={t(`${K}.kpiRejected`)}
+              value={countOf('Rejected')}
+              color="var(--danger)"
+            />
+          </div>
 
-      <div className="mb-4 flex gap-6 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-        {tabs.map((item) => {
-          const active = tab === item.value;
-          return (
-            <button
-              key={item.value}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setTab(item.value)}
-              className="-mb-px inline-flex items-center gap-2 pb-2.5 text-sm"
-              style={{
-                borderBottom: `2px solid ${active ? 'var(--brand-500)' : 'transparent'}`,
-                color: active ? 'var(--brand-500)' : 'var(--text-secondary)',
-                fontWeight: active ? 600 : 500,
-              }}
-            >
-              {item.label}
-            </button>
-          );
-        })}
-      </div>
+          <div className="mb-4 flex gap-6 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+            {tabs.map((item) => {
+              const active = tab === item.value;
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setTab(item.value)}
+                  className="-mb-px inline-flex items-center gap-2 pb-2.5 text-sm"
+                  style={{
+                    borderBottom: `2px solid ${active ? 'var(--brand-500)' : 'transparent'}`,
+                    color: active ? 'var(--brand-500)' : 'var(--text-secondary)',
+                    fontWeight: active ? 600 : 500,
+                  }}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
 
-      <div
-        className="rounded-[14px] border"
-        style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-elevated)' }}
-      >
-        {rows.length === 0 ? (
-          <EmptyState title={t(`${K}.emptyTitle`)} description={t(`${K}.emptyDescription`)} />
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow style={ROW_STYLE} className="hover:bg-transparent">
-                <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
-                  {t(`${K}.colBusiness`)}
-                </TableHead>
-                <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
-                  {t(`${K}.colTaxId`)}
-                </TableHead>
-                <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
-                  {t(`${K}.colCategory`)}
-                </TableHead>
-                <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
-                  {t(`${K}.colRequestedBy`)}
-                </TableHead>
-                <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
-                  {t(`${K}.colDocuments`)}
-                </TableHead>
-                <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
-                  {t(`${K}.colStatus`)}
-                </TableHead>
-                <TableHead className={HEAD_CLASS} />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((account) => {
-                const underReview = account.status === 'Pending' || account.status === 'More info';
-                const docsIncomplete = account.docs !== COMPLETE_DOCS;
-                return (
-                  <TableRow
-                    key={account.id}
-                    onClick={() => setSelectedId(account.id)}
-                    className="cursor-pointer"
-                    style={ROW_STYLE}
-                  >
-                    <TableCell className={`${CELL_CLASS} max-w-[260px]`}>
-                      <TwoLineCell primary={account.name} secondary={account.city} />
-                    </TableCell>
-                    <TableCell
-                      className={`${CELL_CLASS} tabular-nums`}
-                      style={{ color: 'var(--text-secondary)' }}
-                    >
-                      {account.cnpj}
-                    </TableCell>
-                    <TableCell className={CELL_CLASS} style={{ color: 'var(--text-primary)' }}>
-                      {account.category}
-                    </TableCell>
-                    <TableCell className={`${CELL_CLASS} max-w-[240px]`}>
-                      <TwoLineCell primary={account.requester} secondary={account.email} />
-                    </TableCell>
-                    <TableCell
-                      className={CELL_CLASS}
-                      data-incomplete={docsIncomplete}
-                      style={{
-                        color: docsIncomplete ? 'var(--warning)' : 'var(--text-secondary)',
-                      }}
-                    >
-                      {account.docs}
-                    </TableCell>
-                    <TableCell className={CELL_CLASS}>
-                      <StatusBadge status={account.status} />
-                    </TableCell>
-                    <TableCell className={`${CELL_CLASS} text-right`}>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedId(account.id);
-                        }}
-                        className="rounded-[10px] border px-3 py-1.5 text-[13px] font-medium"
-                        style={{
-                          borderColor: 'var(--border-subtle)',
-                          background: 'var(--bg-elevated)',
-                          color: 'var(--text-primary)',
-                        }}
-                      >
-                        {underReview ? t(`${K}.review`) : t(`${K}.view`)}
-                      </button>
-                    </TableCell>
+          <div
+            className="rounded-[14px] border"
+            style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-elevated)' }}
+          >
+            {rows.length === 0 ? (
+              <EmptyState title={t(`${K}.emptyTitle`)} description={t(`${K}.emptyDescription`)} />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow style={ROW_STYLE} className="hover:bg-transparent">
+                    <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
+                      {t(`${K}.colBusiness`)}
+                    </TableHead>
+                    <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
+                      {t(`${K}.colTaxId`)}
+                    </TableHead>
+                    <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
+                      {t(`${K}.colCategory`)}
+                    </TableHead>
+                    <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
+                      {t(`${K}.colRequestedBy`)}
+                    </TableHead>
+                    <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
+                      {t(`${K}.colDocuments`)}
+                    </TableHead>
+                    <TableHead className={HEAD_CLASS} style={HEAD_STYLE}>
+                      {t(`${K}.colStatus`)}
+                    </TableHead>
+                    <TableHead className={HEAD_CLASS} />
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((account) => {
+                    const underReview =
+                      account.status === 'Pending' || account.status === 'More info';
+                    const incomplete = docsIncomplete(account.docs);
+                    return (
+                      <TableRow
+                        key={account.id}
+                        onClick={() => setSelectedId(account.id)}
+                        className="cursor-pointer"
+                        style={ROW_STYLE}
+                      >
+                        <TableCell className={`${CELL_CLASS} max-w-[260px]`}>
+                          <TwoLineCell primary={account.name} secondary={account.city} />
+                        </TableCell>
+                        <TableCell
+                          className={`${CELL_CLASS} tabular-nums`}
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          {account.cnpj}
+                        </TableCell>
+                        <TableCell className={CELL_CLASS} style={{ color: 'var(--text-primary)' }}>
+                          {account.category}
+                        </TableCell>
+                        <TableCell className={`${CELL_CLASS} max-w-[240px]`}>
+                          <TwoLineCell primary={account.requester} secondary={account.email} />
+                        </TableCell>
+                        <TableCell
+                          className={CELL_CLASS}
+                          data-incomplete={incomplete}
+                          style={{ color: incomplete ? 'var(--warning)' : 'var(--text-secondary)' }}
+                        >
+                          {account.docs}
+                        </TableCell>
+                        <TableCell className={CELL_CLASS}>
+                          <StatusBadge status={account.status} />
+                        </TableCell>
+                        <TableCell className={`${CELL_CLASS} text-right`}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedId(account.id);
+                            }}
+                            className="rounded-[10px] border px-3 py-1.5 text-[13px] font-medium"
+                            style={{
+                              borderColor: 'var(--border-subtle)',
+                              background: 'var(--bg-elevated)',
+                              color: 'var(--text-primary)',
+                            }}
+                          >
+                            {underReview ? t(`${K}.review`) : t(`${K}.view`)}
+                          </button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </>
+      )}
 
       <BusinessAccountDetailDrawer
         request={selected}

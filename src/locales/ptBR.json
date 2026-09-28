@@ -147,7 +147,13 @@
         "sendingTo": "Enviando para {{email}}",
         "cancel": "Cancelar",
         "confirmReject": "Rejeitar e enviar e-mail"
-      }
+      },
+      "loading": "Carregando contas comerciais...",
+      "loadError": "Não foi possível carregar as contas comerciais. Tente novamente mais tarde.",
+      "retry": "Tentar novamente",
+      "toastRefreshFailed": "Ação registrada, mas não foi possível atualizar a lista — recarregue a página para ver o estado mais recente.",
+      "toastActionFailedTitle": "Não foi possível {{action}}",
+      "toastActionFailedDescription": "Algo deu errado. Tente novamente."
     }
   }
 }

@@ -147,7 +147,13 @@
         "sendingTo": "Sending to {{email}}",
         "cancel": "Cancel",
         "confirmReject": "Reject and send email"
-      }
+      },
+      "loading": "Loading business accounts...",
+      "loadError": "Couldn't load business accounts. Please try again later.",
+      "retry": "Try again",
+      "toastRefreshFailed": "Action recorded, but the list couldn't refresh — reload the page to see the latest state.",
+      "toastActionFailedTitle": "Could not {{action}}",
+      "toastActionFailedDescription": "Something went wrong. Please try again."
     }
   }
 }

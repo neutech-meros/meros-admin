@@ -147,7 +147,13 @@
         "sendingTo": "Enviando a {{email}}",
         "cancel": "Cancelar",
         "confirmReject": "Rechazar y enviar correo"
-      }
+      },
+      "loading": "Cargando cuentas de empresa...",
+      "loadError": "No se pudieron cargar las cuentas de empresa. Inténtalo de nuevo más tarde.",
+      "retry": "Intentar de nuevo",
+      "toastRefreshFailed": "Acción registrada, pero no se pudo actualizar la lista — recarga la página para ver el estado más reciente.",
+      "toastActionFailedTitle": "No se pudo {{action}}",
+      "toastActionFailedDescription": "Algo salió mal. Inténtalo de nuevo."
     }
   }
 }
