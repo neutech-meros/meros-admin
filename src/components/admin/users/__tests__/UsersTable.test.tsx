@@ -63,6 +63,30 @@ describe('UsersTable', () => {
     expect(screen.getByText('Rafael Nogueira')).toBeInTheDocument();
   });
 
+  // The test setup initializes i18n with lng 'pt', so STATUS_LABEL_KEY/ROLE_LABEL_KEY must
+  // actually be translated here — an untranslated Record<UserRecord['status'], string> would
+  // still pass every other assertion above, since none of them check the badge text itself.
+  it('renders the status and role badges translated, not as the raw enum value', () => {
+    render(
+      <UsersTable
+        users={users}
+        sort={{ key: null, dir: 'desc' }}
+        onSortChange={jest.fn()}
+        onRowClick={jest.fn()}
+        onViewProfile={jest.fn()}
+        onResetPassword={jest.fn()}
+        onDeactivate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('Ativo')).toBeInTheDocument();
+    expect(screen.getByText('Criador')).toBeInTheDocument();
+    expect(screen.getByText('Desativado')).toBeInTheDocument();
+    expect(screen.getByText('Usuário')).toBeInTheDocument();
+    expect(screen.queryByText('Active')).not.toBeInTheDocument();
+    expect(screen.queryByText('Creator')).not.toBeInTheDocument();
+  });
+
   it('calls onSortChange with the column key when a sortable header is clicked', async () => {
     const user = userEvent.setup();
     const onSortChange = jest.fn();

@@ -41,6 +41,17 @@ describe('UserDetailDrawer', () => {
     expect(screen.getByText('Travel creator.')).toBeInTheDocument();
   });
 
+  it('renders the role and status badges translated, not as the raw enum value', () => {
+    render(<UserDetailDrawer user={user} onClose={jest.fn()} onSaveProfile={jest.fn()} />);
+    // Header badge (role) + stats bar (status), both on the default Profile tab; each also
+    // repeats elsewhere on the page (account-type row, status row), so assert presence
+    // rather than a single match.
+    expect(screen.getAllByText('Criador').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Ativo').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Creator')).not.toBeInTheDocument();
+    expect(screen.queryByText('Active')).not.toBeInTheDocument();
+  });
+
   it('switches to the Subscriptions tab and shows its content', async () => {
     const uiUser = userEvent.setup();
     render(<UserDetailDrawer user={user} onClose={jest.fn()} onSaveProfile={jest.fn()} />);
