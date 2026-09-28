@@ -15,6 +15,7 @@ const STATUS_MAP: Record<string, StatusStyle> = {
   Approved: { color: 'var(--success)', background: 'var(--success-bg)' },
   Pending: { color: 'var(--warning)', background: 'var(--warning-bg)' },
   Processing: { color: 'var(--warning)', background: 'var(--warning-bg)' },
+  'More info': { color: 'var(--brand-600)', background: 'var(--brand-100)' },
   Deactivated: NEUTRAL,
   Deleted: { color: 'var(--danger)', background: 'var(--danger-bg)' },
   'In review': { color: 'var(--warning)', background: 'var(--warning-bg)' },
