@@ -5,7 +5,7 @@ import type {
   ReportedItem,
   ReportSeverity,
   ReviewedItem,
-} from '@/lib/mocks/admin/moderation';
+} from '@/lib/admin/moderation';
 
 // Validates the same-origin proxy's response — this app's own trust boundary, mirroring
 // how every other admin proxy in this codebase re-validates rather than trusting the
@@ -14,12 +14,13 @@ import type {
 const targetTypeSchema = z.enum(['LIST', 'PLACE_IN_LIST', 'PROFILE']);
 const severitySchema = z.enum(['HIGH', 'AVERAGE', 'LOW']);
 const decisionSchema = z.enum(['KEPT', 'REMOVED']);
+const accountStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED']);
 
 const reporterSchema = z.object({
   name: z.string(),
   handle: z.string().nullable(),
   reason: z.string(),
-  reportedAt: z.string(),
+  reportedAt: z.string().datetime({ offset: true }),
 });
 
 const queueItemSchema = z.object({
@@ -37,10 +38,10 @@ const queueItemSchema = z.object({
       name: z.string(),
       handle: z.string().nullable(),
       account: z.string(),
-      accountStatus: z.string(),
+      accountStatus: accountStatusSchema,
     })
     .nullable(),
-  priorAction: z.string(),
+  priorRemovals: z.number(),
   reporters: z.array(reporterSchema),
 });
 
@@ -51,12 +52,12 @@ export const queueResponseSchema = z.object({
 
 const reviewedItemSchema = z.object({
   id: z.string(),
-  title: z.string(),
-  owner: z.string(),
-  reportsLabel: z.string(),
+  title: z.string().nullable(),
+  owner: z.string().nullable(),
+  reportCount: z.number(),
   decision: decisionSchema,
   reviewedBy: z.string().nullable(),
-  reviewedAt: z.string(),
+  reviewedAt: z.string().datetime({ offset: true }),
 });
 
 export const reviewedResponseSchema = z.object({
@@ -92,7 +93,8 @@ const DECISION_LABEL: Record<z.infer<typeof decisionSchema>, ReportDecision> = {
 // (e.g. 'ACTIVE') as-is — it has no "Creator · Verified"/"Traveler" style label, since
 // those concepts (creator status, verification) live in the Users & Creators screen's own
 // data model, not in the moderation API. Shown as-is rather than invented; see MER-795's
-// spec for the full note on this mismatch.
+// spec for the full note on this mismatch. accountStatus is kept as the raw enum value
+// (not pre-translated) so the caller can render it through i18n.
 export function toReportedItem(
   raw: QueueItem,
   index: number,
@@ -112,8 +114,8 @@ export function toReportedItem(
     owner: ownerName,
     handle: raw.owner?.handle ?? '',
     account: raw.owner?.account ?? '—',
-    accountStatus: raw.owner?.accountStatus ?? '—',
-    priorAction: raw.priorAction,
+    accountStatus: raw.owner?.accountStatus ?? null,
+    priorRemovals: raw.priorRemovals,
     reporters: raw.reporters.map((r) => ({
       name: r.name,
       handle: r.handle ?? '',
@@ -133,7 +135,7 @@ export function toReviewedItem(
     id: raw.id,
     title: raw.title,
     owner: raw.owner,
-    reportsLabel: raw.reportsLabel,
+    reportCount: raw.reportCount,
     decision: DECISION_LABEL[raw.decision],
     reviewedBy: raw.reviewedBy ?? '—',
     reviewedAt: formatDateTime(raw.reviewedAt),

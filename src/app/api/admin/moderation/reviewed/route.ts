@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import { reviewedResponseSchema } from '@/lib/admin/moderation-api';
 import { getProxyEnv } from '@/lib/server/proxy-env';
 
 const UPSTREAM_ERROR_MESSAGE = 'Failed to reach the moderation API';
 const PROXY_DISABLED_MESSAGE = 'This endpoint is disabled';
+
+// Mirrors the upstream's own bound (moderationReviewedQuerySchema) so an invalid limit is
+// rejected here with a 400 instead of round-tripping to the API and coming back as a 502.
+const limitSchema = z.coerce.number().int().min(1).max(500).optional();
 
 export async function GET(request: Request) {
   try {
@@ -13,8 +18,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: PROXY_DISABLED_MESSAGE }, { status: 404 });
     }
 
-    const limit = new URL(request.url).searchParams.get('limit');
-    const query = limit ? `?limit=${encodeURIComponent(limit)}` : '';
+    const rawLimit = new URL(request.url).searchParams.get('limit');
+    const parsedLimit = limitSchema.safeParse(rawLimit ?? undefined);
+    if (!parsedLimit.success) {
+      return NextResponse.json({ error: 'Invalid limit' }, { status: 400 });
+    }
+    const query = parsedLimit.data !== undefined ? `?limit=${parsedLimit.data}` : '';
     const upstream = await fetch(`${MEROS_API_URL}/admin/moderation/reviewed${query}`, {
       headers: { Authorization: `Bearer ${MEROS_ADMIN_API_KEY}` },
       cache: 'no-store',

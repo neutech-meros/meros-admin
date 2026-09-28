@@ -114,6 +114,17 @@
       "loading": "Carregando denúncias...",
       "loadError": "Não foi possível carregar a fila de moderação. Tente novamente mais tarde.",
       "retry": "Tentar novamente",
+      "severityHigh": "Alta",
+      "severityAverage": "Média",
+      "severityLow": "Baixa",
+      "decisionKept": "Mantido",
+      "decisionRemoved": "Removido",
+      "accountStatusActive": "ativa",
+      "accountStatusInactive": "inativa",
+      "accountStatusSuspended": "suspensa",
+      "accountStatusDeleted": "excluída",
+      "reviewedTitleUnavailable": "Conteúdo não está mais disponível",
+      "toastRefreshFailed": "Decisão registrada, mas não foi possível atualizar as listas — recarregue a página para ver o estado mais recente.",
       "drawer": {
         "title": "Denúncia: {{kind}}",
         "reportedContentLabel": "Conteúdo denunciado",
@@ -128,7 +139,14 @@
         "removeContent": "Remover conteúdo",
         "keepContent": "Manter conteúdo",
         "openAccount": "Abrir conta",
-        "openAccountUnavailable": "{{owner}} ({{handle}}) ainda não está disponível nesta sessão — o vínculo com a conta chega com a integração de Users & Creators."
+        "openAccountUnavailable": "{{owner}} ({{handle}}) ainda não está disponível nesta sessão — o vínculo com a conta chega com a integração de Users & Creators.",
+        "accountHistoryNone": "Nenhuma ação de moderação anterior nesta conta.",
+        "accountHistory_one": "{{count}} ação de moderação anterior nesta conta.",
+        "accountHistory_other": "{{count}} ações de moderação anteriores nesta conta.",
+        "confirmRemoveTitle": "Remover este conteúdo?",
+        "confirmRemoveDescription": "Isso suspende imediatamente o conteúdo denunciado e o status da conta. Você pode revisar a decisão depois, mas ela entra em vigor na hora.",
+        "confirmRemoveCancel": "Cancelar",
+        "confirmRemoveConfirm": "Sim, remover"
       }
     }
   }

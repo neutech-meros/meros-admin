@@ -31,7 +31,14 @@ export async function POST(request: Request, { params }: RouteContext) {
     if (!parsedParams.success) {
       return NextResponse.json({ error: 'Invalid target' }, { status: 400 });
     }
-    const parsedBody = bodySchema.safeParse(await request.json());
+
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    const parsedBody = bodySchema.safeParse(rawBody);
     if (!parsedBody.success) {
       return NextResponse.json({ error: 'Invalid decision payload' }, { status: 400 });
     }

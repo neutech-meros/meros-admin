@@ -1,7 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { toast } from 'sonner';
 
-import type { ReportedItem } from '@/lib/mocks/admin/moderation';
+import type { ReportedItem } from '@/lib/admin/moderation';
 import enUS from '@/locales/enUS.json';
 import esES from '@/locales/esES.json';
 import ptBR from '@/locales/ptBR.json';
@@ -16,6 +16,8 @@ jest.mock('sonner', () => ({
 
 const baseReport: ReportedItem = {
   id: 'report-42',
+  targetType: 'LIST',
+  targetId: 'list-42',
   title: 'Hidden waterfalls of Chapada',
   kind: 'Travel list',
   reason: 'Illegal or dangerous content',
@@ -24,9 +26,9 @@ const baseReport: ReportedItem = {
   where: 'Travel list · 9 stops · published 01/08/2026',
   owner: 'Marina Alves',
   handle: '@marina.alves',
-  account: 'Creator · Verified',
-  accountStatus: 'Active',
-  priorAction: '1 warning issued in June 2026.',
+  account: 'Business',
+  accountStatus: 'ACTIVE',
+  priorRemovals: 1,
   reporters: [
     {
       name: 'Beatriz Lima',
@@ -91,7 +93,7 @@ describe('ReportDetailDrawer', () => {
     renderDrawer(baseReport);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('Denúncia: Travel list')).toBeInTheDocument();
-    expect(screen.getByText('High')).toBeInTheDocument();
+    expect(screen.getByText('Alta')).toBeInTheDocument();
     // Title appears in both the header description and the cover block.
     expect(screen.getAllByText('Hidden waterfalls of Chapada')).toHaveLength(2);
     expect(screen.getByText('Conteúdo denunciado')).toBeInTheDocument();
@@ -102,7 +104,7 @@ describe('ReportDetailDrawer', () => {
     expect(screen.getByText('Travel list · 9 stops · published 01/08/2026')).toBeInTheDocument();
     expect(screen.getByText('Conta')).toBeInTheDocument();
     expect(
-      screen.getByText('Marina Alves · @marina.alves · Creator · Verified · conta active'),
+      screen.getByText('Marina Alves · @marina.alves · Business · conta ativa'),
     ).toBeInTheDocument();
     expect(screen.getByText('Motivo')).toBeInTheDocument();
     expect(screen.getByText('Illegal or dangerous content')).toBeInTheDocument();
@@ -113,7 +115,24 @@ describe('ReportDetailDrawer', () => {
     expect(screen.getByText('Tiago Fonseca')).toBeInTheDocument();
     expect(screen.getByText('Encourages illegal access')).toBeInTheDocument();
     expect(screen.getByText('Histórico da conta')).toBeInTheDocument();
-    expect(screen.getByText('1 warning issued in June 2026.')).toBeInTheDocument();
+    expect(screen.getByText('1 ação de moderação anterior nesta conta.')).toBeInTheDocument();
+  });
+
+  it('shows the "no prior actions" copy when priorRemovals is zero', () => {
+    renderDrawer({ ...baseReport, priorRemovals: 0 });
+    expect(screen.getByText('Nenhuma ação de moderação anterior nesta conta.')).toBeInTheDocument();
+  });
+
+  it('shows the plural prior-removals copy for more than one', () => {
+    renderDrawer({ ...baseReport, priorRemovals: 3 });
+    expect(screen.getByText('3 ações de moderação anteriores nesta conta.')).toBeInTheDocument();
+  });
+
+  it('falls back to a dash when the account has no resolvable status', () => {
+    renderDrawer({ ...baseReport, accountStatus: null });
+    expect(
+      screen.getByText('Marina Alves · @marina.alves · Business · conta —'),
+    ).toBeInTheDocument();
   });
 
   it('uses the singular heading for exactly one reporter', () => {
@@ -131,13 +150,30 @@ describe('ReportDetailDrawer', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('calls onRemove with the report id and does not call onClose', () => {
+  it('requires confirmation before calling onRemove', async () => {
     const { onKeep, onRemove, onClose } = renderDrawer(baseReport);
     fireEvent.click(screen.getByRole('button', { name: 'Remover conteúdo' }));
+    expect(onRemove).not.toHaveBeenCalled();
+
+    const confirmDialog = await screen.findByRole('alertdialog');
+    expect(within(confirmDialog).getByText('Remover este conteúdo?')).toBeInTheDocument();
+
+    fireEvent.click(within(confirmDialog).getByRole('button', { name: 'Sim, remover' }));
     expect(onRemove).toHaveBeenCalledTimes(1);
     expect(onRemove).toHaveBeenCalledWith('report-42');
     expect(onKeep).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('does not call onRemove when the confirmation is cancelled', async () => {
+    const { onRemove } = renderDrawer(baseReport);
+    fireEvent.click(screen.getByRole('button', { name: 'Remover conteúdo' }));
+
+    const confirmDialog = await screen.findByRole('alertdialog');
+    fireEvent.click(within(confirmDialog).getByRole('button', { name: 'Cancelar' }));
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(onRemove).not.toHaveBeenCalled();
   });
 
   it('shows an "Open account" button that toasts instead of navigating (Users & Creators isn\'t built here yet)', () => {

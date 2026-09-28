@@ -11,10 +11,14 @@ import ReportedContentPage from '../page';
 // The Toaster is mounted by AdminShell, not by this page, so toasts would be silent here
 // anyway; mocking lets us assert the page actually fires them.
 jest.mock('sonner', () => ({
-  toast: { success: jest.fn(), error: jest.fn() },
+  toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() },
 }));
 
 // The test setup initializes i18n with lng 'pt', so assertions below use the ptBR strings.
+// All fixture instants fall in August 2026, so every formatted date shares the same
+// locale-formatted month ("de ago. de 2026") and only the day/time vary — and those vary
+// with the test runner's local timezone, so assertions match the shape, not an exact clock time.
+const DATE_RE = /^\d{2} de ago\. de 2026, \d{2}:\d{2}$/;
 
 const QUEUE_TITLES = [
   'Beaches secretas do litoral norte da Bahia',
@@ -43,7 +47,7 @@ function queueItem(overrides: Record<string, unknown> = {}) {
       account: 'Business',
       accountStatus: 'ACTIVE',
     },
-    priorAction: 'No prior moderation actions on this account.',
+    priorRemovals: 0,
     reporters: [
       {
         name: 'Beatriz Lima',
@@ -118,12 +122,20 @@ const QUEUE_FIXTURE = [
   }),
 ];
 
-const REVIEWED_FIXTURE = [
+const REVIEWED_FIXTURE: Array<{
+  id: string;
+  title: string;
+  owner: string;
+  reportCount: number;
+  decision: 'KEPT' | 'REMOVED';
+  reviewedBy: string | null;
+  reviewedAt: string;
+}> = [
   {
     id: 'reviewed-1',
     title: REVIEWED_TITLES[0],
     owner: 'Larissa Prado',
-    reportsLabel: '3 user reports',
+    reportCount: 3,
     decision: 'REMOVED',
     reviewedBy: 'Ana Martins',
     reviewedAt: '2026-08-19T16:40:00.000Z',
@@ -132,7 +144,7 @@ const REVIEWED_FIXTURE = [
     id: 'reviewed-2',
     title: REVIEWED_TITLES[1],
     owner: 'Eduardo Costa',
-    reportsLabel: '1 user report',
+    reportCount: 1,
     decision: 'KEPT',
     reviewedBy: 'Lucas Pereira',
     reviewedAt: '2026-08-17T10:12:00.000Z',
@@ -160,10 +172,10 @@ function defaultFetchImpl(url: RequestInfo | URL, init?: RequestInit) {
     return Promise.resolve(jsonResponse(200, { items: reviewedState }));
   }
   if (href.includes('/decision') && init?.method === 'POST') {
-    const body = JSON.parse(String(init.body)) as {
-      decision: 'KEPT' | 'REMOVED';
-      reviewedBy: string;
-    };
+    const body = JSON.parse(String(init.body)) as { decision: 'KEPT' | 'REMOVED' };
+    // reviewedBy is intentionally absent from the request: there's no admin-identity concept
+    // yet, and the client must not fabricate a reviewer name (see MER-796 PR #5's review).
+    expect(body).not.toHaveProperty('reviewedBy');
     const match = href.match(/reports\/([A-Z_]+)\/([^/]+)\/decision/);
     const [, targetType, targetId] = match ?? [];
     const decided = queueState.find((q) => q.targetType === targetType && q.targetId === targetId);
@@ -174,9 +186,9 @@ function defaultFetchImpl(url: RequestInfo | URL, init?: RequestInit) {
         id: decided.id,
         title: decided.title,
         owner: decided.owner!.name,
-        reportsLabel: `${decided.reporters.length} user report${decided.reporters.length === 1 ? '' : 's'}`,
+        reportCount: decided.reporters.length,
         decision: body.decision,
-        reviewedBy: body.reviewedBy,
+        reviewedBy: null,
         reviewedAt: new Date().toISOString(),
       },
       ...reviewedState,
@@ -208,7 +220,7 @@ async function renderLoaded() {
 }
 
 function tab(name: 'Fila' | 'Revisados') {
-  return screen.getByRole('button', { name: new RegExp(`^${name}`) });
+  return screen.getByRole('tab', { name: new RegExp(`^${name}`) });
 }
 
 function expectCounts(queue: number, reviewed: number) {
@@ -226,6 +238,11 @@ async function decide(title: string, action: 'Manter conteúdo' | 'Remover conte
   const user = userEvent.setup();
   await user.click(within(queueRow(title)).getByRole('button', { name: 'Revisar' }));
   await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: action }));
+  if (action === 'Remover conteúdo') {
+    await user.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Sim, remover' }),
+    );
+  }
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 }
 
@@ -265,9 +282,9 @@ describe('ReportedContentPage', () => {
   it('renders the 3 fetched queue items with their severity badges by default', async () => {
     await renderLoaded();
     for (const title of QUEUE_TITLES) expect(screen.getByText(title)).toBeInTheDocument();
-    expect(within(queueRow(QUEUE_TITLES[0])).getByText('High')).toBeInTheDocument();
-    expect(within(queueRow(QUEUE_TITLES[1])).getByText('Average')).toBeInTheDocument();
-    expect(within(queueRow(QUEUE_TITLES[2])).getByText('Low')).toBeInTheDocument();
+    expect(within(queueRow(QUEUE_TITLES[0])).getByText('Alta')).toBeInTheDocument();
+    expect(within(queueRow(QUEUE_TITLES[1])).getByText('Média')).toBeInTheDocument();
+    expect(within(queueRow(QUEUE_TITLES[2])).getByText('Baixa')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('Travel list')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('Marina Alves')).toBeInTheDocument();
     expect(within(queueRow(QUEUE_TITLES[0])).getByText('@marina.alves')).toBeInTheDocument();
@@ -290,13 +307,11 @@ describe('ReportedContentPage', () => {
     await user.click(tab('Revisados'));
     for (const title of REVIEWED_TITLES) expect(screen.getByText(title)).toBeInTheDocument();
     for (const title of QUEUE_TITLES) expect(screen.queryByText(title)).not.toBeInTheDocument();
-    expect(screen.getByText('Removed')).toBeInTheDocument();
-    expect(screen.getByText('Kept')).toBeInTheDocument();
-    expect(screen.getByText('3 user reports')).toBeInTheDocument();
+    expect(screen.getByText('Removido')).toBeInTheDocument();
+    expect(screen.getByText('Mantido')).toBeInTheDocument();
+    expect(screen.getByText('3 denúncias')).toBeInTheDocument();
     expect(screen.getByText('Ana Martins')).toBeInTheDocument();
-    // Formatted in the runner's local timezone, so match the shape rather than an exact
-    // clock time (the fixture's ISO instant is fixed, but "local time" isn't across CI runs).
-    expect(screen.getByText(/^19 Aug 2026, \d{2}:\d{2}$/)).toBeInTheDocument();
+    expect(screen.getAllByText(DATE_RE)).toHaveLength(2);
     expectCounts(3, 2);
 
     await user.click(tab('Fila'));
@@ -336,13 +351,12 @@ describe('ReportedContentPage', () => {
 
     await user.click(tab('Revisados'));
     const row = queueRow(QUEUE_TITLES[0]);
-    expect(within(row).getByText('Kept')).toBeInTheDocument();
+    expect(within(row).getByText('Mantido')).toBeInTheDocument();
     expect(within(row).getByText('Marina Alves')).toBeInTheDocument();
-    expect(within(row).getByText('2 user reports')).toBeInTheDocument();
-    expect(within(row).getByText('Ana Martins')).toBeInTheDocument();
+    expect(within(row).getByText('2 denúncias')).toBeInTheDocument();
   });
 
-  it('removing content records a Removed decision with singular report label', async () => {
+  it('removing content requires confirmation and records a Removed decision', async () => {
     const user = userEvent.setup();
     await renderLoaded();
     await decide(QUEUE_TITLES[2], 'Remover conteúdo');
@@ -355,8 +369,28 @@ describe('ReportedContentPage', () => {
 
     await user.click(tab('Revisados'));
     const row = queueRow(QUEUE_TITLES[2]);
-    expect(within(row).getByText('Removed')).toBeInTheDocument();
-    expect(within(row).getByText('1 user report')).toBeInTheDocument();
+    expect(within(row).getByText('Removido')).toBeInTheDocument();
+    expect(within(row).getByText('1 denúncia')).toBeInTheDocument();
+  });
+
+  it('cancelling the remove confirmation keeps the item in the queue', async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+    await user.click(within(queueRow(QUEUE_TITLES[0])).getByRole('button', { name: 'Revisar' }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Remover conteúdo' }),
+    );
+    await user.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar' }),
+    );
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // The title appears in the queue row plus twice inside the still-open drawer (the
+    // header description and the cover block), proving neither closed. (Counts aren't
+    // re-checked here: the drawer's open Sheet marks the rest of the page aria-hidden,
+    // so the tabs are correctly unreachable by role while it's open.)
+    expect(screen.getAllByText(QUEUE_TITLES[0])).toHaveLength(3);
   });
 
   it('shows the empty state once every queue item is decided', async () => {
@@ -388,5 +422,38 @@ describe('ReportedContentPage', () => {
     fetchMock.mockImplementation(defaultFetchImpl);
     await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
     await screen.findByText(QUEUE_TITLES[0]);
+  });
+
+  it('shows a decision-recorded toast but a distinct refresh-failed toast when the post-decision refetch fails', async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+
+    let decisionPosted = false;
+    fetchMock.mockImplementation((url, init) => {
+      const href = String(url);
+      if (href.includes('/decision') && init?.method === 'POST') {
+        decisionPosted = true;
+        return Promise.resolve(jsonResponse(204, null));
+      }
+      if (decisionPosted) return Promise.resolve(jsonResponse(502, { error: 'boom' }));
+      return defaultFetchImpl(url, init);
+    });
+
+    await user.click(within(queueRow(QUEUE_TITLES[0])).getByRole('button', { name: 'Revisar' }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Manter conteúdo' }),
+    );
+
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('Conteúdo mantido', {
+        description: QUEUE_TITLES[0],
+      }),
+    );
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        'Decisão registrada, mas não foi possível atualizar as listas — recarregue a página para ver o estado mais recente.',
+        { description: QUEUE_TITLES[0] },
+      ),
+    );
   });
 });

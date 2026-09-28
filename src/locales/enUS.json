@@ -114,6 +114,17 @@
       "loading": "Loading reports...",
       "loadError": "Couldn't load the moderation queue. Please try again later.",
       "retry": "Try again",
+      "severityHigh": "High",
+      "severityAverage": "Average",
+      "severityLow": "Low",
+      "decisionKept": "Kept",
+      "decisionRemoved": "Removed",
+      "accountStatusActive": "active",
+      "accountStatusInactive": "inactive",
+      "accountStatusSuspended": "suspended",
+      "accountStatusDeleted": "deleted",
+      "reviewedTitleUnavailable": "Content no longer available",
+      "toastRefreshFailed": "Decision recorded, but the lists could not refresh — reload the page to see the latest state.",
       "drawer": {
         "title": "{{kind}} reported",
         "reportedContentLabel": "Reported content",
@@ -128,7 +139,14 @@
         "removeContent": "Remove content",
         "keepContent": "Keep content",
         "openAccount": "Open account",
-        "openAccountUnavailable": "{{owner}} ({{handle}}) is not available in this session yet — account cross-linking lands with the Users & Creators integration."
+        "openAccountUnavailable": "{{owner}} ({{handle}}) is not available in this session yet — account cross-linking lands with the Users & Creators integration.",
+        "accountHistoryNone": "No prior moderation actions on this account.",
+        "accountHistory_one": "{{count}} prior moderation action on this account.",
+        "accountHistory_other": "{{count}} prior moderation actions on this account.",
+        "confirmRemoveTitle": "Remove this content?",
+        "confirmRemoveDescription": "This immediately suspends the reported content and its account status. You can revisit the decision later, but it takes effect right away.",
+        "confirmRemoveCancel": "Cancel",
+        "confirmRemoveConfirm": "Yes, remove"
       }
     }
   }

@@ -1,7 +1,7 @@
 # MER-796 — UI: Reported content screen
 
-Parent story: MER-777 (Admin – Review Reported Content). Siblings: MER-795 (API, **not
-started**), MER-797 (QA, separate).
+Parent story: MER-777 (Admin – Review Reported Content). Siblings: MER-795 (API — shipped
+and wired in since, see "Post-wiring update" below), MER-797 (QA, separate).
 
 > MER-796 itself has no description in Jira. Scope derives from MER-777's AC and from the
 > "Meros Admin (standalone).html" mockup export the user provided (a bundled prototype of
@@ -216,3 +216,40 @@ Each agent gets: this spec, the relevant existing file(s) to match conventions a
 (`dashboard/page.tsx`, `status-styles.ts`, `components/ui/sheet.tsx`, `components/ui/tabs.tsx`),
 and the hard rule that everything (code, identifiers, comments, commit messages) is in
 English regardless of what language surrounds this instruction.
+
+## Post-wiring update (real MER-795 integration, then PR #5's review)
+
+The mock-only design above described the screen's first iteration. It has since been wired
+to the real MER-795 API (same-origin proxy routes under `src/app/api/admin/moderation/*`),
+and then revised again to address PR #5's review. This section records what changed so the
+body above isn't read as still-current:
+
+- `src/lib/mocks/admin/moderation.ts` is deleted. Its types moved to
+  `src/lib/admin/moderation.ts` (the production home) once the mock seed data became dead
+  code — the page fetches real data through `src/lib/admin/moderation-api.ts`'s
+  `toReportedItem`/`toReviewedItem`, validated against the proxy's zod response schemas.
+- `ReportedItem.priorAction`/`ReviewedItem.reportsLabel` (pre-formatted English prose) were
+  replaced with `priorRemovals: number`/`reportCount: number`; the client now builds the
+  display text via `t()` so every locale reads naturally instead of embedding English
+  sentences. Same reasoning on the MER-795 side — see that spec's own "Post-wiring update".
+- Severity, decision, and account status are now rendered through `t()`-backed label maps
+  (`src/lib/admin/moderation-labels.ts`) instead of the raw English enum value; the English
+  value itself is kept only as the `statusStyle()` tone-lookup key.
+- Dates are formatted with `Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium',
+  timeStyle: 'short' })` instead of a hardcoded English month array, so a pt/es admin no
+  longer sees English dates on an otherwise-translated screen.
+- The tab switcher uses `@radix-ui/react-tabs` directly (not the shadcn `ui/tabs.tsx`
+  wrapper, whose default styling doesn't match this screen's underline/count-badge look) for
+  proper `tablist`/`tab`/`tabpanel` semantics and keyboard navigation.
+- Removing content now requires confirming in a Radix `AlertDialog` first (`ui/alert-dialog.tsx`,
+  added this pass) rather than acting on a single click.
+- The decision POST no longer sends a `reviewedBy` field: there's no real admin-identity
+  concept yet, and fabricating a reviewer name (`'Ana Martins'`, hardcoded) would have
+  written a false attribution into a real audit trail. The API already treats `reviewedBy`
+  as optional and the UI already renders a `null` value as `'—'`.
+- The cover block's purple background and the "Keep content" button's background are
+  intentionally hardcoded to `#7B03F3` rather than `var(--brand-500)` — an explicit,
+  deliberate user color choice from earlier in this same implementation, not an oversight.
+- `kind`, `owner.account`, `where`, `excerpt`, and `reason` are still raw English strings
+  from the API, deliberately left unchanged — see MER-795's spec's "Post-wiring update" for
+  the reasoning on each.
