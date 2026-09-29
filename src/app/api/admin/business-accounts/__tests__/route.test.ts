@@ -59,7 +59,7 @@ describe('GET /api/admin/business-accounts', () => {
   });
 
   it('returns 404 (not 502) when disabled in production with the other proxy vars unset', async () => {
-    process.env.NODE_ENV = 'production';
+    (process.env as { NODE_ENV: string }).NODE_ENV = 'production';
     process.env.ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED = 'false';
     delete process.env.MEROS_API_URL;
     delete process.env.MEROS_ADMIN_API_KEY;

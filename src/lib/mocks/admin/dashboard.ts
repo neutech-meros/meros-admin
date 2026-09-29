@@ -1,3 +1,5 @@
+import { avatarColorForIndex, initialsOf } from './avatar';
+
 export interface KpiCardData {
   label: string;
   value: string;
@@ -253,17 +255,6 @@ export interface RecentUserRow {
   avatarColor: string;
 }
 
-const AVATAR_COLORS = ['#7F00FF', '#1A8245', '#7C5CDF', '#B7791F', '#DF2339'];
-
-function initialsOf(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
-}
-
 // Mock (window.MEROS.RECENT_USERS is not present in the source file).
 export function getRecentUsers(): RecentUserRow[] {
   const rows: Array<Omit<RecentUserRow, 'initials' | 'avatarColor'>> = [
@@ -275,7 +266,7 @@ export function getRecentUsers(): RecentUserRow[] {
   return rows.map((u, i) => ({
     ...u,
     initials: initialsOf(u.name),
-    avatarColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
+    avatarColor: avatarColorForIndex(i),
   }));
 }
 
