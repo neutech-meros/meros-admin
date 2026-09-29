@@ -1,3 +1,4 @@
+import type { CategoryNode } from '@/lib/mocks/admin/categories';
 import type { CategoryRequest, CategoryRequestStatus } from '@/lib/mocks/admin/category-requests';
 
 export const TAB_KEYS: Array<CategoryRequestStatus | 'all'> = [
@@ -40,4 +41,22 @@ export function requestStatusTone(status: CategoryRequestStatus): {
     case 'More info':
       return { color: 'var(--brand-600)', background: 'var(--brand-100)' };
   }
+}
+
+const PATH_SEPARATOR = ' › ';
+
+export interface MatchedParentPath {
+  parentSlug: string | null;
+  subcategorySlug: string | null;
+}
+
+// Matches a request's proposed parent path (e.g. "Food › Restaurant") against the real
+// category tree by name, to preselect where a request would land if approved.
+export function matchParentPath(tree: CategoryNode[], parentPath: string): MatchedParentPath {
+  const [topName, subName] = parentPath.split(PATH_SEPARATOR).map((part) => part.trim());
+  const top = tree.find((node) => node.name === topName);
+  if (!top) return { parentSlug: null, subcategorySlug: null };
+  if (!subName) return { parentSlug: top.slug, subcategorySlug: null };
+  const sub = (top.children ?? []).find((node) => node.name === subName);
+  return { parentSlug: top.slug, subcategorySlug: sub?.slug ?? null };
 }

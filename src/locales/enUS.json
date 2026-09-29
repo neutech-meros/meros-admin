@@ -237,6 +237,19 @@
         "createCategory": "Create category",
         "close": "Close"
       },
+      "createModal": {
+        "title": "Create category",
+        "subtitle": "Requested by {{requester}}. Confirm where it belongs in the tree before creating it.",
+        "levelLabel": "Level in the tree",
+        "levelParent": "Parent",
+        "levelSubcategory": "Subcategory",
+        "levelChildCategory": "Child category",
+        "parentCategoryLabel": "Parent category",
+        "subcategoryLabel": "Subcategory",
+        "nameLabel": "Category name",
+        "namePlaceholder": "Category name",
+        "previewLabel": "Preview"
+      },
       "toasts": {
         "detailsRequestedTitle": "Details requested",
         "detailsRequestedDescription": "{{requester}} was asked to clarify the request.",

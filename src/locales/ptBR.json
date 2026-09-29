@@ -237,6 +237,19 @@
         "createCategory": "Criar categoria",
         "close": "Fechar"
       },
+      "createModal": {
+        "title": "Criar categoria",
+        "subtitle": "Solicitado por {{requester}}. Confirme onde ela deve ficar na árvore antes de criar.",
+        "levelLabel": "Nível na árvore",
+        "levelParent": "Categoria principal",
+        "levelSubcategory": "Subcategoria",
+        "levelChildCategory": "Categoria filha",
+        "parentCategoryLabel": "Categoria principal",
+        "subcategoryLabel": "Subcategoria",
+        "nameLabel": "Nome da categoria",
+        "namePlaceholder": "Nome da categoria",
+        "previewLabel": "Pré-visualização"
+      },
       "toasts": {
         "detailsRequestedTitle": "Detalhes solicitados",
         "detailsRequestedDescription": "{{requester}} foi solicitado(a) a esclarecer o pedido.",

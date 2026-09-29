@@ -8,6 +8,10 @@ import { toast } from 'sonner';
 
 import { CategoryRequestDetailDrawer } from '@/components/admin/category-requests/CategoryRequestDetailDrawer';
 import { CategoryRequestsTable } from '@/components/admin/category-requests/CategoryRequestsTable';
+import {
+  CreateCategoryModal,
+  type CreateCategoryResult,
+} from '@/components/admin/category-requests/CreateCategoryModal';
 import { countByStatus, filterByTab } from '@/lib/admin/category-requests';
 import {
   getCategoryRequests,
@@ -36,6 +40,7 @@ export default function CategoryRequestsPage() {
   const [requests] = useState<CategoryRequest[]>(() => getCategoryRequests());
   const [tab, setTab] = useState<CategoryRequestStatus | 'all'>('Pending');
   const [drawerRequest, setDrawerRequest] = useState<CategoryRequest | null>(null);
+  const [createRequest, setCreateRequest] = useState<CategoryRequest | null>(null);
 
   const visible = useMemo(() => filterByTab(requests, tab), [requests, tab]);
 
@@ -63,13 +68,24 @@ export default function CategoryRequestsPage() {
   ];
 
   function handleApprove(request: CategoryRequest) {
-    toast.success(t('admin.categoryRequests.toasts.createdTitle'), {
-      description: t('admin.categoryRequests.toasts.createdDescription', {
-        name: request.name,
-        parent: request.parent,
-      }),
-    });
     setDrawerRequest(null);
+    setCreateRequest(request);
+  }
+
+  function handleCreateConfirm(result: CreateCategoryResult) {
+    if (result.parentPath) {
+      toast.success(t('admin.categoryRequests.toasts.createdTitle'), {
+        description: t('admin.categoryRequests.toasts.createdDescription', {
+          name: result.name,
+          parent: result.parentPath,
+        }),
+      });
+    } else {
+      toast.success(t('admin.categories.toasts.parentCreatedTitle'), {
+        description: t('admin.categories.toasts.parentCreatedDescription', { name: result.name }),
+      });
+    }
+    setCreateRequest(null);
   }
 
   function handleReject(request: CategoryRequest) {
@@ -162,6 +178,12 @@ export default function CategoryRequestsPage() {
         onAskForDetails={handleAskForDetails}
         onReject={handleReject}
         onApprove={handleApprove}
+      />
+
+      <CreateCategoryModal
+        request={createRequest}
+        onCancel={() => setCreateRequest(null)}
+        onCreate={handleCreateConfirm}
       />
     </div>
   );

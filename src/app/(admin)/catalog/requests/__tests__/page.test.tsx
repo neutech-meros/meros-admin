@@ -75,10 +75,29 @@ describe('CategoryRequestsPage', () => {
     }
   });
 
-  it('row-level Create toasts and does not move the row to another tab', async () => {
+  it('row-level Create opens the create-category modal, prefilled from the request and the tree', async () => {
     const user = userEvent.setup();
     render(<CategoryRequestsPage />);
     await user.click(within(row('Vegan food')).getByRole('button', { name: 'Criar' }));
+
+    expect(screen.getByRole('heading', { name: 'Criar categoria' })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Solicitado por Marina Alves. Confirme onde ela deve ficar na árvore antes de criar.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Vegan food')).toBeInTheDocument();
+    expect(screen.getByLabelText('Categoria principal')).toHaveValue('food');
+    expect(screen.getByLabelText('Subcategoria')).toHaveValue('food/restaurant');
+    expect(screen.getByDisplayValue('Restaurante')).toBeInTheDocument();
+    expect(screen.getByText('Food › Restaurant › Vegan food')).toBeInTheDocument();
+  });
+
+  it('confirming the create-category modal toasts and does not move the row to another tab', async () => {
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    await user.click(within(row('Vegan food')).getByRole('button', { name: 'Criar' }));
+    await user.click(screen.getByRole('button', { name: 'Criar categoria' }));
 
     expect(toast.success).toHaveBeenCalledWith(
       'Categoria criada',
@@ -86,8 +105,26 @@ describe('CategoryRequestsPage', () => {
         description: '"Vegan food" foi adicionada sob Food › Restaurant.',
       }),
     );
+    expect(screen.queryByRole('heading', { name: 'Criar categoria' })).not.toBeInTheDocument();
     expect(screen.getByText('Vegan food')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Pendentes \(3\)/ })).toBeInTheDocument();
+  });
+
+  it('switching the create-category modal to "Parent" level creates a top-level category', async () => {
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    await user.click(within(row('Wellness')).getByRole('button', { name: 'Criar' }));
+    await user.click(screen.getByRole('button', { name: 'Categoria principal' }));
+
+    expect(screen.queryByLabelText('Categoria principal')).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog').textContent).toContain('Wellness');
+
+    await user.click(screen.getByRole('button', { name: 'Criar categoria' }));
+
+    expect(toast.success).toHaveBeenCalledWith(
+      'Categoria principal criada',
+      expect.objectContaining({ description: '"Wellness" foi adicionada à árvore.' }),
+    );
   });
 
   it('row-level Reject toasts and does not move the row to another tab', async () => {
