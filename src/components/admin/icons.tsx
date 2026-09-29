@@ -1,7 +1,5 @@
 import type { SVGProps } from 'react';
 
-import { Activity, List, Send, ShieldCheck } from 'lucide-react';
-
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
 function IconBase({ size = 18, children, ...props }: IconProps) {
@@ -107,20 +105,6 @@ export function IconGear(props: IconProps) {
 }
 
 export const IconSystem = IconGear;
-
-// Not present in the reference markup (D.ICONS entries missing from the export) — closest lucide equivalents.
-export function IconLists({ size = 18, ...props }: IconProps) {
-  return <List size={size} {...props} />;
-}
-export function IconCampaigns({ size = 18, ...props }: IconProps) {
-  return <Send size={size} {...props} />;
-}
-export function IconSecurity({ size = 18, ...props }: IconProps) {
-  return <ShieldCheck size={size} {...props} />;
-}
-export function IconMonitoring({ size = 18, ...props }: IconProps) {
-  return <Activity size={size} {...props} />;
-}
 
 // Shell chrome icons (header/sidebar controls), exact source paths.
 export function IconSearch(props: IconProps) {
