@@ -86,6 +86,108 @@
       "chartErrorDescription": "La serie de ingresos no está disponible temporalmente. Inténtalo de nuevo en unos segundos.",
       "chartErrorRetry": "Intentar de nuevo"
     },
+    "categories": {
+      "title": "Categorías",
+      "subtitle": "Jerarquía de tres niveles: categoría principal → subcategoría → categoría hija. Ejemplo: Comida › Restaurante › Comida italiana.",
+      "newParentCategory": "Nueva categoría principal",
+      "searchPlaceholder": "Buscar categorías",
+      "expandAll": "Expandir todo",
+      "collapseAll": "Colapsar todo",
+      "countLabel": "{{parents}} categorías principales · {{subcategories}} subcategorías · {{children}} categorías hijas",
+      "itemsLabel_one": "{{count}} lugar",
+      "itemsLabel_other": "{{count}} lugares",
+      "table": {
+        "category": "Categoría",
+        "level": "Nivel",
+        "slug": "Slug",
+        "children": "Subcategorías",
+        "places": "Lugares",
+        "status": "Estado",
+        "addChild": "Agregar hija",
+        "edit": "Editar"
+      },
+      "childCount": {
+        "subcategories_one": "{{count}} subcategoría",
+        "subcategories_other": "{{count}} subcategorías"
+      },
+      "level": {
+        "parent": "Principal",
+        "subcategory": "Subcategoría",
+        "child": "Hija"
+      },
+      "statusWord": {
+        "active": "activa",
+        "deactivated": "desactivada"
+      },
+      "modal": {
+        "newTitle": "Nueva categoría",
+        "editTitle": "Renombrar categoría",
+        "subCreateUnderParent": "Se creará bajo {{parentName}}.",
+        "subCreateTopLevel": "Se creará como una categoría principal.",
+        "subEditSlugUnchanged": "El slug no cambia.",
+        "subEditSlugUnchangedDeactivating": "El slug no cambia. Desactivar también desactiva todas las categorías debajo de ella.",
+        "nameLabel": "Nombre de la categoría",
+        "namePlaceholder": "ej.: Comida italiana",
+        "iconLabel": "Icono",
+        "iconOptions": {
+          "restaurant": "Restaurante",
+          "cafe": "Café",
+          "barNightlife": "Bar y vida nocturna",
+          "hotel": "Hotel",
+          "rental": "Alquiler",
+          "stay": "Alojamiento",
+          "outdoor": "Aire libre",
+          "culture": "Cultura",
+          "experience": "Experiencia",
+          "transfer": "Traslado",
+          "bikeScooter": "Bicicleta y patinete",
+          "transport": "Transporte",
+          "beach": "Playa",
+          "flight": "Vuelo",
+          "wellness": "Bienestar",
+          "shopping": "Compras",
+          "attraction": "Atracción",
+          "genericPlace": "Lugar genérico"
+        },
+        "statusLabel": "Estado",
+        "statusActive": "Activa",
+        "statusDeactivated": "Desactivada",
+        "hintActive": "Visible para los usuarios en cuanto se guarde.",
+        "hintDeactivated": "Oculta de la app hasta que la actives.",
+        "cancel": "Cancelar",
+        "createCta": "Crear categoría",
+        "saveCta": "Guardar cambios"
+      },
+      "cascade": {
+        "title": "¿Desactivar {{name}}?",
+        "countLabel_one": "{{count}} categoría hija",
+        "countLabel_other": "{{count}} categorías hijas",
+        "body": "Desactivar una categoría principal también desactiva todas las categorías debajo de ella. {{countLabel}} quedarán ocultas de la app.",
+        "alsoDeactivated": "También se desactivarán",
+        "cancel": "Cancelar",
+        "confirm": "Desactivar todas"
+      },
+      "toasts": {
+        "leafCategoryDescription": "Categoría sin subcategorías.",
+        "nameRequiredTitle": "Nombre requerido",
+        "nameRequiredDescription": "Escribe un nombre de categoría antes de guardar.",
+        "alreadyExistsTitle": "Ya existe",
+        "alreadyExistsDescription": "Ya existe una categoría con ese slug.",
+        "maxDepthTitle": "Profundidad máxima",
+        "maxDepthDescription": "El árbol admite solo tres niveles.",
+        "renamedTitle": "Categoría renombrada",
+        "renamedDescription": "\"{{oldName}}\" ahora es \"{{newName}}\".",
+        "updatedTitle": "Categoría actualizada",
+        "updatedDescription": "\"{{name}}\" ahora está {{status}}.",
+        "createdTitle": "Categoría creada",
+        "createdDescription": "\"{{name}}\" se agregó bajo {{parentName}}.",
+        "parentCreatedTitle": "Categoría principal creada",
+        "parentCreatedDescription": "\"{{name}}\" se agregó al árbol.",
+        "deactivatedTitle": "Categoría desactivada",
+        "deactivatedDescription_one": "\"{{name}}\" y {{count}} categoría hija se marcaron como {{status}}.",
+        "deactivatedDescription_other": "\"{{name}}\" y {{count}} categorías hijas se marcaron como {{status}}."
+      }
+    },
     "users": {
       "title": "Usuarios y creadores",
       "subtitle": "Gestiona cuentas, verificaciones y planes.",

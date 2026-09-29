@@ -86,6 +86,108 @@
       "chartErrorDescription": "The revenue series is temporarily unavailable. Try again in a few seconds.",
       "chartErrorRetry": "Try again"
     },
+    "categories": {
+      "title": "Categories",
+      "subtitle": "Three-level hierarchy: parent category → subcategory → child category. Example: Food › Restaurant › Italian food.",
+      "newParentCategory": "New parent category",
+      "searchPlaceholder": "Search categories",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all",
+      "countLabel": "{{parents}} parents · {{subcategories}} subcategories · {{children}} child categories",
+      "itemsLabel_one": "{{count}} place",
+      "itemsLabel_other": "{{count}} places",
+      "table": {
+        "category": "Category",
+        "level": "Level",
+        "slug": "Slug",
+        "children": "Children",
+        "places": "Places",
+        "status": "Status",
+        "addChild": "Add child",
+        "edit": "Edit"
+      },
+      "childCount": {
+        "subcategories_one": "{{count}} subcategory",
+        "subcategories_other": "{{count}} subcategories"
+      },
+      "level": {
+        "parent": "Parent",
+        "subcategory": "Subcategory",
+        "child": "Child"
+      },
+      "statusWord": {
+        "active": "active",
+        "deactivated": "deactivated"
+      },
+      "modal": {
+        "newTitle": "New category",
+        "editTitle": "Rename category",
+        "subCreateUnderParent": "It will be created under {{parentName}}.",
+        "subCreateTopLevel": "It will be created as a top-level category.",
+        "subEditSlugUnchanged": "Slug stays unchanged.",
+        "subEditSlugUnchangedDeactivating": "Slug stays unchanged. Deactivating also deactivates every category below it.",
+        "nameLabel": "Category name",
+        "namePlaceholder": "e.g. Italian food",
+        "iconLabel": "Icon",
+        "iconOptions": {
+          "restaurant": "Restaurant",
+          "cafe": "Café",
+          "barNightlife": "Bar & nightlife",
+          "hotel": "Hotel",
+          "rental": "Rental",
+          "stay": "Stay",
+          "outdoor": "Outdoor",
+          "culture": "Culture",
+          "experience": "Experience",
+          "transfer": "Transfer",
+          "bikeScooter": "Bike & scooter",
+          "transport": "Transport",
+          "beach": "Beach",
+          "flight": "Flight",
+          "wellness": "Wellness",
+          "shopping": "Shopping",
+          "attraction": "Attraction",
+          "genericPlace": "Generic place"
+        },
+        "statusLabel": "Status",
+        "statusActive": "Active",
+        "statusDeactivated": "Deactivated",
+        "hintActive": "Visible to users as soon as it is saved.",
+        "hintDeactivated": "Hidden from the app until you switch it to Active.",
+        "cancel": "Cancel",
+        "createCta": "Create category",
+        "saveCta": "Save changes"
+      },
+      "cascade": {
+        "title": "Deactivate {{name}}?",
+        "countLabel_one": "{{count}} child category",
+        "countLabel_other": "{{count}} child categories",
+        "body": "Deactivating a parent category also deactivates every category below it. {{countLabel}} will be hidden from the app.",
+        "alsoDeactivated": "Also deactivated",
+        "cancel": "Cancel",
+        "confirm": "Deactivate all"
+      },
+      "toasts": {
+        "leafCategoryDescription": "Leaf category — no subcategories.",
+        "nameRequiredTitle": "Name required",
+        "nameRequiredDescription": "Type a category name before saving.",
+        "alreadyExistsTitle": "Already exists",
+        "alreadyExistsDescription": "A category with this slug already exists.",
+        "maxDepthTitle": "Maximum depth",
+        "maxDepthDescription": "The tree supports three levels only.",
+        "renamedTitle": "Category renamed",
+        "renamedDescription": "\"{{oldName}}\" is now \"{{newName}}\".",
+        "updatedTitle": "Category updated",
+        "updatedDescription": "\"{{name}}\" is now {{status}}.",
+        "createdTitle": "Category created",
+        "createdDescription": "\"{{name}}\" was added under {{parentName}}.",
+        "parentCreatedTitle": "Parent category created",
+        "parentCreatedDescription": "\"{{name}}\" was added to the tree.",
+        "deactivatedTitle": "Category deactivated",
+        "deactivatedDescription_one": "\"{{name}}\" and {{count}} child category were set to {{status}}.",
+        "deactivatedDescription_other": "\"{{name}}\" and {{count}} child categories were set to {{status}}."
+      }
+    },
     "users": {
       "title": "Users & Creators",
       "subtitle": "Manage accounts, verifications and plans.",
