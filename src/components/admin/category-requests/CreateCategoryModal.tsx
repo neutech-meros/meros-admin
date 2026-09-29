@@ -4,13 +4,16 @@ import { useEffect, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
+import { useAtomValue } from 'jotai';
+
 import { IconPickerField } from '@/components/admin/categories/IconPickerField';
 import { IconChevronDown } from '@/components/admin/icons';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { DEFAULT_CATEGORY_ICON, resolveCategoryIcon } from '@/lib/admin/category-icons';
 import { matchParentPath } from '@/lib/admin/category-requests';
-import { getCategoryTree, type CategoryNode } from '@/lib/mocks/admin/categories';
+import type { CategoryNode } from '@/lib/mocks/admin/categories';
 import type { CategoryRequest } from '@/lib/mocks/admin/category-requests';
+import { categoryTreeAtom } from '@/store/atoms/categories';
 
 type Level = 'Parent' | 'Subcategory' | 'Child category';
 
@@ -25,6 +28,7 @@ const LEVEL_LABEL_KEY: Record<Level, string> = {
 export interface CreateCategoryResult {
   name: string;
   parentPath: string | null;
+  parentSlug: string | null;
   icon: string;
   status: 'Active' | 'Deactivated';
 }
@@ -49,7 +53,7 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
   const { t } = useTranslation();
   const K = 'admin.categoryRequests.createModal';
 
-  const [tree] = useState<CategoryNode[]>(() => getCategoryTree());
+  const tree = useAtomValue(categoryTreeAtom);
   const [name, setName] = useState('');
   const [level, setLevel] = useState<Level>('Parent');
   const [parentSlug, setParentSlug] = useState<string | null>(null);
@@ -125,8 +129,15 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
 
   const PreviewIcon = resolveCategoryIcon(icon);
 
+  const immediateParentSlug =
+    level === 'Parent'
+      ? null
+      : level === 'Subcategory'
+        ? (parentNode?.slug ?? null)
+        : (subNode?.slug ?? null);
+
   function handleCreate() {
-    onCreate({ name: name.trim(), parentPath, icon, status });
+    onCreate({ name: name.trim(), parentPath, parentSlug: immediateParentSlug, icon, status });
   }
 
   return (

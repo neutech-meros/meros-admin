@@ -1,7 +1,9 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Provider } from 'jotai';
 import { toast } from 'sonner';
 
+import CategoriesPage from '../../categories/page';
 import CategoryRequestsPage from '../page';
 
 jest.mock('sonner', () => ({
@@ -12,13 +14,23 @@ function row(name: string) {
   return screen.getByText(name).closest('tr')!;
 }
 
+function renderPage() {
+  // A fresh Provider per test isolates the shared category/category-request atoms,
+  // matching the isolation the previous per-render useState gave each test.
+  return render(
+    <Provider>
+      <CategoryRequestsPage />
+    </Provider>,
+  );
+}
+
 describe('CategoryRequestsPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('renders the heading, KPI counts and defaults to the Pending tab', () => {
-    render(<CategoryRequestsPage />);
+    renderPage();
     expect(screen.getByText('Solicitações de categoria')).toBeInTheDocument();
     expect(screen.getByText('Vegan food')).toBeInTheDocument();
     expect(screen.getByText('Glamping')).toBeInTheDocument();
@@ -29,7 +41,7 @@ describe('CategoryRequestsPage', () => {
   });
 
   it('KPI counts match the seed data', () => {
-    render(<CategoryRequestsPage />);
+    renderPage();
     expect(screen.getByText('Aguardando revisão').nextSibling).toHaveTextContent('3');
     expect(screen.getByText('Aguardando o solicitante').nextSibling).toHaveTextContent('1');
     expect(screen.getByText('Aprovadas').nextSibling).toHaveTextContent('1');
@@ -38,7 +50,7 @@ describe('CategoryRequestsPage', () => {
 
   it('switches tabs and filters the table, with "all" showing everything', async () => {
     const user = userEvent.setup();
-    render(<CategoryRequestsPage />);
+    renderPage();
 
     await user.click(screen.getByRole('button', { name: /Aguardando o solicitante \(1\)/ }));
     expect(screen.getByText('Pet friendly')).toBeInTheDocument();
@@ -61,7 +73,7 @@ describe('CategoryRequestsPage', () => {
 
   it('shows Create/Reject only for Pending rows, and View for every other status', async () => {
     const user = userEvent.setup();
-    render(<CategoryRequestsPage />);
+    renderPage();
     await user.click(screen.getByRole('button', { name: 'Todas as solicitações' }));
 
     const pendingRow = row('Vegan food');
@@ -77,7 +89,7 @@ describe('CategoryRequestsPage', () => {
 
   it('row-level Create opens the create-category modal, prefilled from the request and the tree', async () => {
     const user = userEvent.setup();
-    render(<CategoryRequestsPage />);
+    renderPage();
     await user.click(within(row('Vegan food')).getByRole('button', { name: 'Criar' }));
 
     expect(screen.getByRole('heading', { name: 'Criar categoria' })).toBeInTheDocument();
@@ -93,9 +105,9 @@ describe('CategoryRequestsPage', () => {
     expect(screen.getByText('Food › Restaurant › Vegan food')).toBeInTheDocument();
   });
 
-  it('confirming the create-category modal toasts and does not move the row to another tab', async () => {
+  it('confirming the create-category modal toasts and moves the row to Approved', async () => {
     const user = userEvent.setup();
-    render(<CategoryRequestsPage />);
+    renderPage();
     await user.click(within(row('Vegan food')).getByRole('button', { name: 'Criar' }));
     await user.click(screen.getByRole('button', { name: 'Criar categoria' }));
 
@@ -106,13 +118,17 @@ describe('CategoryRequestsPage', () => {
       }),
     );
     expect(screen.queryByRole('heading', { name: 'Criar categoria' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Vegan food')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Pendentes \(2\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Aprovadas \(2\)/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Aprovadas \(2\)/ }));
     expect(screen.getByText('Vegan food')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Pendentes \(3\)/ })).toBeInTheDocument();
   });
 
   it('switching the create-category modal to "Parent" level creates a top-level category', async () => {
     const user = userEvent.setup();
-    render(<CategoryRequestsPage />);
+    renderPage();
     await user.click(within(row('Wellness')).getByRole('button', { name: 'Criar' }));
     await user.click(screen.getByRole('button', { name: 'Categoria principal' }));
 
@@ -127,22 +143,26 @@ describe('CategoryRequestsPage', () => {
     );
   });
 
-  it('row-level Reject toasts and does not move the row to another tab', async () => {
+  it('row-level Reject toasts and moves the row to Rejected', async () => {
     const user = userEvent.setup();
-    render(<CategoryRequestsPage />);
+    renderPage();
     await user.click(within(row('Glamping')).getByRole('button', { name: 'Rejeitar' }));
 
     expect(toast.error).toHaveBeenCalledWith(
       'Solicitação rejeitada',
       expect.objectContaining({ description: 'Diego Ramos foi notificado(a).' }),
     );
+    expect(screen.queryByText('Glamping')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Pendentes \(2\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Rejeitadas \(2\)/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Rejeitadas \(2\)/ }));
     expect(screen.getByText('Glamping')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Pendentes \(3\)/ })).toBeInTheDocument();
   });
 
   it('opens the drawer on row click with the right title, badge and details', async () => {
     const user = userEvent.setup();
-    render(<CategoryRequestsPage />);
+    renderPage();
     await user.click(row('Vegan food'));
 
     expect(screen.getByRole('heading', { name: 'Vegan food' })).toBeInTheDocument();
@@ -161,7 +181,7 @@ describe('CategoryRequestsPage', () => {
 
   it('shows 3 action buttons for a Pending request in the drawer, and toasts + closes on each', async () => {
     const user = userEvent.setup();
-    render(<CategoryRequestsPage />);
+    renderPage();
     await user.click(row('Vegan food'));
 
     expect(screen.getByRole('button', { name: 'Pedir mais detalhes' })).toBeInTheDocument();
@@ -178,7 +198,7 @@ describe('CategoryRequestsPage', () => {
 
   it('shows only Close for an Approved request in the drawer', async () => {
     const user = userEvent.setup();
-    render(<CategoryRequestsPage />);
+    renderPage();
     await user.click(screen.getByRole('button', { name: /Aprovadas \(1\)/ }));
     await user.click(within(row('Street food')).getByRole('button', { name: 'Ver' }));
 
@@ -192,12 +212,31 @@ describe('CategoryRequestsPage', () => {
 
   it("shows 3 action buttons for a 'More info' request opened from its row", async () => {
     const user = userEvent.setup();
-    render(<CategoryRequestsPage />);
+    renderPage();
     await user.click(screen.getByRole('button', { name: /Aguardando o solicitante \(1\)/ }));
     await user.click(within(row('Pet friendly')).getByRole('button', { name: 'Ver' }));
 
     expect(screen.getByRole('button', { name: 'Pedir mais detalhes' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Rejeitar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Criar categoria' })).toBeInTheDocument();
+  });
+
+  it('creating a category from a request makes it show up for real on the Categories screen', async () => {
+    const user = userEvent.setup();
+    render(
+      <Provider>
+        <CategoryRequestsPage />
+        <CategoriesPage />
+      </Provider>,
+    );
+
+    // "Food" and "Food > Restaurant" are open by default on the Categories screen, so the
+    // new child is visible immediately, no expand click needed.
+    expect(screen.queryByText('food/restaurant/vegan-food')).not.toBeInTheDocument();
+
+    await user.click(within(row('Vegan food')).getByRole('button', { name: 'Criar' }));
+    await user.click(screen.getByRole('button', { name: 'Criar categoria' }));
+
+    expect(screen.getByText('food/restaurant/vegan-food')).toBeInTheDocument();
   });
 });

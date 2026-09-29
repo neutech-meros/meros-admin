@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
+import { useAtom, useSetAtom } from 'jotai';
 import { toast } from 'sonner';
 
 import { CategoryRequestDetailDrawer } from '@/components/admin/category-requests/CategoryRequestDetailDrawer';
@@ -12,12 +13,11 @@ import {
   CreateCategoryModal,
   type CreateCategoryResult,
 } from '@/components/admin/category-requests/CreateCategoryModal';
+import { addCategory } from '@/lib/admin/categories-tree';
 import { countByStatus, filterByTab } from '@/lib/admin/category-requests';
-import {
-  getCategoryRequests,
-  type CategoryRequest,
-  type CategoryRequestStatus,
-} from '@/lib/mocks/admin/category-requests';
+import type { CategoryRequest, CategoryRequestStatus } from '@/lib/mocks/admin/category-requests';
+import { categoryTreeAtom } from '@/store/atoms/categories';
+import { categoryRequestsAtom } from '@/store/atoms/category-requests';
 
 const TAB_ORDER: Array<CategoryRequestStatus | 'all'> = [
   'Pending',
@@ -37,7 +37,8 @@ const TAB_LABEL_KEY: Record<CategoryRequestStatus | 'all', string> = {
 
 export default function CategoryRequestsPage() {
   const { t } = useTranslation();
-  const [requests] = useState<CategoryRequest[]>(() => getCategoryRequests());
+  const [requests, setRequests] = useAtom(categoryRequestsAtom);
+  const setTree = useSetAtom(categoryTreeAtom);
   const [tab, setTab] = useState<CategoryRequestStatus | 'all'>('Pending');
   const [drawerRequest, setDrawerRequest] = useState<CategoryRequest | null>(null);
   const [createRequest, setCreateRequest] = useState<CategoryRequest | null>(null);
@@ -73,6 +74,10 @@ export default function CategoryRequestsPage() {
   }
 
   function handleCreateConfirm(result: CreateCategoryResult) {
+    if (!createRequest) return;
+    const requestId = createRequest.id;
+    setTree((cur) => addCategory(cur, result.parentSlug, result.name, result.status, result.icon));
+    setRequests((cur) => cur.map((r) => (r.id === requestId ? { ...r, status: 'Approved' } : r)));
     if (result.parentPath) {
       toast.success(t('admin.categoryRequests.toasts.createdTitle'), {
         description: t('admin.categoryRequests.toasts.createdDescription', {
@@ -89,6 +94,7 @@ export default function CategoryRequestsPage() {
   }
 
   function handleReject(request: CategoryRequest) {
+    setRequests((cur) => cur.map((r) => (r.id === request.id ? { ...r, status: 'Rejected' } : r)));
     toast.error(t('admin.categoryRequests.toasts.rejectedTitle'), {
       description: t('admin.categoryRequests.toasts.rejectedDescription', {
         requester: request.requester,
@@ -98,6 +104,7 @@ export default function CategoryRequestsPage() {
   }
 
   function handleAskForDetails(request: CategoryRequest) {
+    setRequests((cur) => cur.map((r) => (r.id === request.id ? { ...r, status: 'More info' } : r)));
     toast.info(t('admin.categoryRequests.toasts.detailsRequestedTitle'), {
       description: t('admin.categoryRequests.toasts.detailsRequestedDescription', {
         requester: request.requester,

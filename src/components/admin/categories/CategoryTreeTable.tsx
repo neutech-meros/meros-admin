@@ -64,7 +64,7 @@ export function CategoryTreeTable({ rows, onToggle, onAddChild, onEdit }: Catego
                     >
                       <IconChevronRight size={14} />
                     </span>
-                    {!row.hasChildren && (
+                    {!row.hasChildren && row.depth === 2 && (
                       <span
                         aria-hidden="true"
                         className="mx-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full"
