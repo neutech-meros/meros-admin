@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { IconPickerField } from '@/components/admin/categories/IconPickerField';
 import { IconChevronDown } from '@/components/admin/icons';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { DEFAULT_CATEGORY_ICON } from '@/lib/admin/category-icons';
+import { DEFAULT_CATEGORY_ICON, resolveCategoryIcon } from '@/lib/admin/category-icons';
 import { matchParentPath } from '@/lib/admin/category-requests';
 import { getCategoryTree, type CategoryNode } from '@/lib/mocks/admin/categories';
 import type { CategoryRequest } from '@/lib/mocks/admin/category-requests';
@@ -123,6 +123,8 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
           ? `${parentNode.name} › ${subNode.name}`
           : null;
 
+  const PreviewIcon = resolveCategoryIcon(icon);
+
   function handleCreate() {
     onCreate({ name: name.trim(), parentPath, icon, status });
   }
@@ -130,14 +132,14 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
       <DialogContent
-        className="max-w-[440px] gap-0 p-6"
+        className="max-h-[90vh] max-w-[440px] gap-0 overflow-y-auto p-5"
         style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}
       >
-        <DialogTitle className="text-[18px] font-semibold tracking-tight">
+        <DialogTitle className="text-[17px] font-semibold tracking-tight">
           {t(`${K}.title`)}
         </DialogTitle>
         <DialogDescription
-          className="mb-5 text-[12.5px]"
+          className="mb-4 text-[12.5px]"
           style={{ color: 'var(--text-secondary)' }}
         >
           {t(`${K}.subtitle`, { requester: request.requester })}
@@ -149,7 +151,7 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
         >
           {t(`${K}.levelLabel`)}
         </label>
-        <div className="mb-5 flex gap-2">
+        <div className="mb-4 flex gap-2">
           {LEVELS.map((option) => {
             const on = level === option;
             return (
@@ -157,7 +159,7 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
                 key={option}
                 type="button"
                 onClick={() => handleLevelChange(option)}
-                className="flex-1 rounded-[10px] border px-2 py-2.5 text-[13px]"
+                className="flex-1 rounded-[10px] border px-2 py-2 text-[13px]"
                 style={{
                   borderColor: on ? 'var(--brand-500)' : 'var(--border-subtle)',
                   background: on ? 'var(--brand-100)' : 'var(--bg-elevated)',
@@ -172,76 +174,78 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
         </div>
 
         {level !== 'Parent' && (
-          <div className="mb-5">
-            <label
-              htmlFor="create-category-parent"
-              className="mb-1.5 block text-xs font-semibold uppercase tracking-wide"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {t(`${K}.parentCategoryLabel`)}
-            </label>
-            <div className="relative">
-              <select
-                id="create-category-parent"
-                value={parentSlug ?? ''}
-                onChange={(e) => handleParentChange(e.target.value)}
-                className="w-full cursor-pointer appearance-none rounded-[10px] border py-2.5 pl-3 pr-9 text-sm outline-none"
-                style={{
-                  background: 'var(--bg-surface)',
-                  borderColor: 'var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {tree.map((node) => (
-                  <option key={node.slug} value={node.slug}>
-                    {node.name}
-                  </option>
-                ))}
-              </select>
-              <IconChevronDown
-                size={16}
-                aria-hidden="true"
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+          <div className={level === 'Child category' ? 'mb-4 grid grid-cols-2 gap-3' : 'mb-4'}>
+            <div>
+              <label
+                htmlFor="create-category-parent"
+                className="mb-1.5 block text-xs font-semibold uppercase tracking-wide"
                 style={{ color: 'var(--text-secondary)' }}
-              />
+              >
+                {t(`${K}.parentCategoryLabel`)}
+              </label>
+              <div className="relative">
+                <select
+                  id="create-category-parent"
+                  value={parentSlug ?? ''}
+                  onChange={(e) => handleParentChange(e.target.value)}
+                  className="w-full cursor-pointer appearance-none rounded-[10px] border py-2 pl-3 pr-9 text-sm outline-none"
+                  style={{
+                    background: 'var(--bg-surface)',
+                    borderColor: 'var(--border-subtle)',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {tree.map((node) => (
+                    <option key={node.slug} value={node.slug}>
+                      {node.name}
+                    </option>
+                  ))}
+                </select>
+                <IconChevronDown
+                  size={16}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: 'var(--text-secondary)' }}
+                />
+              </div>
             </div>
-          </div>
-        )}
 
-        {level === 'Child category' && (
-          <div className="mb-5">
-            <label
-              htmlFor="create-category-subcategory"
-              className="mb-1.5 block text-xs font-semibold uppercase tracking-wide"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {t(`${K}.subcategoryLabel`)}
-            </label>
-            <div className="relative">
-              <select
-                id="create-category-subcategory"
-                value={subSlug ?? ''}
-                onChange={(e) => setSubSlug(e.target.value)}
-                className="w-full cursor-pointer appearance-none rounded-[10px] border py-2.5 pl-3 pr-9 text-sm outline-none"
-                style={{
-                  background: 'var(--bg-surface)',
-                  borderColor: 'var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {subcategoryOptions.map((node) => (
-                  <option key={node.slug} value={node.slug}>
-                    {node.name}
-                  </option>
-                ))}
-              </select>
-              <IconChevronDown
-                size={16}
-                aria-hidden="true"
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                style={{ color: 'var(--text-secondary)' }}
-              />
-            </div>
+            {level === 'Child category' && (
+              <div>
+                <label
+                  htmlFor="create-category-subcategory"
+                  className="mb-1.5 block text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  {t(`${K}.subcategoryLabel`)}
+                </label>
+                <div className="relative">
+                  <select
+                    id="create-category-subcategory"
+                    value={subSlug ?? ''}
+                    onChange={(e) => setSubSlug(e.target.value)}
+                    className="w-full cursor-pointer appearance-none rounded-[10px] border py-2 pl-3 pr-9 text-sm outline-none"
+                    style={{
+                      background: 'var(--bg-surface)',
+                      borderColor: 'var(--border-subtle)',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    {subcategoryOptions.map((node) => (
+                      <option key={node.slug} value={node.slug}>
+                        {node.name}
+                      </option>
+                    ))}
+                  </select>
+                  <IconChevronDown
+                    size={16}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                    style={{ color: 'var(--text-secondary)' }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -258,7 +262,7 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t(`${K}.namePlaceholder`)}
-          className="mb-5 w-full rounded-[10px] border px-3 py-2.5 text-sm outline-none"
+          className="mb-4 w-full rounded-[10px] border px-3 py-2 text-sm outline-none"
           style={{
             background: 'var(--bg-surface)',
             borderColor: 'var(--border-subtle)',
@@ -266,7 +270,7 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
           }}
         />
 
-        <div className="mb-5">
+        <div className="mb-4">
           <IconPickerField
             id="create-category-icon"
             label={t('admin.categories.modal.iconLabel')}
@@ -281,7 +285,7 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
         >
           {t('admin.categories.modal.statusLabel')}
         </label>
-        <div className="mb-5 flex gap-2">
+        <div className="mb-4 flex gap-2">
           {(['Active', 'Deactivated'] as const).map((option) => {
             const on = status === option;
             return (
@@ -289,7 +293,7 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
                 key={option}
                 type="button"
                 onClick={() => setStatus(option)}
-                className="flex-1 rounded-[10px] border px-3 py-2.5 text-[13px]"
+                className="flex-1 rounded-[10px] border px-3 py-2 text-[13px]"
                 style={{
                   borderColor: on
                     ? option === 'Active'
@@ -318,23 +322,26 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
         </div>
 
         <div
-          className="rounded-[10px] border p-3.5 text-[13px]"
+          className="rounded-[10px] border p-3 text-[13px]"
           style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}
         >
           <div
-            className="mb-1.5 text-xs font-semibold uppercase tracking-wide"
+            className="mb-1 text-xs font-semibold uppercase tracking-wide"
             style={{ color: 'var(--text-secondary)' }}
           >
             {t(`${K}.previewLabel`)}
           </div>
-          <div>{previewPath}</div>
+          <div className="flex items-center gap-1.5">
+            <PreviewIcon size={14} style={{ color: 'var(--brand-500)' }} />
+            <span>{previewPath}</span>
+          </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-[10px] border px-4 py-2.5 text-[13.5px] font-semibold"
+            className="rounded-[10px] border px-4 py-2 text-[13.5px] font-semibold"
             style={{
               borderColor: 'var(--border-subtle)',
               background: 'var(--bg-elevated)',
@@ -347,7 +354,7 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
             type="button"
             onClick={handleCreate}
             disabled={!name.trim()}
-            className="rounded-[10px] border px-4 py-2.5 text-[13.5px] font-semibold text-white disabled:opacity-50"
+            className="rounded-[10px] border px-4 py-2 text-[13.5px] font-semibold text-white disabled:opacity-50"
             style={{ borderColor: 'var(--brand-500)', background: 'var(--brand-500)' }}
           >
             {t('admin.categories.modal.createCta')}
