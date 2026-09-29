@@ -56,6 +56,15 @@ describe('DrawerBlocks', () => {
     expect(screen.getByText('Os eventos desta conta aparecerão aqui.')).toBeInTheDocument();
   });
 
+  it('renders a text block as a label above a paragraph value', () => {
+    const blocks: DrawerBlock[] = [
+      { kind: 'text', label: 'Why they need it', value: 'Markets and food trucks do not fit.' },
+    ];
+    render(<DrawerBlocks blocks={blocks} />);
+    expect(screen.getByText('Why they need it')).toBeInTheDocument();
+    expect(screen.getByText('Markets and food trucks do not fit.')).toBeInTheDocument();
+  });
+
   it('renders an empty block with title and description', () => {
     const blocks: DrawerBlock[] = [
       { kind: 'empty', title: 'No reports', description: 'Nothing to show yet.' },

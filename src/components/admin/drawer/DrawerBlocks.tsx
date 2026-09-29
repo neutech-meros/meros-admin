@@ -25,7 +25,8 @@ export type DrawerBlock =
       }>;
     }
   | { kind: 'timeline'; events: Array<{ title: string; time: string }> }
-  | { kind: 'empty'; title: string; description: string };
+  | { kind: 'empty'; title: string; description: string }
+  | { kind: 'text'; label: string; value: string };
 
 function KvBlock({ block }: { block: Extract<DrawerBlock, { kind: 'kv' }> }) {
   return (
@@ -136,6 +137,17 @@ function TimelineBlock({ block }: { block: Extract<DrawerBlock, { kind: 'timelin
   );
 }
 
+function TextBlock({ block }: { block: Extract<DrawerBlock, { kind: 'text' }> }) {
+  return (
+    <div className="border-b py-2.5 text-[13.5px]" style={{ borderColor: 'var(--border-subtle)' }}>
+      <div className="mb-1" style={{ color: 'var(--text-secondary)' }}>
+        {block.label}
+      </div>
+      <div>{block.value}</div>
+    </div>
+  );
+}
+
 function EmptyBlock({ block }: { block: Extract<DrawerBlock, { kind: 'empty' }> }) {
   return (
     <div
@@ -181,6 +193,8 @@ export function DrawerBlocks({ blocks }: { blocks: DrawerBlock[] }) {
             return <TimelineBlock key={i} block={block} />;
           case 'empty':
             return <EmptyBlock key={i} block={block} />;
+          case 'text':
+            return <TextBlock key={i} block={block} />;
         }
       })}
     </div>

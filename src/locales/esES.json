@@ -188,6 +188,64 @@
         "deactivatedDescription_other": "\"{{name}}\" y {{count}} categorías hijas se marcaron como {{status}}."
       }
     },
+    "categoryRequests": {
+      "title": "Solicitudes de categoría",
+      "subtitle": "Usuarios y empresas piden nuevas categorías aquí. Revisa la solicitud, verifica superposiciones y créala en el árbol o recházala.",
+      "kpiPending": "Pendientes de revisión",
+      "kpiMoreInfo": "Esperando al solicitante",
+      "kpiApproved": "Aprobadas",
+      "kpiRejected": "Rechazadas",
+      "tabPending": "Pendientes ({{count}})",
+      "tabMoreInfo": "Esperando al solicitante ({{count}})",
+      "tabApproved": "Aprobadas ({{count}})",
+      "tabRejected": "Rechazadas ({{count}})",
+      "tabAll": "Todas las solicitudes",
+      "table": {
+        "category": "Categoría propuesta",
+        "parentPath": "Ruta de la categoría principal",
+        "requestedBy": "Solicitado por",
+        "votes": "Votos",
+        "requested": "Solicitado",
+        "status": "Estado",
+        "create": "Crear",
+        "reject": "Rechazar",
+        "view": "Ver"
+      },
+      "emptyTitle": "No hay solicitudes en este estado",
+      "emptyDescription": "Cambia de pestaña para ver solicitudes en otra etapa de revisión.",
+      "status": {
+        "pending": "Pendiente",
+        "moreInfo": "Más información",
+        "approved": "Aprobada",
+        "rejected": "Rechazada"
+      },
+      "drawer": {
+        "subtitle": "Propuesta bajo {{parent}}",
+        "proposedName": "Nombre propuesto",
+        "parentPath": "Ruta de la categoría principal",
+        "level": "Nivel",
+        "requestedBy": "Solicitado por",
+        "account": "Cuenta",
+        "requestedOn": "Solicitado el",
+        "communityVotes": "Votos de la comunidad",
+        "communityVotesValue_one": "{{count}} usuario pidió esto",
+        "communityVotesValue_other": "{{count}} usuarios pidieron esto",
+        "whyTheyNeedIt": "Por qué lo necesitan",
+        "overlapCheck": "Verificación de superposición",
+        "askForDetails": "Pedir más detalles",
+        "reject": "Rechazar",
+        "createCategory": "Crear categoría",
+        "close": "Cerrar"
+      },
+      "toasts": {
+        "detailsRequestedTitle": "Detalles solicitados",
+        "detailsRequestedDescription": "Se pidió a {{requester}} que aclare la solicitud.",
+        "rejectedTitle": "Solicitud rechazada",
+        "rejectedDescription": "{{requester}} fue notificado(a).",
+        "createdTitle": "Categoría creada",
+        "createdDescription": "\"{{name}}\" se agregó bajo {{parent}}."
+      }
+    },
     "users": {
       "title": "Usuarios y creadores",
       "subtitle": "Gestiona cuentas, verificaciones y planes.",

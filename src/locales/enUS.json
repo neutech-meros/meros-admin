@@ -188,6 +188,64 @@
         "deactivatedDescription_other": "\"{{name}}\" and {{count}} child categories were set to {{status}}."
       }
     },
+    "categoryRequests": {
+      "title": "Category requests",
+      "subtitle": "Users and businesses ask for new categories here. Review the request, check for overlap, then create it in the tree or reject it.",
+      "kpiPending": "Pending review",
+      "kpiMoreInfo": "Waiting on requester",
+      "kpiApproved": "Approved",
+      "kpiRejected": "Rejected",
+      "tabPending": "Pending ({{count}})",
+      "tabMoreInfo": "Waiting on requester ({{count}})",
+      "tabApproved": "Approved ({{count}})",
+      "tabRejected": "Rejected ({{count}})",
+      "tabAll": "All requests",
+      "table": {
+        "category": "Proposed category",
+        "parentPath": "Parent path",
+        "requestedBy": "Requested by",
+        "votes": "Votes",
+        "requested": "Requested",
+        "status": "Status",
+        "create": "Create",
+        "reject": "Reject",
+        "view": "View"
+      },
+      "emptyTitle": "No requests in this status",
+      "emptyDescription": "Switch tabs to see requests in another review stage.",
+      "status": {
+        "pending": "Pending",
+        "moreInfo": "More info",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "drawer": {
+        "subtitle": "Proposed under {{parent}}",
+        "proposedName": "Proposed name",
+        "parentPath": "Parent path",
+        "level": "Level",
+        "requestedBy": "Requested by",
+        "account": "Account",
+        "requestedOn": "Requested on",
+        "communityVotes": "Community votes",
+        "communityVotesValue_one": "{{count}} user asked for this",
+        "communityVotesValue_other": "{{count}} users asked for this",
+        "whyTheyNeedIt": "Why they need it",
+        "overlapCheck": "Overlap check",
+        "askForDetails": "Ask for details",
+        "reject": "Reject",
+        "createCategory": "Create category",
+        "close": "Close"
+      },
+      "toasts": {
+        "detailsRequestedTitle": "Details requested",
+        "detailsRequestedDescription": "{{requester}} was asked to clarify the request.",
+        "rejectedTitle": "Request rejected",
+        "rejectedDescription": "{{requester}} was notified.",
+        "createdTitle": "Category created",
+        "createdDescription": "\"{{name}}\" was added under {{parent}}."
+      }
+    },
     "users": {
       "title": "Users & Creators",
       "subtitle": "Manage accounts, verifications and plans.",
