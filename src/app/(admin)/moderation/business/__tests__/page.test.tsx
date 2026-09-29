@@ -194,7 +194,7 @@ function defaultFetchImpl(url: RequestInfo | URL, init?: RequestInit) {
   const method = init?.method ?? 'GET';
 
   if (href.endsWith('/api/admin/business-accounts') && method === 'GET') {
-    return Promise.resolve(jsonResponse(200, { items: state }));
+    return Promise.resolve(jsonResponse(200, { items: state, total: state.length }));
   }
   const actionMatch = href.match(/business-accounts\/([^/]+)\/(request-info|approve|reject)$/);
   if (actionMatch && method === 'POST') {
@@ -501,12 +501,29 @@ describe('BusinessAccountsPage', () => {
     const { drawer } = await openDrawerFor('Trilhas do Sul Turismo');
     await user.click(within(drawer).getByRole('button', { name: 'Reject' }));
     const dialog = screen.getByRole('dialog', { name: 'Reject business account' });
-    await user.click(within(dialog).getByRole('button', { name: 'Reject and send email' }));
+    expect(
+      within(dialog).queryByRole('button', { name: 'Reject and send email' }),
+    ).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Reject' }));
 
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith('Request rejected', {
         description:
           "Trilhas do Sul Turismo was rejected — documents don't match the company. No email on file, so the requester was not notified.",
+      }),
+    );
+  });
+
+  it('shows a "no email on file" description when requesting info from a requester with no email', async () => {
+    state.find((r) => r.businessName === 'Trilhas do Sul Turismo')!.requesterEmail = null;
+    await renderLoaded();
+    const { user, drawer } = await openDrawerFor('Trilhas do Sul Turismo');
+    await user.click(within(drawer).getByRole('button', { name: 'Request info' }));
+
+    await waitFor(() =>
+      expect(toast.info).toHaveBeenCalledWith('Information requested', {
+        description:
+          'Marked as waiting on documents. Diego Ramos has no email on file, so they were not notified.',
       }),
     );
   });

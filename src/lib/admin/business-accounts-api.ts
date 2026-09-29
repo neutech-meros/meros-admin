@@ -25,6 +25,7 @@ const businessAccountItemSchema = z.object({
 
 export const businessAccountListResponseSchema = z.object({
   items: z.array(businessAccountItemSchema),
+  total: z.number().int().nonnegative(),
 });
 
 export type BusinessAccountApiItem = z.infer<typeof businessAccountItemSchema>;

@@ -222,9 +222,10 @@ export default function BusinessAccountsPage() {
       t(`${K}.drawer.requestInfo`),
       () => requestBusinessAccountInfo(id),
       () => {
-        toast.info(t(`${K}.toastInfoTitle`), {
-          description: t(`${K}.toastInfoDescription`, { requester: account.requester }),
-        });
+        const description = account.email
+          ? t(`${K}.toastInfoDescription`, { requester: account.requester })
+          : t(`${K}.toastInfoDescriptionNoEmail`, { requester: account.requester });
+        toast.info(t(`${K}.toastInfoTitle`), { description });
       },
     );
   };

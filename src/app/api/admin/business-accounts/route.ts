@@ -5,6 +5,8 @@ import { getProxyEnv, isProxyEnabled } from '@/lib/server/proxy-env';
 
 const UPSTREAM_ERROR_MESSAGE = 'Failed to reach the business accounts API';
 const PROXY_DISABLED_MESSAGE = 'This endpoint is disabled';
+const PAGE_LIMIT = 100;
+const MAX_PAGES = 50;
 
 export async function GET() {
   try {
@@ -13,23 +15,37 @@ export async function GET() {
     }
 
     const { MEROS_API_URL, MEROS_ADMIN_API_KEY } = getProxyEnv();
-    const upstream = await fetch(`${MEROS_API_URL}/admin/business-accounts`, {
-      headers: { Authorization: `Bearer ${MEROS_ADMIN_API_KEY}` },
-      cache: 'no-store',
-    });
-    if (!upstream.ok) {
-      console.error(`[admin/business-accounts] upstream responded with status ${upstream.status}`);
-      return NextResponse.json({ error: UPSTREAM_ERROR_MESSAGE }, { status: 502 });
-    }
-    const parsed = businessAccountListResponseSchema.safeParse(await upstream.json());
-    if (!parsed.success) {
-      const issues = parsed.error.issues.map((issue) => `${issue.path.join('.')} (${issue.code})`);
-      console.error(
-        `[admin/business-accounts] upstream response failed validation: ${issues.join(', ')}`,
+    const headers = { Authorization: `Bearer ${MEROS_ADMIN_API_KEY}` };
+
+    const items: unknown[] = [];
+    let total = 0;
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const upstream = await fetch(
+        `${MEROS_API_URL}/admin/business-accounts?page=${page}&limit=${PAGE_LIMIT}`,
+        { headers, cache: 'no-store' },
       );
-      return NextResponse.json({ error: UPSTREAM_ERROR_MESSAGE }, { status: 502 });
+      if (!upstream.ok) {
+        console.error(
+          `[admin/business-accounts] upstream responded with status ${upstream.status}`,
+        );
+        return NextResponse.json({ error: UPSTREAM_ERROR_MESSAGE }, { status: 502 });
+      }
+      const parsed = businessAccountListResponseSchema.safeParse(await upstream.json());
+      if (!parsed.success) {
+        const issues = parsed.error.issues.map(
+          (issue) => `${issue.path.join('.')} (${issue.code})`,
+        );
+        console.error(
+          `[admin/business-accounts] upstream response failed validation: ${issues.join(', ')}`,
+        );
+        return NextResponse.json({ error: UPSTREAM_ERROR_MESSAGE }, { status: 502 });
+      }
+      items.push(...parsed.data.items);
+      total = parsed.data.total;
+      if (parsed.data.items.length === 0 || items.length >= total) break;
     }
-    return NextResponse.json(parsed.data);
+
+    return NextResponse.json({ items, total });
   } catch (error) {
     const reason = error instanceof Error ? `${error.name}: ${error.message}` : 'unknown error';
     console.error(`[admin/business-accounts] upstream request failed: ${reason}`);

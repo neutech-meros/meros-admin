@@ -259,6 +259,15 @@ describe('BusinessAccountDetailDrawer', () => {
     expect(within(dialog).queryByText(/^Sending to/)).not.toBeInTheDocument();
   });
 
+  it('labels the confirm button plainly "Reject" instead of claiming an email when there is none', () => {
+    renderDrawer({ ...baseRequest, email: null });
+    const dialog = openRejectDialog();
+    expect(
+      within(dialog).queryByRole('button', { name: 'Reject and send email' }),
+    ).not.toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+  });
+
   it('confirming calls onReject with the id, selected reason, and trimmed details, then closes', () => {
     const { onReject, onClose } = renderDrawer(baseRequest);
     const dialog = openRejectDialog();
