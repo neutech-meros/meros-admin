@@ -22,20 +22,29 @@ const productionSchema = z.object({
   MEROS_API_URL: apiUrl,
   MEROS_ADMIN_API_KEY: adminApiKey,
   MEROS_ADMIN_ACTOR: adminActor,
-  // Off by default in production: this proxy has no admin-auth guard yet (same gap flagged
-  // repeatedly across every admin proxy this app has). Must be explicitly opted into once
-  // that's tracked.
-  ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED: proxyEnabledFlag('false'),
 });
 
 const developmentSchema = z.object({
   MEROS_API_URL: apiUrl.default(DEV_API_URL),
   MEROS_ADMIN_API_KEY: adminApiKey.default(DEV_ADMIN_API_KEY),
   MEROS_ADMIN_ACTOR: adminActor.default(DEV_ADMIN_ACTOR),
-  ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED: proxyEnabledFlag('true'),
 });
 
 export type ProxyEnv = z.infer<typeof productionSchema>;
+
+// Off by default in production: this proxy has no admin-auth guard yet (same gap flagged
+// repeatedly across every admin proxy this app has). Must be explicitly opted into once
+// that's tracked.
+const productionFlag = proxyEnabledFlag('false');
+const developmentFlag = proxyEnabledFlag('true');
+
+// Reads only the feature flag, independent of the other (required-in-production) vars, so a
+// disabled route 404s even when the rest of the proxy config isn't set up yet, instead of
+// throwing out of getProxyEnv() and surfacing as a 502.
+export function isProxyEnabled(): boolean {
+  const schema = process.env.NODE_ENV === 'production' ? productionFlag : developmentFlag;
+  return schema.parse(process.env.ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED);
+}
 
 export function getProxyEnv(): ProxyEnv {
   const schema = process.env.NODE_ENV === 'production' ? productionSchema : developmentSchema;
@@ -43,7 +52,6 @@ export function getProxyEnv(): ProxyEnv {
     MEROS_API_URL: process.env.MEROS_API_URL,
     MEROS_ADMIN_API_KEY: process.env.MEROS_ADMIN_API_KEY,
     MEROS_ADMIN_ACTOR: process.env.MEROS_ADMIN_ACTOR,
-    ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED: process.env.ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED,
   });
   if (!result.success) {
     const invalidVars = result.error.issues.map((issue) => issue.path.join('.')).join(', ');

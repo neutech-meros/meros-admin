@@ -42,6 +42,20 @@ describe('POST /api/admin/business-accounts/:id/approve', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it('returns 404 (not 502) when disabled in production with the other proxy vars unset', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED = 'false';
+    delete process.env.MEROS_API_URL;
+    delete process.env.MEROS_ADMIN_API_KEY;
+    delete process.env.MEROS_ADMIN_ACTOR;
+    global.fetch = jest.fn();
+
+    const res = await POST(new Request('http://x'), params(VALID_ID));
+
+    expect(res.status).toBe(404);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('returns 400 for a non-uuid id without reaching upstream', async () => {
     global.fetch = jest.fn();
 

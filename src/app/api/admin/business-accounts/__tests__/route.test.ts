@@ -58,6 +58,20 @@ describe('GET /api/admin/business-accounts', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it('returns 404 (not 502) when disabled in production with the other proxy vars unset', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED = 'false';
+    delete process.env.MEROS_API_URL;
+    delete process.env.MEROS_ADMIN_API_KEY;
+    delete process.env.MEROS_ADMIN_ACTOR;
+    global.fetch = jest.fn();
+
+    const res = await GET();
+
+    expect(res.status).toBe(404);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('forwards the validated upstream response with 200, with the admin key attached', async () => {
     global.fetch = fetchOk(VALID_LIST_RESPONSE);
 

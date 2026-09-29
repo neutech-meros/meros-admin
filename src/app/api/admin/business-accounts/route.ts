@@ -1,19 +1,18 @@
 import { NextResponse } from 'next/server';
 
 import { businessAccountListResponseSchema } from '@/lib/admin/business-accounts-api';
-import { getProxyEnv } from '@/lib/server/proxy-env';
+import { getProxyEnv, isProxyEnabled } from '@/lib/server/proxy-env';
 
 const UPSTREAM_ERROR_MESSAGE = 'Failed to reach the business accounts API';
 const PROXY_DISABLED_MESSAGE = 'This endpoint is disabled';
 
 export async function GET() {
   try {
-    const { MEROS_API_URL, MEROS_ADMIN_API_KEY, ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED } =
-      getProxyEnv();
-    if (!ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED) {
+    if (!isProxyEnabled()) {
       return NextResponse.json({ error: PROXY_DISABLED_MESSAGE }, { status: 404 });
     }
 
+    const { MEROS_API_URL, MEROS_ADMIN_API_KEY } = getProxyEnv();
     const upstream = await fetch(`${MEROS_API_URL}/admin/business-accounts`, {
       headers: { Authorization: `Bearer ${MEROS_ADMIN_API_KEY}` },
       cache: 'no-store',

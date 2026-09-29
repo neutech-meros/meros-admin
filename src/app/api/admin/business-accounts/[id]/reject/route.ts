@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { getProxyEnv } from '@/lib/server/proxy-env';
+import { getProxyEnv, isProxyEnabled } from '@/lib/server/proxy-env';
 
 const UPSTREAM_ERROR_MESSAGE = 'Failed to reach the business accounts API';
 const PROXY_DISABLED_MESSAGE = 'This endpoint is disabled';
@@ -18,13 +18,7 @@ interface RouteContext {
 
 export async function POST(request: Request, { params }: RouteContext) {
   try {
-    const {
-      MEROS_API_URL,
-      MEROS_ADMIN_API_KEY,
-      MEROS_ADMIN_ACTOR,
-      ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED,
-    } = getProxyEnv();
-    if (!ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED) {
+    if (!isProxyEnabled()) {
       return NextResponse.json({ error: PROXY_DISABLED_MESSAGE }, { status: 404 });
     }
 
@@ -52,6 +46,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: 'Invalid rejection payload' }, { status: 400 });
     }
 
+    const { MEROS_API_URL, MEROS_ADMIN_API_KEY, MEROS_ADMIN_ACTOR } = getProxyEnv();
     const upstream = await fetch(
       `${MEROS_API_URL}/admin/business-accounts/${parsedParams.data.id}/reject`,
       {
