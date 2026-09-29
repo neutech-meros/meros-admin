@@ -4,7 +4,7 @@ import i18n from '@/i18n';
 import type {
   BusinessAccountRequest,
   BusinessAccountRequestStatus,
-} from '@/lib/mocks/admin/businessAccounts';
+} from '@/lib/admin/business-accounts-api';
 import enUS from '@/locales/enUS.json';
 import esES from '@/locales/esES.json';
 import ptBR from '@/locales/ptBR.json';
@@ -37,7 +37,8 @@ const baseRequest: BusinessAccountRequest = {
   category: 'Accommodation',
   requester: 'Marina Alves',
   email: 'marina@vistaazul.com.br',
-  docs: '3 of 3',
+  documentsSubmitted: 3,
+  documentsRequired: 3,
   submitted: '24/08/2026',
   status: 'Pending',
   plan: 'Business Pro',
@@ -64,6 +65,11 @@ function renderDrawer(request: BusinessAccountRequest | null) {
 function openRejectDialog() {
   fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
   return screen.getByRole('dialog', { name: 'Reject business account' });
+}
+
+function openApproveDialog() {
+  fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+  return screen.getByRole('dialog', { name: 'Approve this business account?' });
 }
 
 describe('admin.businessAccounts.drawer locale coverage', () => {
@@ -107,7 +113,6 @@ describe('BusinessAccountDetailDrawer', () => {
       ['Submitted on', '24/08/2026'],
       ['Documents received', '3 of 3'],
       ['Review note', 'Requested to sell hosted stays and list experiences.'],
-      ['Checklist', 'Tax ID validated · Company name matches · Address proof · Bank account owner'],
     ];
 
     const labels = within(drawer).getAllByTestId('info-row-label');
@@ -116,13 +121,16 @@ describe('BusinessAccountDetailDrawer', () => {
     expect(values.map((el) => el.textContent)).toEqual(expectedRows.map(([, value]) => value));
   });
 
-  it('renders the checklist as the same static text for any request', () => {
-    renderDrawer({ ...baseRequest, id: 'br9', name: 'Other Biz', note: 'Something else.' });
-    expect(
-      screen.getByText(
-        'Tax ID validated · Company name matches · Address proof · Bank account owner',
-      ),
-    ).toBeInTheDocument();
+  it('shows a "no email on file" placeholder in the Contact email row when email is null', () => {
+    renderDrawer({ ...baseRequest, email: null });
+    const drawer = screen.getByRole('dialog', { name: 'Pousada Vista Azul' });
+    expect(within(drawer).getByText('No email on file')).toBeInTheDocument();
+  });
+
+  it('does not render a fixed verification checklist', () => {
+    renderDrawer(baseRequest);
+    expect(screen.queryByText(/Tax ID validated/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Checklist')).not.toBeInTheDocument();
   });
 
   it.each<BusinessAccountRequestStatus>(['Pending', 'More info'])(
@@ -164,16 +172,47 @@ describe('BusinessAccountDetailDrawer', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('Approve calls onApprove with the id, closes the drawer, and opens no dialog', () => {
+  it('Approve opens a confirmation dialog without calling anything or closing the drawer', () => {
+    const { onApprove, onClose } = renderDrawer(baseRequest);
+    const dialog = openApproveDialog();
+
+    expect(
+      within(dialog).getByText(
+        "Pousada Vista Azul will become active and verified. This can't be undone.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Approve account' })).toBeInTheDocument();
+
+    expect(onApprove).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('confirming Approve calls onApprove with the id, closes the drawer, and opens no dialog', () => {
     const { onRequestInfo, onApprove, onReject, onClose } = renderDrawer(baseRequest);
-    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    const dialog = openApproveDialog();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Approve account' }));
+
     expect(onApprove).toHaveBeenCalledWith('br1');
     expect(onClose).toHaveBeenCalled();
     expect(onRequestInfo).not.toHaveBeenCalled();
     expect(onReject).not.toHaveBeenCalled();
     expect(
-      screen.queryByRole('dialog', { name: 'Reject business account' }),
+      screen.queryByRole('dialog', { name: 'Approve this business account?' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('Cancel on the Approve dialog does not call onApprove and keeps the drawer open', () => {
+    const { onApprove, onClose } = renderDrawer(baseRequest);
+    const dialog = openApproveDialog();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    expect(
+      screen.queryByRole('dialog', { name: 'Approve this business account?' }),
+    ).not.toBeInTheDocument();
+    expect(onApprove).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Pousada Vista Azul' })).toBeInTheDocument();
   });
 
   it('Reject opens the confirmation dialog without calling anything or closing the drawer', () => {
@@ -209,6 +248,15 @@ describe('BusinessAccountDetailDrawer', () => {
 
     expect(onReject).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('shows a "no email on file" note in the Reject dialog when email is null', () => {
+    renderDrawer({ ...baseRequest, email: null });
+    const dialog = openRejectDialog();
+    expect(
+      within(dialog).getByText("No email on file — the requester won't be notified."),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByText(/^Sending to/)).not.toBeInTheDocument();
   });
 
   it('confirming calls onReject with the id, selected reason, and trimmed details, then closes', () => {

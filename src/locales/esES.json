@@ -91,8 +91,8 @@
       "subtitle": "Todas las solicitudes de cuenta de empresa llegan aquí para la revisión de documentos y su aprobación.",
       "kpiPending": "Pendientes de revisión",
       "kpiWaitingDocuments": "Esperando documentos",
-      "kpiApproved": "Aprobadas (30d)",
-      "kpiRejected": "Rechazadas (30d)",
+      "kpiApproved": "Aprobadas",
+      "kpiRejected": "Rechazadas",
       "tabPending": "Pendientes ({{count}})",
       "tabApproved": "Aprobadas ({{count}})",
       "tabRejected": "Rechazadas ({{count}})",
@@ -122,8 +122,6 @@
         "submittedOn": "Enviado el",
         "documentsReceived": "Documentos recibidos",
         "reviewNote": "Nota de revisión",
-        "checklist": "Lista de verificación",
-        "checklistValue": "Identificación fiscal validada · El nombre de la empresa coincide · Comprobante de domicilio · Titular de la cuenta bancaria",
         "statusPending": "Pendiente",
         "statusMoreInfo": "Más información",
         "statusApproved": "Aprobado",
@@ -146,14 +144,23 @@
         "detailsHelp": "Este texto se incluye en el correo, palabra por palabra.",
         "sendingTo": "Enviando a {{email}}",
         "cancel": "Cancelar",
-        "confirmReject": "Rechazar y enviar correo"
+        "confirmReject": "Rechazar y enviar correo",
+        "noEmail": "Sin correo registrado",
+        "noEmailOnFile": "Sin correo registrado — no se notificará al solicitante.",
+        "approveTitle": "¿Aprobar esta cuenta de empresa?",
+        "approveDescription": "{{name}} pasará a estar activa y verificada. Esto no se puede deshacer.",
+        "confirmApprove": "Aprobar cuenta"
       },
       "loading": "Cargando cuentas de empresa...",
       "loadError": "No se pudieron cargar las cuentas de empresa. Inténtalo de nuevo más tarde.",
       "retry": "Intentar de nuevo",
       "toastRefreshFailed": "Acción registrada, pero no se pudo actualizar la lista — recarga la página para ver el estado más reciente.",
       "toastActionFailedTitle": "No se pudo {{action}}",
-      "toastActionFailedDescription": "Algo salió mal. Inténtalo de nuevo."
+      "toastActionFailedDescription": "Algo salió mal. Inténtalo de nuevo.",
+      "docsCount": "{{submitted}} de {{required}}",
+      "toastNotFound": "No se encontró esta cuenta de empresa — puede haber sido eliminada.",
+      "toastAlreadyReviewed": "Esta cuenta de empresa ya fue revisada por otra persona.",
+      "toastRejectedDescriptionNoEmail": "{{name}} fue rechazada — {{reason}}. No hay correo registrado, así que no se notificó al solicitante."
     }
   }
 }

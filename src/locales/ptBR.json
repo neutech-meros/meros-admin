@@ -91,8 +91,8 @@
       "subtitle": "Toda solicitação de conta empresarial chega aqui para análise de documentos e aprovação.",
       "kpiPending": "Aguardando análise",
       "kpiWaitingDocuments": "Aguardando documentos",
-      "kpiApproved": "Aprovadas (30d)",
-      "kpiRejected": "Rejeitadas (30d)",
+      "kpiApproved": "Aprovadas",
+      "kpiRejected": "Rejeitadas",
       "tabPending": "Pendentes ({{count}})",
       "tabApproved": "Aprovadas ({{count}})",
       "tabRejected": "Rejeitadas ({{count}})",
@@ -122,8 +122,6 @@
         "submittedOn": "Enviado em",
         "documentsReceived": "Documentos recebidos",
         "reviewNote": "Nota da análise",
-        "checklist": "Checklist de verificação",
-        "checklistValue": "CNPJ validado · Razão social confere · Comprovante de endereço · Titular da conta bancária",
         "statusPending": "Pendente",
         "statusMoreInfo": "Mais informações",
         "statusApproved": "Aprovado",
@@ -146,14 +144,23 @@
         "detailsHelp": "Este texto será incluído no e-mail, palavra por palavra.",
         "sendingTo": "Enviando para {{email}}",
         "cancel": "Cancelar",
-        "confirmReject": "Rejeitar e enviar e-mail"
+        "confirmReject": "Rejeitar e enviar e-mail",
+        "noEmail": "Nenhum e-mail cadastrado",
+        "noEmailOnFile": "Nenhum e-mail cadastrado — o solicitante não será notificado.",
+        "approveTitle": "Aprovar esta conta comercial?",
+        "approveDescription": "{{name}} passará a ficar ativa e verificada. Isso não pode ser desfeito.",
+        "confirmApprove": "Aprovar conta"
       },
       "loading": "Carregando contas comerciais...",
       "loadError": "Não foi possível carregar as contas comerciais. Tente novamente mais tarde.",
       "retry": "Tentar novamente",
       "toastRefreshFailed": "Ação registrada, mas não foi possível atualizar a lista — recarregue a página para ver o estado mais recente.",
       "toastActionFailedTitle": "Não foi possível {{action}}",
-      "toastActionFailedDescription": "Algo deu errado. Tente novamente."
+      "toastActionFailedDescription": "Algo deu errado. Tente novamente.",
+      "docsCount": "{{submitted}} de {{required}}",
+      "toastNotFound": "Esta conta comercial não foi encontrada — ela pode ter sido removida.",
+      "toastAlreadyReviewed": "Esta conta comercial já foi revisada por outra pessoa.",
+      "toastRejectedDescriptionNoEmail": "{{name}} foi rejeitada — {{reason}}. Não há e-mail cadastrado, então o solicitante não foi notificado."
     }
   }
 }

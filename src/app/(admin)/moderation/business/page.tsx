@@ -26,12 +26,10 @@ import {
   fetchBusinessAccountRequests,
   rejectBusinessAccount,
   requestBusinessAccountInfo,
+  type BusinessAccountRequest,
+  type BusinessAccountRequestStatus,
 } from '@/lib/admin/business-accounts-api';
 import { statusStyle } from '@/lib/admin/status-styles';
-import type {
-  BusinessAccountRequest,
-  BusinessAccountRequestStatus,
-} from '@/lib/mocks/admin/businessAccounts';
 
 const K = 'admin.businessAccounts';
 
@@ -39,8 +37,6 @@ const K = 'admin.businessAccounts';
 // up under "All requests".
 type Tab = 'Pending' | 'Approved' | 'Rejected' | 'all';
 type LoadStatus = 'loading' | 'loaded' | 'error';
-
-const COMPLETE_DOCS_PATTERN = / of /;
 
 const HEAD_STYLE: CSSProperties = { color: 'var(--text-secondary)' };
 const HEAD_CLASS = 'px-4 text-xs font-medium tracking-wide uppercase';
@@ -57,11 +53,6 @@ const CARD_STYLE: CSSProperties = {
 // UI language rather than always English.
 function formatDateTime(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(iso));
-}
-
-function docsIncomplete(docs: string): boolean {
-  const [submitted, required] = docs.split(COMPLETE_DOCS_PATTERN).map(Number);
-  return Number.isFinite(submitted) && Number.isFinite(required) && submitted < required;
 }
 
 function KpiCard({ label, value, color }: { label: string; value: number; color?: string }) {
@@ -198,12 +189,25 @@ export default function BusinessAccountsPage() {
     try {
       await action();
     } catch (error) {
-      const message =
-        error instanceof BusinessAccountApiError
-          ? error.message
-          : t(`${K}.toastActionFailedDescription`);
+      // 404/409 mean someone else already acted on this target since the list was fetched —
+      // the raw proxy error text is English-only and not meant for the admin to read as-is,
+      // so map the two known status codes to translated copy and reload the stale row.
+      if (error instanceof BusinessAccountApiError && error.status === 404) {
+        toast.error(t(`${K}.toastActionFailedTitle`, { action: actionLabel }), {
+          description: t(`${K}.toastNotFound`),
+        });
+        await reload();
+        return;
+      }
+      if (error instanceof BusinessAccountApiError && error.status === 409) {
+        toast.error(t(`${K}.toastActionFailedTitle`, { action: actionLabel }), {
+          description: t(`${K}.toastAlreadyReviewed`),
+        });
+        await reload();
+        return;
+      }
       toast.error(t(`${K}.toastActionFailedTitle`, { action: actionLabel }), {
-        description: message,
+        description: t(`${K}.toastActionFailedDescription`),
       });
       return;
     }
@@ -248,13 +252,19 @@ export default function BusinessAccountsPage() {
       t(`${K}.drawer.reject`),
       () => rejectBusinessAccount(id, reason, note),
       () => {
-        toast.error(t(`${K}.toastRejectedTitle`), {
-          description: t(`${K}.toastRejectedDescription`, {
-            name: account.name,
-            reason: reasonLabel.toLowerCase(),
-            email: account.email,
-          }),
-        });
+        // The API skips the email entirely when there's no address on file — match that
+        // here instead of claiming "Email sent to null".
+        const description = account.email
+          ? t(`${K}.toastRejectedDescription`, {
+              name: account.name,
+              reason: reasonLabel.toLowerCase(),
+              email: account.email,
+            })
+          : t(`${K}.toastRejectedDescriptionNoEmail`, {
+              name: account.name,
+              reason: reasonLabel.toLowerCase(),
+            });
+        toast.error(t(`${K}.toastRejectedTitle`), { description });
       },
     );
   };
@@ -379,7 +389,7 @@ export default function BusinessAccountsPage() {
                   {rows.map((account) => {
                     const underReview =
                       account.status === 'Pending' || account.status === 'More info';
-                    const incomplete = docsIncomplete(account.docs);
+                    const incomplete = account.documentsSubmitted < account.documentsRequired;
                     return (
                       <TableRow
                         key={account.id}
@@ -400,14 +410,20 @@ export default function BusinessAccountsPage() {
                           {account.category}
                         </TableCell>
                         <TableCell className={`${CELL_CLASS} max-w-[240px]`}>
-                          <TwoLineCell primary={account.requester} secondary={account.email} />
+                          <TwoLineCell
+                            primary={account.requester}
+                            secondary={account.email ?? '—'}
+                          />
                         </TableCell>
                         <TableCell
                           className={CELL_CLASS}
                           data-incomplete={incomplete}
                           style={{ color: incomplete ? 'var(--warning)' : 'var(--text-secondary)' }}
                         >
-                          {account.docs}
+                          {t(`${K}.docsCount`, {
+                            submitted: account.documentsSubmitted,
+                            required: account.documentsRequired,
+                          })}
                         </TableCell>
                         <TableCell className={CELL_CLASS}>
                           <StatusBadge status={account.status} />

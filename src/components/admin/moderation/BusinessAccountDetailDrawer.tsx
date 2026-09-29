@@ -13,11 +13,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
-import { statusStyle } from '@/lib/admin/status-styles';
 import type {
   BusinessAccountRequest,
   BusinessAccountRequestStatus,
-} from '@/lib/mocks/admin/businessAccounts';
+} from '@/lib/admin/business-accounts-api';
+import { statusStyle } from '@/lib/admin/status-styles';
 
 // Canonical reject reasons, verbatim from the mockup, in display order. The value passed to
 // onReject is always one of these English strings (stable regardless of UI language); the
@@ -181,7 +181,14 @@ function RejectDialog({ request, open, onOpenChange, onConfirm }: RejectDialogPr
               <rect x="3" y="5" width="18" height="14" rx="2" />
               <path d="m3 7 9 6 9-6" />
             </svg>
-            <span>{t(`${K}.sendingTo`, { email: request.email })}</span>
+            {/* A missing email means the requester genuinely won't be notified — say that
+                plainly instead of the misleading "Sending to —" the mapper's placeholder
+                would otherwise produce. */}
+            <span>
+              {request.email
+                ? t(`${K}.sendingTo`, { email: request.email })
+                : t(`${K}.noEmailOnFile`)}
+            </span>
           </div>
         </div>
 
@@ -208,6 +215,52 @@ function RejectDialog({ request, open, onOpenChange, onConfirm }: RejectDialogPr
   );
 }
 
+interface ApproveDialogProps {
+  request: BusinessAccountRequest;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+}
+
+// Approve is irreversible (only IN_REVIEW accounts are ever reviewed again — there's no path
+// back from Approved in this tool), and it sits right next to the destructive Reject button,
+// so it gets the same confirm-before-acting treatment as Reject rather than firing on one click.
+function ApproveDialog({ request, open, onOpenChange, onConfirm }: ApproveDialogProps) {
+  const { t } = useTranslation();
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent style={{ background: 'var(--bg-elevated)' }}>
+        <DialogHeader>
+          <DialogTitle style={{ color: 'var(--text-primary)' }}>
+            {t(`${K}.approveTitle`)}
+          </DialogTitle>
+          <DialogDescription style={{ color: 'var(--text-secondary)' }}>
+            {t(`${K}.approveDescription`, { name: request.name })}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="rounded-[10px] border px-4 py-2 text-sm font-semibold"
+            style={FIELD_STYLE}
+          >
+            {t(`${K}.cancel`)}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-[10px] px-4 py-2 text-sm font-semibold text-white"
+            style={{ background: 'var(--brand-500)', border: 'none' }}
+          >
+            {t(`${K}.confirmApprove`)}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function BusinessAccountDetailDrawer({
   request,
   onClose,
@@ -216,8 +269,10 @@ export function BusinessAccountDetailDrawer({
   onReject,
 }: BusinessAccountDetailDrawerProps) {
   const { t } = useTranslation();
-  // Tracks which request the reject dialog is open for, so switching requests closes it.
+  // Tracks which request each confirmation dialog is open for, so switching requests closes
+  // either one and never leaks state into another request.
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) onClose();
@@ -240,7 +295,8 @@ export function BusinessAccountDetailDrawer({
     onClose();
   }
 
-  function handleApprove() {
+  function handleConfirmApprove() {
+    setApprovingId(null);
     onApprove(current.id);
     onClose();
   }
@@ -292,13 +348,17 @@ export function BusinessAccountDetailDrawer({
             <InfoRow label={t(`${K}.category`)}>{current.category}</InfoRow>
             <InfoRow label={t(`${K}.requestedPlan`)}>{current.plan}</InfoRow>
             <InfoRow label={t(`${K}.requestedBy`)}>{current.requester}</InfoRow>
-            <InfoRow label={t(`${K}.contactEmail`)}>{current.email}</InfoRow>
+            <InfoRow label={t(`${K}.contactEmail`)}>{current.email ?? t(`${K}.noEmail`)}</InfoRow>
             <InfoRow label={t(`${K}.submittedOn`)} mono>
               {current.submitted}
             </InfoRow>
-            <InfoRow label={t(`${K}.documentsReceived`)}>{current.docs}</InfoRow>
+            <InfoRow label={t(`${K}.documentsReceived`)}>
+              {t('admin.businessAccounts.docsCount', {
+                submitted: current.documentsSubmitted,
+                required: current.documentsRequired,
+              })}
+            </InfoRow>
             <InfoRow label={t(`${K}.reviewNote`)}>{current.note}</InfoRow>
-            <InfoRow label={t(`${K}.checklist`)}>{t(`${K}.checklistValue`)}</InfoRow>
           </div>
 
           <div
@@ -329,7 +389,7 @@ export function BusinessAccountDetailDrawer({
                 </button>
                 <button
                   type="button"
-                  onClick={handleApprove}
+                  onClick={() => setApprovingId(current.id)}
                   className="rounded-[10px] px-4 py-2 text-sm font-semibold text-white"
                   style={{ background: 'var(--brand-500)', border: 'none' }}
                 >
@@ -351,8 +411,16 @@ export function BusinessAccountDetailDrawer({
         </SheetContent>
       </Sheet>
 
+      <ApproveDialog
+        key={`approve-${current.id}`}
+        request={current}
+        open={approvingId === current.id}
+        onOpenChange={(open) => setApprovingId(open ? current.id : null)}
+        onConfirm={handleConfirmApprove}
+      />
+
       <RejectDialog
-        key={current.id}
+        key={`reject-${current.id}`}
         request={current}
         open={rejectingId === current.id}
         onOpenChange={(open) => setRejectingId(open ? current.id : null)}

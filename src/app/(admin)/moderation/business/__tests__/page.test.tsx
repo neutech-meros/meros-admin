@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 
@@ -291,8 +291,8 @@ describe('BusinessAccountsPage', () => {
     await renderLoaded();
     expect(kpiValue('Pending review')).toHaveTextContent(String(PENDING.length));
     expect(kpiValue('Waiting on documents')).toHaveTextContent(String(MORE_INFO.length));
-    expect(kpiValue('Approved (30d)')).toHaveTextContent(String(APPROVED.length));
-    expect(kpiValue('Rejected (30d)')).toHaveTextContent(String(REJECTED.length));
+    expect(kpiValue('Approved')).toHaveTextContent(String(APPROVED.length));
+    expect(kpiValue('Rejected')).toHaveTextContent(String(REJECTED.length));
     expect([PENDING.length, MORE_INFO.length, APPROVED.length, REJECTED.length]).toEqual([
       2, 1, 1, 1,
     ]);
@@ -381,10 +381,12 @@ describe('BusinessAccountsPage', () => {
     // Empty the Pending tab by approving both of its rows, one at a time.
     const { drawer: first } = await openDrawerFor(PENDING[0]!);
     await user.click(within(first).getByRole('button', { name: 'Approve' }));
+    await user.click(screen.getByRole('button', { name: 'Approve account' }));
     await screen.findByRole('button', { name: /^Pending \(1\)$/ });
 
     const { drawer: second } = await openDrawerFor(PENDING[1]!);
     await user.click(within(second).getByRole('button', { name: 'Approve' }));
+    await user.click(screen.getByRole('button', { name: 'Approve account' }));
     await screen.findByRole('button', { name: /^Pending \(0\)$/ });
     expect(screen.getByText('No requests in this status')).toBeInTheDocument();
     expect(
@@ -427,6 +429,7 @@ describe('BusinessAccountsPage', () => {
     await renderLoaded();
     const { user, drawer } = await openDrawerFor('Pousada Vista Azul');
     await user.click(within(drawer).getByRole('button', { name: 'Approve' }));
+    await user.click(screen.getByRole('button', { name: 'Approve account' }));
 
     await screen.findByRole('button', { name: /^Pending \(1\)$/ });
     expect(toast.success).toHaveBeenCalledWith('Business account approved', {
@@ -434,7 +437,7 @@ describe('BusinessAccountsPage', () => {
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByText('Pousada Vista Azul')).not.toBeInTheDocument();
-    expect(kpiValue('Approved (30d)')).toHaveTextContent('2');
+    expect(kpiValue('Approved')).toHaveTextContent('2');
 
     await user.click(tabButton(/^Approved \(2\)$/));
     const r = within(row('Pousada Vista Azul'));
@@ -461,5 +464,50 @@ describe('BusinessAccountsPage', () => {
 
     await user.click(tabButton(/^Rejected \(2\)$/));
     expect(within(row('Trilhas do Sul Turismo')).getByText('Rejected')).toBeInTheDocument();
+  });
+
+  it('shows a translated toast and reloads the list when the account was already reviewed (409)', async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+    const { drawer } = await openDrawerFor('Pousada Vista Azul');
+    await user.click(within(drawer).getByRole('button', { name: 'Approve' }));
+
+    fetchMock.mockImplementationOnce((url, init) => {
+      const href = String(url);
+      if (href.includes('/approve') && init?.method === 'POST') {
+        return Promise.resolve(jsonResponse(409, { error: 'stale' }));
+      }
+      return defaultFetchImpl(url, init);
+    });
+    await user.click(screen.getByRole('button', { name: 'Approve account' }));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Could not Approve', {
+        description: 'This business account was already reviewed by someone else.',
+      }),
+    );
+    // The list reloads after the conflict, since another admin already decided this row —
+    // still Pending here because the mocked backend state was never actually mutated.
+    expect(
+      fetchMock.mock.calls.filter(([u]) => String(u).endsWith('/api/admin/business-accounts')),
+    ).toHaveLength(2);
+  });
+
+  it('shows a "no email on file" description when rejecting a requester with no email', async () => {
+    const user = userEvent.setup();
+    state.find((r) => r.businessName === 'Trilhas do Sul Turismo')!.requesterEmail = null;
+    await renderLoaded();
+
+    const { drawer } = await openDrawerFor('Trilhas do Sul Turismo');
+    await user.click(within(drawer).getByRole('button', { name: 'Reject' }));
+    const dialog = screen.getByRole('dialog', { name: 'Reject business account' });
+    await user.click(within(dialog).getByRole('button', { name: 'Reject and send email' }));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Request rejected', {
+        description:
+          "Trilhas do Sul Turismo was rejected — documents don't match the company. No email on file, so the requester was not notified.",
+      }),
+    );
   });
 });

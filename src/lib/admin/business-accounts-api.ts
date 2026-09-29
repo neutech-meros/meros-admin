@@ -1,15 +1,11 @@
 import { z } from 'zod';
 
-import type {
-  BusinessAccountRequest,
-  BusinessAccountRequestStatus,
-} from '@/lib/mocks/admin/businessAccounts';
-
 // Validates the same-origin proxy's response — this app's own trust boundary, mirroring
 // how every other admin proxy in this codebase re-validates rather than trusting the
 // network response's shape blindly.
 
 const statusSchema = z.enum(['Pending', 'More info', 'Approved', 'Rejected']);
+export type BusinessAccountRequestStatus = z.infer<typeof statusSchema>;
 
 const businessAccountItemSchema = z.object({
   id: z.string().uuid(),
@@ -45,9 +41,32 @@ function initialsOf(name: string): string {
     .join('');
 }
 
+// The view model the page/drawer render. documentsSubmitted/documentsRequired stay raw
+// numbers (not a pre-composed "N of M" string) so the client can translate the count and
+// compare them directly, instead of parsing a display string back apart. email stays
+// nullable (not coalesced to a placeholder) so callers can tell "no email on file" apart
+// from any other display gap.
+export interface BusinessAccountRequest {
+  id: string;
+  name: string;
+  city: string;
+  cnpj: string;
+  category: string;
+  requester: string;
+  email: string | null;
+  documentsSubmitted: number;
+  documentsRequired: number;
+  submitted: string;
+  status: BusinessAccountRequestStatus;
+  plan: string;
+  note: string;
+  initials: string;
+  avatarColor: string;
+}
+
 // The API sends only real, structured fields (no display prose) — this maps them onto the
-// same BusinessAccountRequest shape the page/drawer already render, computing the two purely
-// presentational fields (initials/avatarColor) client-side, same as this app's other screens.
+// view model above, computing the two purely presentational fields (initials/avatarColor)
+// client-side, same as this app's other screens.
 export function toBusinessAccountRequest(
   raw: BusinessAccountApiItem,
   index: number,
@@ -61,10 +80,11 @@ export function toBusinessAccountRequest(
     cnpj: raw.taxId ?? EMPTY,
     category: raw.category ?? EMPTY,
     requester: raw.requesterName,
-    email: raw.requesterEmail ?? EMPTY,
-    docs: `${raw.documentsSubmitted} of ${raw.documentsRequired}`,
+    email: raw.requesterEmail,
+    documentsSubmitted: raw.documentsSubmitted,
+    documentsRequired: raw.documentsRequired,
     submitted: formatDateTime(raw.submittedAt),
-    status: raw.status as BusinessAccountRequestStatus,
+    status: raw.status,
     plan: raw.requestedPlan ?? EMPTY,
     note: raw.applicationNote ?? EMPTY,
     initials: initialsOf(name),

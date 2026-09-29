@@ -91,8 +91,8 @@
       "subtitle": "Every business account request lands here for document review and approval.",
       "kpiPending": "Pending review",
       "kpiWaitingDocuments": "Waiting on documents",
-      "kpiApproved": "Approved (30d)",
-      "kpiRejected": "Rejected (30d)",
+      "kpiApproved": "Approved",
+      "kpiRejected": "Rejected",
       "tabPending": "Pending ({{count}})",
       "tabApproved": "Approved ({{count}})",
       "tabRejected": "Rejected ({{count}})",
@@ -122,8 +122,6 @@
         "submittedOn": "Submitted on",
         "documentsReceived": "Documents received",
         "reviewNote": "Review note",
-        "checklist": "Checklist",
-        "checklistValue": "Tax ID validated · Company name matches · Address proof · Bank account owner",
         "statusPending": "Pending",
         "statusMoreInfo": "More info",
         "statusApproved": "Approved",
@@ -146,14 +144,23 @@
         "detailsHelp": "This text is included in the email, word for word.",
         "sendingTo": "Sending to {{email}}",
         "cancel": "Cancel",
-        "confirmReject": "Reject and send email"
+        "confirmReject": "Reject and send email",
+        "noEmail": "No email on file",
+        "noEmailOnFile": "No email on file — the requester won't be notified.",
+        "approveTitle": "Approve this business account?",
+        "approveDescription": "{{name}} will become active and verified. This can't be undone.",
+        "confirmApprove": "Approve account"
       },
       "loading": "Loading business accounts...",
       "loadError": "Couldn't load business accounts. Please try again later.",
       "retry": "Try again",
       "toastRefreshFailed": "Action recorded, but the list couldn't refresh — reload the page to see the latest state.",
       "toastActionFailedTitle": "Could not {{action}}",
-      "toastActionFailedDescription": "Something went wrong. Please try again."
+      "toastActionFailedDescription": "Something went wrong. Please try again.",
+      "docsCount": "{{submitted}} of {{required}}",
+      "toastNotFound": "This business account could not be found — it may have been removed.",
+      "toastAlreadyReviewed": "This business account was already reviewed by someone else.",
+      "toastRejectedDescriptionNoEmail": "{{name}} was rejected — {{reason}}. No email on file, so the requester was not notified."
     }
   }
 }
