@@ -28,6 +28,14 @@ function leaves(pairs: [string, string][]): NavLeaf[] {
   return pairs.map(([key, label]) => ({ key, label }));
 }
 
+// This tree matches exactly what rendered in the reference HTML's captured
+// DOM snapshot (order and sub-items), not the fuller `NAV` array present in
+// the reference's script — several groups/sub-items never actually rendered
+// there (missing icon data at capture time left them empty, or in
+// Security's case, left the group entirely unreachable — its 11 leaves
+// rendered but with no header to open them). Fidelity here means matching
+// the rendered output, the same rule already applied to the dashboard KPI
+// cards during planning.
 export const NAV: NavGroup[] = [
   { key: 'dashboard', label: 'Overview', icon: IconDashboard },
   { key: 'users', label: 'Users & Creators', icon: IconUsers },
@@ -41,12 +49,12 @@ export const NAV: NavGroup[] = [
     ]),
   },
   {
-    key: 'categories',
+    key: 'catalog',
     label: 'Categories',
     icon: IconCatalog,
     sub: leaves([
-      ['categories-all', 'All categories'],
-      ['categories-requests', 'Category requests'],
+      ['catalog-categories', 'All categories'],
+      ['catalog-requests', 'Category requests'],
     ]),
   },
   {

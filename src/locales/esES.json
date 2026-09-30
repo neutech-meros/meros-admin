@@ -163,6 +163,130 @@
         "confirmRemoveCancel": "Cancelar",
         "confirmRemoveConfirm": "Sí, eliminar"
       }
+    },
+    "users": {
+      "title": "Usuarios y creadores",
+      "subtitle": "Gestiona cuentas, verificaciones y planes.",
+      "toasts": {
+        "accountUpdatedTitle": "Cuenta actualizada",
+        "reactivated": "{{name}} fue reactivada.",
+        "deactivated": "{{name}} fue desactivada.",
+        "accountDeletedTitle": "Cuenta eliminada",
+        "deleted": "{{name}} fue eliminada de la plataforma.",
+        "profileSavedTitle": "Perfil guardado",
+        "profileSaved": "Se actualizó el perfil de {{name}}."
+      },
+      "searchPlaceholder": "Buscar por nombre o email...",
+      "filterByAccount": "Filtrar por cuenta",
+      "filterByPlan": "Filtrar por plan",
+      "filterByStatus": "Filtrar por estado",
+      "allAccounts": "Todas las cuentas",
+      "allPlans": "Todos los planes",
+      "allStatuses": "Todos los estados",
+      "clearFilters": "Limpiar filtros",
+      "footerText": "Mostrando 1–{{count}} de 3.482 cuentas",
+      "emptyTitle": "Ningún usuario encontrado",
+      "emptyDescription": "Intenta buscar por otro nombre o email.",
+      "drawer": {
+        "tabProfile": "Perfil",
+        "tabSubscriptions": "Suscripciones",
+        "tabHistory": "Historial",
+        "tabReports": "Reportes",
+        "statPlan": "Plan",
+        "statFollowers": "Seguidores",
+        "statFollowing": "Siguiendo",
+        "statStatus": "Estado",
+        "contactSection": "Contacto",
+        "fullName": "Nombre completo",
+        "email": "Email",
+        "phone": "Teléfono",
+        "location": "Ubicación",
+        "accountSection": "Cuenta",
+        "accountType": "Tipo de cuenta",
+        "plan": "Plan",
+        "joinedOn": "Se unió el",
+        "status": "Estado",
+        "bioSection": "Biografía",
+        "noBio": "Sin biografía.",
+        "editProfile": "Editar perfil",
+        "editProfileTitle": "Editar perfil",
+        "saveChanges": "Guardar cambios",
+        "cancel": "Cancelar",
+        "noSubscriptionTitle": "Sin suscripción activa",
+        "noSubscriptionDescription": "Este usuario está actualmente en el plan gratuito.",
+        "noReportsTitle": "Sin reportes",
+        "noReportsDescription": "Este usuario no tiene reportes presentados ni recibidos.",
+        "subPlan": "Plan",
+        "subAmount": "Monto",
+        "subSince": "Suscriptor desde",
+        "subStatus": "Estado",
+        "reportType": "Tipo",
+        "reportReason": "Motivo",
+        "reportStatus": "Estado",
+        "reportDate": "Fecha",
+        "nameRequired": "Ingresa el nombre completo.",
+        "invalidEmail": "Ingresa un email válido."
+      },
+      "resetPassword": {
+        "title": "Restablecer contraseña",
+        "subtitle": "Envía a {{name}} un enlace de restablecimiento. Lo abre para definir una nueva contraseña y volver a entrar.",
+        "sendLinkTo": "Enviar enlace a",
+        "email": "Email",
+        "sms": "SMS",
+        "noEmail": "Sin email registrado",
+        "noPhone": "Sin teléfono registrado",
+        "expiryNote": "El enlace expira en 60 minutos y solo puede usarse una vez.",
+        "cancel": "Cancelar",
+        "sendEmail": "Enviar enlace por email",
+        "sendSms": "Enviar enlace por SMS",
+        "invalidEmailTitle": "Revisa el email",
+        "invalidPhoneTitle": "Revisa el teléfono",
+        "invalidHint": "No parece válido — corrígelo antes de enviar.",
+        "missingHint": "No hay nada registrado — agrégalo antes de enviar.",
+        "sentTitle": "Enlace enviado",
+        "sentDescription": "Se envió un enlace de restablecimiento a {{destination}}.",
+        "editEmail": "Editar email",
+        "editPhone": "Editar teléfono",
+        "emailInputLabel": "Dirección de email",
+        "phoneInputLabel": "Número de teléfono"
+      },
+      "table": {
+        "columnName": "Nombre",
+        "columnAccount": "Cuenta",
+        "columnPlan": "Plan",
+        "columnFollowers": "Seguidores",
+        "columnJoined": "Se unió",
+        "columnStatus": "Estado",
+        "actionsFor": "Acciones para {{name}}",
+        "viewProfile": "Ver perfil",
+        "resetPassword": "Restablecer contraseña",
+        "deactivateAccount": "Desactivar cuenta",
+        "reactivateAccount": "Reactivar cuenta",
+        "deleteAccount": "Eliminar cuenta"
+      },
+      "searchLabel": "Buscar usuarios",
+      "accountOptions": {
+        "personal": "Personal",
+        "business": "Empresarial"
+      },
+      "planOptions": {
+        "freeTrial": "Prueba gratuita",
+        "freemium": "Freemium",
+        "premium": "Premium"
+      },
+      "statusOptions": {
+        "active": "Activo",
+        "deactivated": "Desactivado",
+        "deleted": "Eliminado"
+      },
+      "roleOptions": {
+        "user": "Usuario",
+        "creator": "Creador"
+      }
+    },
+    "drawer": {
+      "noActivityTitle": "Sin actividad aún",
+      "noActivityDescription": "Los eventos de esta cuenta aparecerán aquí."
     }
   }
 }

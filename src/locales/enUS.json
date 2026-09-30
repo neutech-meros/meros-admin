@@ -163,6 +163,130 @@
         "confirmRemoveCancel": "Cancel",
         "confirmRemoveConfirm": "Yes, remove"
       }
+    },
+    "users": {
+      "title": "Users & Creators",
+      "subtitle": "Manage accounts, verifications and plans.",
+      "toasts": {
+        "accountUpdatedTitle": "Account updated",
+        "reactivated": "{{name}} was reactivated.",
+        "deactivated": "{{name}} was deactivated.",
+        "accountDeletedTitle": "Account deleted",
+        "deleted": "{{name}} was removed from the platform.",
+        "profileSavedTitle": "Profile saved",
+        "profileSaved": "{{name}}’s profile was updated."
+      },
+      "searchPlaceholder": "Search by name or email...",
+      "filterByAccount": "Filter by account",
+      "filterByPlan": "Filter by plan",
+      "filterByStatus": "Filter by status",
+      "allAccounts": "All accounts",
+      "allPlans": "All plans",
+      "allStatuses": "All statuses",
+      "clearFilters": "Clear filters",
+      "footerText": "Showing 1–{{count}} of 3,482 accounts",
+      "emptyTitle": "No user found",
+      "emptyDescription": "Try searching for another name or email.",
+      "drawer": {
+        "tabProfile": "Profile",
+        "tabSubscriptions": "Subscriptions",
+        "tabHistory": "History",
+        "tabReports": "Reports",
+        "statPlan": "Plan",
+        "statFollowers": "Followers",
+        "statFollowing": "Following",
+        "statStatus": "Status",
+        "contactSection": "Contact",
+        "fullName": "Full name",
+        "email": "Email",
+        "phone": "Phone",
+        "location": "Location",
+        "accountSection": "Account",
+        "accountType": "Account type",
+        "plan": "Plan",
+        "joinedOn": "Joined on",
+        "status": "Status",
+        "bioSection": "Bio",
+        "noBio": "No bio added.",
+        "editProfile": "Edit profile",
+        "editProfileTitle": "Edit profile",
+        "saveChanges": "Save changes",
+        "cancel": "Cancel",
+        "noSubscriptionTitle": "No active subscription",
+        "noSubscriptionDescription": "This user is currently on the free plan.",
+        "noReportsTitle": "No reports",
+        "noReportsDescription": "This user has no reports filed or received.",
+        "subPlan": "Plan",
+        "subAmount": "Amount",
+        "subSince": "Subscriber since",
+        "subStatus": "Status",
+        "reportType": "Type",
+        "reportReason": "Reason",
+        "reportStatus": "Status",
+        "reportDate": "Date",
+        "nameRequired": "Enter the full name.",
+        "invalidEmail": "Enter a valid email address."
+      },
+      "resetPassword": {
+        "title": "Reset password",
+        "subtitle": "Send {{name}} a reset link. They open it to set a new password and get back into the app.",
+        "sendLinkTo": "Send link to",
+        "email": "Email",
+        "sms": "SMS",
+        "noEmail": "No email on file",
+        "noPhone": "No phone on file",
+        "expiryNote": "The link expires in 60 minutes and can only be used once.",
+        "cancel": "Cancel",
+        "sendEmail": "Send email link",
+        "sendSms": "Send SMS link",
+        "invalidEmailTitle": "Check the email address",
+        "invalidPhoneTitle": "Check the phone number",
+        "invalidHint": "It doesn’t look valid — edit it before sending.",
+        "missingHint": "There’s nothing on file — add it before sending.",
+        "sentTitle": "Reset link sent",
+        "sentDescription": "A password reset link was sent to {{destination}}.",
+        "editEmail": "Edit email",
+        "editPhone": "Edit phone",
+        "emailInputLabel": "Email address",
+        "phoneInputLabel": "Phone number"
+      },
+      "table": {
+        "columnName": "Name",
+        "columnAccount": "Account",
+        "columnPlan": "Plan",
+        "columnFollowers": "Followers",
+        "columnJoined": "Joined",
+        "columnStatus": "Status",
+        "actionsFor": "Actions for {{name}}",
+        "viewProfile": "View profile",
+        "resetPassword": "Reset password",
+        "deactivateAccount": "Deactivate account",
+        "reactivateAccount": "Reactivate account",
+        "deleteAccount": "Delete account"
+      },
+      "searchLabel": "Search users",
+      "accountOptions": {
+        "personal": "Personal",
+        "business": "Business"
+      },
+      "planOptions": {
+        "freeTrial": "Free trial",
+        "freemium": "Freemium",
+        "premium": "Premium"
+      },
+      "statusOptions": {
+        "active": "Active",
+        "deactivated": "Deactivated",
+        "deleted": "Deleted"
+      },
+      "roleOptions": {
+        "user": "User",
+        "creator": "Creator"
+      }
+    },
+    "drawer": {
+      "noActivityTitle": "No activity yet",
+      "noActivityDescription": "Events for this account will appear here."
     }
   }
 }
