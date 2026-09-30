@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 
-import { businessAccountListResponseSchema } from '@/lib/admin/business-accounts-api';
+import {
+  businessAccountListResponseSchema,
+  type BusinessAccountApiItem,
+} from '@/lib/admin/business-accounts-api';
 import { getProxyEnv, isProxyEnabled } from '@/lib/server/proxy-env';
 
 const UPSTREAM_ERROR_MESSAGE = 'Failed to reach the business accounts API';
@@ -17,8 +20,9 @@ export async function GET() {
     const { MEROS_API_URL, MEROS_ADMIN_API_KEY } = getProxyEnv();
     const headers = { Authorization: `Bearer ${MEROS_ADMIN_API_KEY}` };
 
-    const items: unknown[] = [];
+    const itemsById = new Map<string, BusinessAccountApiItem>();
     let total = 0;
+    let reachedMaxPages = true;
     for (let page = 1; page <= MAX_PAGES; page += 1) {
       const upstream = await fetch(
         `${MEROS_API_URL}/admin/business-accounts?page=${page}&limit=${PAGE_LIMIT}`,
@@ -40,12 +44,21 @@ export async function GET() {
         );
         return NextResponse.json({ error: UPSTREAM_ERROR_MESSAGE }, { status: 502 });
       }
-      items.push(...parsed.data.items);
+      for (const item of parsed.data.items) itemsById.set(item.id, item);
       total = parsed.data.total;
-      if (parsed.data.items.length === 0 || items.length >= total) break;
+      if (parsed.data.items.length === 0 || itemsById.size >= total) {
+        reachedMaxPages = false;
+        break;
+      }
     }
 
-    return NextResponse.json({ items, total });
+    if (reachedMaxPages && itemsById.size < total) {
+      console.warn(
+        `[admin/business-accounts] stopped at MAX_PAGES=${MAX_PAGES} with ${itemsById.size}/${total} items fetched`,
+      );
+    }
+
+    return NextResponse.json({ items: [...itemsById.values()], total });
   } catch (error) {
     const reason = error instanceof Error ? `${error.name}: ${error.message}` : 'unknown error';
     console.error(`[admin/business-accounts] upstream request failed: ${reason}`);

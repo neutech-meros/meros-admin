@@ -170,4 +170,61 @@ describe('GET /api/admin/business-accounts', () => {
 
     expect(res.status).toBe(502);
   });
+
+  it('dedupes an item that shifts and reappears across pages (offset paging under concurrent writes)', async () => {
+    const page1 = {
+      items: [
+        item('00000000-0000-4000-8000-000000000001'),
+        item('00000000-0000-4000-8000-000000000002'),
+      ],
+      total: 3,
+    };
+    // A new row arrived mid-loop, shifting item 2 back onto page 2 alongside item 3.
+    const page2 = {
+      items: [
+        item('00000000-0000-4000-8000-000000000002'),
+        item('00000000-0000-4000-8000-000000000003'),
+      ],
+      total: 4,
+    };
+    const page3 = { items: [], total: 4 };
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => page1 })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => page2 })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => page3 });
+
+    const res = await GET();
+    const body = await res.json();
+
+    expect(body.items.map((i: { id: string }) => i.id)).toEqual([
+      '00000000-0000-4000-8000-000000000001',
+      '00000000-0000-4000-8000-000000000002',
+      '00000000-0000-4000-8000-000000000003',
+    ]);
+  });
+
+  it('warns and still returns what it has when MAX_PAGES is reached before total', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      const page = Number(new URL(url).searchParams.get('page'));
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          items: [item(`00000000-0000-4000-8000-${String(page).padStart(12, '0')}`)],
+          total: 999999,
+        }),
+      });
+    });
+
+    const res = await GET();
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.items).toHaveLength(50);
+    expect(body.total).toBe(999999);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('MAX_PAGES=50'));
+    warn.mockRestore();
+  });
 });
