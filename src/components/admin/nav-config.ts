@@ -100,6 +100,27 @@ export const NAV: NavGroup[] = [
   },
 ];
 
+// The sidebar renders the reference's full tree, but most of those groups have no screen behind
+// them yet — clicking one lands on a 404. Only the keys listed here navigate; the Sidebar renders
+// every other one disabled instead. This is the single place to update when a screen ships: add
+// its key and the nav turns it on.
+//
+// Enabled today: Users & Creators (shipped), plus Moderation & Trust and Categories, whose screens
+// are in flight in PRs #5, #7 and #9.
+export const ENABLED_NAV_KEYS = new Set([
+  'users',
+  'moderation',
+  'moderation-reported',
+  'moderation-business',
+  'catalog',
+  'catalog-categories',
+  'catalog-requests',
+]);
+
+export function isNavKeyEnabled(key: string): boolean {
+  return ENABLED_NAV_KEYS.has(key);
+}
+
 export function labelForKey(key: string): string {
   for (const g of NAV) {
     if (g.key === key) return g.label;
