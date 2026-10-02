@@ -26,6 +26,7 @@ export type DrawerBlock =
     }
   | { kind: 'timeline'; events: Array<{ title: string; time: string }> }
   | { kind: 'empty'; title: string; description: string; onRetry?: () => void; retryLabel?: string }
+  | { kind: 'text'; label: string; value: string }
   | { kind: 'loading'; label: string };
 
 function KvBlock({ block }: { block: Extract<DrawerBlock, { kind: 'kv' }> }) {
@@ -137,6 +138,17 @@ function TimelineBlock({ block }: { block: Extract<DrawerBlock, { kind: 'timelin
   );
 }
 
+function TextBlock({ block }: { block: Extract<DrawerBlock, { kind: 'text' }> }) {
+  return (
+    <div className="border-b py-2.5 text-[13.5px]" style={{ borderColor: 'var(--border-subtle)' }}>
+      <div className="mb-1" style={{ color: 'var(--text-secondary)' }}>
+        {block.label}
+      </div>
+      <div>{block.value}</div>
+    </div>
+  );
+}
+
 function EmptyBlock({ block }: { block: Extract<DrawerBlock, { kind: 'empty' }> }) {
   return (
     <div
@@ -203,6 +215,8 @@ export function DrawerBlocks({ blocks }: { blocks: DrawerBlock[] }) {
                 {block.label}
               </div>
             );
+          case 'text':
+            return <TextBlock key={i} block={block} />;
         }
       })}
     </div>
