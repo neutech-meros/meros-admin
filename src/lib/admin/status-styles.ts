@@ -15,6 +15,7 @@ const STATUS_MAP: Record<string, StatusStyle> = {
   Approved: { color: 'var(--success)', background: 'var(--success-bg)' },
   Pending: { color: 'var(--warning)', background: 'var(--warning-bg)' },
   Processing: { color: 'var(--warning)', background: 'var(--warning-bg)' },
+  'More info': { color: 'var(--brand-600)', background: 'var(--brand-100)' },
   Deactivated: NEUTRAL,
   Deleted: { color: 'var(--danger)', background: 'var(--danger-bg)' },
   'In review': { color: 'var(--warning)', background: 'var(--warning-bg)' },
@@ -23,6 +24,13 @@ const STATUS_MAP: Record<string, StatusStyle> = {
   Blocked: { color: 'var(--danger)', background: 'var(--danger-bg)' },
   Rejected: { color: 'var(--danger)', background: 'var(--danger-bg)' },
   Chargeback: { color: 'var(--danger)', background: 'var(--danger-bg)' },
+  // Report severity (moderation queue).
+  High: { color: 'var(--danger)', background: 'var(--danger-bg)' },
+  Average: { color: 'var(--warning)', background: 'var(--warning-bg)' },
+  Low: NEUTRAL,
+  // Report decision (moderation reviewed tab).
+  Kept: { color: 'var(--success)', background: 'var(--success-bg)' },
+  Removed: { color: 'var(--danger)', background: 'var(--danger-bg)' },
 };
 
 export function statusStyle(status: string): StatusStyle {
