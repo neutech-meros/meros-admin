@@ -19,6 +19,49 @@ describe('statusStyle', () => {
       background: 'var(--danger-bg)',
     });
   });
+
+  describe('report severity tones', () => {
+    it('maps High to the danger tokens', () => {
+      expect(statusStyle('High')).toEqual({
+        color: 'var(--danger)',
+        background: 'var(--danger-bg)',
+      });
+    });
+    it('maps Average to the warning tokens', () => {
+      expect(statusStyle('Average')).toEqual({
+        color: 'var(--warning)',
+        background: 'var(--warning-bg)',
+      });
+    });
+    it('maps Low to the neutral tokens', () => {
+      expect(statusStyle('Low')).toEqual({
+        color: 'var(--text-secondary)',
+        background: 'var(--bg-surface-hover)',
+      });
+    });
+  });
+
+  describe('report decision tones', () => {
+    it('maps Kept to the success tokens', () => {
+      expect(statusStyle('Kept')).toEqual({
+        color: 'var(--success)',
+        background: 'var(--success-bg)',
+      });
+    });
+    it('maps Removed to the danger tokens', () => {
+      expect(statusStyle('Removed')).toEqual({
+        color: 'var(--danger)',
+        background: 'var(--danger-bg)',
+      });
+    });
+  });
+
+  it('maps "More info" to the brand tokens', () => {
+    expect(statusStyle('More info')).toEqual({
+      color: 'var(--brand-600)',
+      background: 'var(--brand-100)',
+    });
+  });
 });
 
 describe('typeStyle', () => {
