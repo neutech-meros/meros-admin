@@ -1,5 +1,4 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-
 import { Provider } from 'jotai';
 
 import { HOME_PATH } from '@/components/admin/nav-config';
