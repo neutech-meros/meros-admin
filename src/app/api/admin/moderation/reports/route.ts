@@ -10,7 +10,7 @@ const PROXY_DISABLED_MESSAGE = 'This endpoint is disabled';
 
 export async function GET() {
   try {
-    if (!isProxyEnabled()) {
+    if (!isProxyEnabled('ADMIN_MODERATION_PROXY_ENABLED')) {
       return NextResponse.json({ error: PROXY_DISABLED_MESSAGE }, { status: 404 });
     }
     const { MEROS_API_URL, MEROS_ADMIN_API_KEY } = getProxyEnv();

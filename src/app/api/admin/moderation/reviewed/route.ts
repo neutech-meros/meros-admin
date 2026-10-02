@@ -13,7 +13,7 @@ const limitSchema = z.coerce.number().int().min(1).max(500).optional();
 
 export async function GET(request: Request) {
   try {
-    if (!isProxyEnabled()) {
+    if (!isProxyEnabled('ADMIN_MODERATION_PROXY_ENABLED')) {
       return NextResponse.json({ error: PROXY_DISABLED_MESSAGE }, { status: 404 });
     }
     const { MEROS_API_URL, MEROS_ADMIN_API_KEY } = getProxyEnv();

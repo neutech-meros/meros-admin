@@ -55,6 +55,13 @@ describe('statusStyle', () => {
       });
     });
   });
+
+  it('maps "More info" to the brand tokens', () => {
+    expect(statusStyle('More info')).toEqual({
+      color: 'var(--brand-600)',
+      background: 'var(--brand-100)',
+    });
+  });
 });
 
 describe('typeStyle', () => {
