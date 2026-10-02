@@ -51,6 +51,12 @@ const PLAN_RANK: Record<NonNullable<UserRecord['plan']>, number> = {
   Freemium: 1,
 };
 
+export const PLAN_LABEL_KEY: Record<NonNullable<UserRecord['plan']>, string> = {
+  'Free trial': 'admin.users.planOptions.freeTrial',
+  Freemium: 'admin.users.planOptions.freemium',
+  Premium: 'admin.users.planOptions.premium',
+};
+
 function followersNum(s: string): number {
   const t = s.trim().toLowerCase();
   const n = parseFloat(t) || 0;
@@ -105,6 +111,34 @@ export function filterAndSortUsers(
     if (va > vb) return mul;
     return 0;
   });
+}
+
+export const USERS_PAGE_SIZE = 8;
+
+export interface UsersPage<T> {
+  pageItems: T[];
+  page: number;
+  pageCount: number;
+  startIndex: number;
+  endIndex: number;
+}
+
+export function paginateUsers<T>(
+  items: T[],
+  page: number,
+  pageSize: number = USERS_PAGE_SIZE,
+): UsersPage<T> {
+  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+  const clampedPage = Math.min(Math.max(1, page), pageCount);
+  const startIndex = (clampedPage - 1) * pageSize;
+  const pageItems = items.slice(startIndex, startIndex + pageSize);
+  return {
+    pageItems,
+    page: clampedPage,
+    pageCount,
+    startIndex,
+    endIndex: startIndex + pageItems.length,
+  };
 }
 
 export function isAnyFilterActive(filters: UserFilters, sort: SortState): boolean {

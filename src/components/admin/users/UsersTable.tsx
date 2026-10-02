@@ -1,6 +1,8 @@
 // src/components/admin/users/UsersTable.tsx
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -20,7 +22,8 @@ import {
 import { UNKNOWN_VALUE } from '@/lib/admin/accounts';
 import { badgeTone } from '@/lib/admin/badge-tone';
 import {
-  ROLE_LABEL_KEY,
+  paginateUsers,
+  PLAN_LABEL_KEY,
   type SortKey,
   type SortState,
   SORT_COLUMNS,
@@ -73,6 +76,19 @@ export function UsersTable({
   onDelete,
 }: UsersTableProps) {
   const { t } = useTranslation();
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [users]);
+
+  const {
+    pageItems,
+    page: currentPage,
+    pageCount,
+    startIndex,
+    endIndex,
+  } = paginateUsers(users, page);
 
   return (
     <div
@@ -87,7 +103,7 @@ export function UsersTable({
                 {SORT_COLUMNS.map(({ key }) => (
                   <TableHead
                     key={key}
-                    aria-sort={key === 'plan' ? undefined : ariaSort(sort, key)}
+                    aria-sort={ariaSort(sort, key)}
                     className="select-none"
                     style={{
                       color: sort.key === key ? 'var(--brand-600)' : 'var(--text-secondary)',
@@ -95,10 +111,8 @@ export function UsersTable({
                   >
                     <button
                       type="button"
-                      onClick={() => key !== 'plan' && onSortChange(key)}
-                      disabled={key === 'plan'}
-                      title={key === 'plan' ? t('admin.users.filterByPlanUnavailable') : undefined}
-                      className="inline-flex cursor-pointer items-center gap-1 font-[inherit] text-inherit disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={() => onSortChange(key)}
+                      className="inline-flex cursor-pointer items-center gap-1 font-[inherit] text-inherit"
                     >
                       {t(COLUMN_LABEL_KEY[key])}
                       <span aria-hidden="true" className="text-[9px]">
@@ -111,9 +125,8 @@ export function UsersTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((u) => {
-                const role = u.account === 'Business' ? 'Creator' : 'User';
-                const acctTone = badgeTone(role);
+              {pageItems.map((u) => {
+                const acctTone = badgeTone(u.account === 'Business' ? 'Creator' : 'User');
                 const statusTone = badgeTone(u.status);
                 return (
                   <TableRow key={u.id} onClick={() => onRowClick(u)} className="cursor-pointer">
@@ -138,10 +151,14 @@ export function UsersTable({
                         className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
                         style={{ color: acctTone.color, background: acctTone.background }}
                       >
-                        {t(ROLE_LABEL_KEY[role])}
+                        {t(
+                          u.account === 'Business'
+                            ? 'admin.users.accountOptions.business'
+                            : 'admin.users.accountOptions.personal',
+                        )}
                       </span>
                     </TableCell>
-                    <TableCell>{u.plan ?? UNKNOWN_VALUE}</TableCell>
+                    <TableCell>{u.plan ? t(PLAN_LABEL_KEY[u.plan]) : UNKNOWN_VALUE}</TableCell>
                     <TableCell className="tabular-nums">{u.followers}</TableCell>
                     <TableCell className="tabular-nums">{u.joined}</TableCell>
                     <TableCell>
@@ -211,29 +228,58 @@ export function UsersTable({
             <span>
               {loadedCount < total
                 ? t('admin.users.footerTextPartial', {
-                    count: users.length,
+                    start: users.length === 0 ? 0 : startIndex + 1,
+                    end: endIndex,
                     loaded: loadedCount,
                     total,
                   })
-                : t('admin.users.footerText', { count: users.length, total })}
+                : t('admin.users.footerText', {
+                    start: users.length === 0 ? 0 : startIndex + 1,
+                    end: endIndex,
+                    total,
+                  })}
             </span>
-            <div className="flex gap-1">
-              {['‹', '1', '2', '3', '›'].map((label, i) => (
+            {pageCount > 1 ? (
+              <nav aria-label={t('admin.users.table.pagination')} className="flex gap-1">
                 <button
-                  key={i}
                   type="button"
-                  disabled
-                  className="h-7 w-7 rounded-md border"
-                  style={{
-                    borderColor: i === 1 ? 'transparent' : 'var(--border-subtle)',
-                    background: i === 1 ? 'var(--brand-100)' : 'transparent',
-                    color: i === 1 ? 'var(--brand-600)' : 'var(--text-secondary)',
-                  }}
+                  disabled={currentPage === 1}
+                  onClick={() => setPage(currentPage - 1)}
+                  aria-label={t('admin.users.table.previousPage')}
+                  className="h-7 w-7 rounded-md border disabled:opacity-40"
+                  style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
                 >
-                  {label}
+                  ‹
                 </button>
-              ))}
-            </div>
+                {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setPage(n)}
+                    aria-current={n === currentPage ? 'page' : undefined}
+                    aria-label={t('admin.users.table.pageNumber', { number: n })}
+                    className="h-7 w-7 rounded-md border"
+                    style={{
+                      borderColor: n === currentPage ? 'transparent' : 'var(--border-subtle)',
+                      background: n === currentPage ? 'var(--brand-100)' : 'transparent',
+                      color: n === currentPage ? 'var(--brand-600)' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {n}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  disabled={currentPage === pageCount}
+                  onClick={() => setPage(currentPage + 1)}
+                  aria-label={t('admin.users.table.nextPage')}
+                  className="h-7 w-7 rounded-md border disabled:opacity-40"
+                  style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
+                >
+                  ›
+                </button>
+              </nav>
+            ) : null}
           </div>
         </>
       ) : (

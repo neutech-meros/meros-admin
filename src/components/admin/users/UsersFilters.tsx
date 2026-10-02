@@ -91,9 +91,8 @@ export function UsersFilters({ filters, onFiltersChange, showClear, onClear }: U
         onChange={(e) =>
           onFiltersChange({ ...filters, plan: e.target.value as UserFilters['plan'] })
         }
-        disabled
-        title={t('admin.users.filterByPlanUnavailable')}
-        className="min-w-[150px] cursor-not-allowed appearance-none rounded-lg border px-3 py-2 text-[13px] opacity-60"
+        title={t('admin.users.filterByPlan')}
+        className="min-w-[150px] cursor-pointer appearance-none rounded-lg border px-3 py-2 text-[13px]"
         style={{
           borderColor: filters.plan === 'all' ? 'var(--border-subtle)' : 'var(--brand-500)',
           background: 'var(--bg-elevated)',

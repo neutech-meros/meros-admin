@@ -1,4 +1,9 @@
-import { type DomainAccountRow, toUserRecord } from '../accounts';
+import {
+  type DomainAccountRow,
+  domainAccountRowSchema,
+  toUserRecord,
+  UNKNOWN_VALUE,
+} from '../accounts';
 
 function domainRow(overrides: Partial<DomainAccountRow> = {}): DomainAccountRow {
   return {
@@ -10,6 +15,8 @@ function domainRow(overrides: Partial<DomainAccountRow> = {}): DomainAccountRow 
     accountType: 'BUSINESS',
     status: 'ACTIVE',
     createdAt: '2025-03-12T10:00:00.000Z',
+    planBucket: 'PREMIUM',
+    followerCount: 1234,
     ...overrides,
   };
 }
@@ -24,8 +31,8 @@ describe('toUserRecord', () => {
       location: '',
       bio: '',
       account: 'Business',
-      plan: null,
-      followers: '—',
+      plan: 'Premium',
+      followers: '1234',
       following: '—',
       joined: '12/03/2025',
       createdAtIso: '2025-03-12T10:00:00.000Z',
@@ -75,5 +82,50 @@ describe('toUserRecord', () => {
 
     expect(user.joined).toBe('12/03/2025');
     expect(user.createdAtIso).toBe('2025-03-13T01:00:00.000Z');
+  });
+
+  it.each([
+    ['FREEMIUM', 'Freemium'],
+    ['PREMIUM', 'Premium'],
+    ['FREE_TRIAL', 'Free trial'],
+  ] as const)('maps the %s plan bucket to the %s plan', (planBucket, plan) => {
+    expect(toUserRecord(domainRow({ planBucket }), 0).plan).toBe(plan);
+  });
+
+  it('maps an unavailable (null) plan bucket to a null plan', () => {
+    expect(toUserRecord(domainRow({ planBucket: null }), 0).plan).toBeNull();
+  });
+
+  it('maps a null followerCount to the unknown placeholder', () => {
+    expect(toUserRecord(domainRow({ followerCount: null }), 0).followers).toBe(UNKNOWN_VALUE);
+  });
+
+  it('maps a numeric followerCount to its plain decimal string, including zero', () => {
+    expect(toUserRecord(domainRow({ followerCount: 3 }), 0).followers).toBe('3');
+    expect(toUserRecord(domainRow({ followerCount: 0 }), 0).followers).toBe('0');
+  });
+});
+
+describe('domainAccountRowSchema', () => {
+  it('accepts every plan bucket, a null plan bucket, and a nullable non-negative followerCount', () => {
+    for (const planBucket of ['FREEMIUM', 'PREMIUM', 'FREE_TRIAL', null] as const) {
+      expect(domainAccountRowSchema.safeParse(domainRow({ planBucket })).success).toBe(true);
+    }
+    expect(domainAccountRowSchema.safeParse(domainRow({ followerCount: null })).success).toBe(true);
+    expect(domainAccountRowSchema.safeParse(domainRow({ followerCount: 0 })).success).toBe(true);
+  });
+
+  it('rejects rows missing the enrichment fields or carrying invalid values', () => {
+    const withoutPlan: Partial<DomainAccountRow> = domainRow();
+    delete withoutPlan.planBucket;
+    const withoutCount: Partial<DomainAccountRow> = domainRow();
+    delete withoutCount.followerCount;
+    expect(domainAccountRowSchema.safeParse(withoutPlan).success).toBe(false);
+    expect(domainAccountRowSchema.safeParse(withoutCount).success).toBe(false);
+    expect(domainAccountRowSchema.safeParse({ ...domainRow(), planBucket: 'GOLD' }).success).toBe(
+      false,
+    );
+    expect(domainAccountRowSchema.safeParse(domainRow({ followerCount: -1 })).success).toBe(false);
+    expect(domainAccountRowSchema.safeParse(domainRow({ followerCount: 1.5 })).success).toBe(false);
   });
 });

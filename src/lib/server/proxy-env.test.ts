@@ -138,4 +138,25 @@ describe('getProxyEnv and isProxyEnabled', () => {
 
     expect(() => getProxyEnv()).toThrow(/MEROS_ADMIN_ACTOR/);
   });
+
+  it('defaults the user-details proxy to disabled in production, independently of the accounts flag', () => {
+    setEnv({ NODE_ENV: 'production', ADMIN_ACCOUNTS_PROXY_ENABLED: 'true' });
+
+    expect(isProxyEnabled('ADMIN_ACCOUNTS_PROXY_ENABLED')).toBe(true);
+    expect(isProxyEnabled('ADMIN_USER_DETAILS_PROXY_ENABLED')).toBe(false);
+  });
+
+  it('enables the user-details proxy in production only when explicitly set to true', () => {
+    setEnv({ NODE_ENV: 'production', ADMIN_USER_DETAILS_PROXY_ENABLED: 'true' });
+
+    expect(isProxyEnabled('ADMIN_USER_DETAILS_PROXY_ENABLED')).toBe(true);
+  });
+
+  it('rejects a garbage value for the user-details proxy flag instead of silently enabling it', () => {
+    setEnv({ NODE_ENV: 'production', ADMIN_USER_DETAILS_PROXY_ENABLED: 'yes' });
+
+    expect(() => isProxyEnabled('ADMIN_USER_DETAILS_PROXY_ENABLED')).toThrow(
+      /ADMIN_USER_DETAILS_PROXY_ENABLED/,
+    );
+  });
 });

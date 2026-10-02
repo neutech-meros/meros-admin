@@ -28,17 +28,56 @@ function accountRow(overrides: Partial<AdminAccountRow> = {}): AdminAccountRow {
   };
 }
 
-function upstreamOk(items: object[], total: number = items.length): Response {
-  return new Response(JSON.stringify({ items, total }), {
+function jsonOk(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+function upstreamOk(items: object[], total: number = items.length): Response {
+  return jsonOk({ items, total });
+}
+
+type UpstreamHandler = () => Promise<Response>;
+
+interface UpstreamHandlers {
+  accounts: UpstreamHandler;
+  plans?: UpstreamHandler;
+  counts?: UpstreamHandler;
+}
+
+function plansOk(plans: Record<string, string> = {}): UpstreamHandler {
+  return () => Promise.resolve(jsonOk({ plans }));
+}
+
+function countsOk(counts: Record<string, number> = {}): UpstreamHandler {
+  return () => Promise.resolve(jsonOk({ counts }));
+}
+
+function callsTo(
+  calls: Parameters<typeof fetch>[],
+  pathname: string,
+): { url: URL; init: RequestInit | undefined }[] {
+  return calls
+    .map(([input, init]) => ({ url: new URL(String(input)), init }))
+    .filter(({ url }) => url.pathname === pathname);
 }
 
 describe('GET /api/admin/accounts', () => {
   const originalEnv = process.env;
   let fetchMock: jest.SpyInstance<Promise<Response>, Parameters<typeof fetch>>;
   let consoleErrorMock: jest.SpyInstance<void, Parameters<typeof console.error>>;
+
+  function mockUpstream({ accounts, plans = plansOk(), counts = countsOk() }: UpstreamHandlers) {
+    fetchMock.mockImplementation((input) => {
+      const { pathname } = new URL(String(input));
+      if (pathname === '/admin/accounts') return accounts();
+      if (pathname === '/admin/subscriptions/plans') return plans();
+      if (pathname === '/admin/social/follower-counts') return counts();
+      return Promise.reject(new Error(`unexpected upstream call: ${pathname}`));
+    });
+  }
 
   function expectFailureLoggedWithoutSecrets() {
     expect(consoleErrorMock).toHaveBeenCalled();
@@ -65,7 +104,11 @@ describe('GET /api/admin/accounts', () => {
   });
 
   it('returns the validated domain rows with the raw ISO createdAt and the upstream total', async () => {
-    fetchMock.mockResolvedValue(upstreamOk([accountRow()], 42));
+    mockUpstream({
+      accounts: () => Promise.resolve(upstreamOk([accountRow()], 42)),
+      plans: plansOk({ 'acc-1': 'PREMIUM' }),
+      counts: countsOk({ 'prof-1': 12 }),
+    });
 
     const response = await GET();
 
@@ -82,6 +125,8 @@ describe('GET /api/admin/accounts', () => {
           accountType: 'BUSINESS',
           status: 'ACTIVE',
           createdAt: '2025-03-12T10:00:00.000Z',
+          planBucket: 'PREMIUM',
+          followerCount: 12,
         },
       ],
       total: 42,
@@ -98,17 +143,26 @@ describe('GET /api/admin/accounts', () => {
       accountType: null,
       status: 'SUSPENDED',
     });
-    fetchMock.mockResolvedValue(upstreamOk([noProfile]));
+    mockUpstream({
+      accounts: () => Promise.resolve(upstreamOk([noProfile])),
+      plans: plansOk({ 'acc-2': 'FREEMIUM' }),
+    });
 
     const response = await GET();
 
-    expect(await response.json()).toEqual({ items: [noProfile], total: 1 });
+    expect(await response.json()).toEqual({
+      items: [{ ...noProfile, planBucket: 'FREEMIUM', followerCount: null }],
+      total: 1,
+    });
   });
 
   it('does not forward fields the upstream sends beyond the domain shape', async () => {
-    fetchMock.mockResolvedValue(
-      upstreamOk([{ ...accountRow(), passwordHash: 'bcrypt$secret', internalNotes: 'x' }]),
-    );
+    mockUpstream({
+      accounts: () =>
+        Promise.resolve(
+          upstreamOk([{ ...accountRow(), passwordHash: 'bcrypt$secret', internalNotes: 'x' }]),
+        ),
+    });
 
     const response = await GET();
 
@@ -262,5 +316,170 @@ describe('GET /api/admin/accounts', () => {
     expect(JSON.stringify(body)).not.toContain('Invalid admin key');
     expectFailureLoggedWithoutSecrets();
     expect(JSON.stringify(consoleErrorMock.mock.calls)).toContain('401');
+  });
+
+  describe('plan and follower-count enrichment', () => {
+    const withProfile = accountRow({ id: 'acc-1', profileId: 'prof-1' });
+    const withoutProfile = accountRow({
+      id: 'acc-2',
+      profileId: null,
+      name: null,
+      email: null,
+      phone: null,
+      accountType: null,
+    });
+
+    it('merges planBucket by account id and followerCount by profileId, null without a profile', async () => {
+      mockUpstream({
+        accounts: () => Promise.resolve(upstreamOk([withProfile, withoutProfile])),
+        plans: plansOk({ 'acc-1': 'FREE_TRIAL', 'acc-2': 'PREMIUM' }),
+        counts: countsOk({ 'prof-1': 0 }),
+      });
+
+      const response = await GET();
+
+      expect(response.status).toBe(200);
+      expect(consoleErrorMock).not.toHaveBeenCalled();
+      expect(await response.json()).toEqual({
+        items: [
+          { ...withProfile, planBucket: 'FREE_TRIAL', followerCount: 0 },
+          { ...withoutProfile, planBucket: 'PREMIUM', followerCount: null },
+        ],
+        total: 2,
+      });
+    });
+
+    it('queries plans for every account id and follower counts only for non-null profile ids', async () => {
+      process.env.MEROS_API_URL = 'https://api.example.test';
+      process.env.MEROS_ADMIN_API_KEY = 'secret-key';
+      const third = accountRow({ id: 'acc-3', profileId: 'prof-3' });
+      mockUpstream({
+        accounts: () => Promise.resolve(upstreamOk([withProfile, withoutProfile, third])),
+      });
+
+      await GET();
+
+      const plansCalls = callsTo(fetchMock.mock.calls, '/admin/subscriptions/plans');
+      const countsCalls = callsTo(fetchMock.mock.calls, '/admin/social/follower-counts');
+      expect(plansCalls).toHaveLength(1);
+      expect(countsCalls).toHaveLength(1);
+
+      expect(plansCalls[0].url.origin).toBe('https://api.example.test');
+      expect(plansCalls[0].url.searchParams.getAll('userIds')).toEqual(['acc-1', 'acc-2', 'acc-3']);
+      expect(countsCalls[0].url.origin).toBe('https://api.example.test');
+      expect(countsCalls[0].url.searchParams.getAll('profileIds')).toEqual(['prof-1', 'prof-3']);
+
+      for (const { init } of [...plansCalls, ...countsCalls]) {
+        expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer secret-key');
+        expect(init?.cache).toBe('no-store');
+      }
+    });
+
+    it('does not call either enrichment endpoint for an empty accounts page', async () => {
+      mockUpstream({ accounts: () => Promise.resolve(upstreamOk([], 0)) });
+
+      const response = await GET();
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ items: [], total: 0 });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(callsTo(fetchMock.mock.calls, '/admin/accounts')).toHaveLength(1);
+    });
+
+    it('skips the follower-counts call when no account on the page has a profile', async () => {
+      mockUpstream({
+        accounts: () => Promise.resolve(upstreamOk([withoutProfile])),
+        plans: plansOk({ 'acc-2': 'FREEMIUM' }),
+      });
+
+      const response = await GET();
+
+      expect(callsTo(fetchMock.mock.calls, '/admin/social/follower-counts')).toHaveLength(0);
+      expect(await response.json()).toEqual({
+        items: [{ ...withoutProfile, planBucket: 'FREEMIUM', followerCount: null }],
+        total: 1,
+      });
+    });
+
+    it('returns a null planBucket for an account id missing from a successful plans response', async () => {
+      mockUpstream({
+        accounts: () => Promise.resolve(upstreamOk([withProfile])),
+        plans: plansOk({}),
+        counts: countsOk({ 'prof-1': 7 }),
+      });
+
+      const response = await GET();
+
+      expect(await response.json()).toEqual({
+        items: [{ ...withProfile, planBucket: null, followerCount: 7 }],
+        total: 1,
+      });
+    });
+
+    const failures: [string, UpstreamHandler][] = [
+      [
+        'the request rejects',
+        () => Promise.reject(new Error('connect ECONNREFUSED 127.0.0.1:3005')),
+      ],
+      [
+        'the upstream responds non-2xx',
+        () =>
+          Promise.resolve(
+            new Response(
+              JSON.stringify({ message: 'Invalid admin key', stack: 'at guard.ts:12' }),
+              { status: 500 },
+            ),
+          ),
+      ],
+      ['the body has an unexpected shape', () => Promise.resolve(jsonOk({ unexpected: true }))],
+    ];
+
+    it.each(failures)(
+      'returns 200 with a null planBucket and intact follower counts when the plans call fails because %s',
+      async (_label, failingPlans) => {
+        mockUpstream({
+          accounts: () => Promise.resolve(upstreamOk([withProfile, withoutProfile])),
+          plans: failingPlans,
+          counts: countsOk({ 'prof-1': 5 }),
+        });
+
+        const response = await GET();
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+          items: [
+            { ...withProfile, planBucket: null, followerCount: 5 },
+            { ...withoutProfile, planBucket: null, followerCount: null },
+          ],
+          total: 2,
+        });
+        expectFailureLoggedWithoutSecrets();
+        expect(JSON.stringify(consoleErrorMock.mock.calls)).not.toContain('Invalid admin key');
+      },
+    );
+
+    it.each(failures)(
+      'returns 200 with a null followerCount and intact plans when the follower-counts call fails because %s',
+      async (_label, failingCounts) => {
+        mockUpstream({
+          accounts: () => Promise.resolve(upstreamOk([withProfile, withoutProfile])),
+          plans: plansOk({ 'acc-1': 'PREMIUM', 'acc-2': 'FREEMIUM' }),
+          counts: failingCounts,
+        });
+
+        const response = await GET();
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+          items: [
+            { ...withProfile, planBucket: 'PREMIUM', followerCount: null },
+            { ...withoutProfile, planBucket: 'FREEMIUM', followerCount: null },
+          ],
+          total: 2,
+        });
+        expectFailureLoggedWithoutSecrets();
+        expect(JSON.stringify(consoleErrorMock.mock.calls)).not.toContain('Invalid admin key');
+      },
+    );
   });
 });
