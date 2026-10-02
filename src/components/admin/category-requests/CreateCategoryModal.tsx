@@ -97,10 +97,14 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
     if (next === 'Parent') {
       setParentSlug(null);
       setSubSlug(null);
-    } else if (next === 'Subcategory') {
+      return;
+    }
+    const resolvedParent = parentNode ?? tree[0] ?? null;
+    setParentSlug(resolvedParent?.slug ?? null);
+    if (next === 'Subcategory') {
       setSubSlug(null);
-    } else if (next === 'Child category' && parentNode && !subSlug) {
-      setSubSlug(parentNode.children?.[0]?.slug ?? null);
+    } else if (!subSlug || resolvedParent !== parentNode) {
+      setSubSlug(resolvedParent?.children?.[0]?.slug ?? null);
     }
   }
 
@@ -364,7 +368,7 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
           <button
             type="button"
             onClick={handleCreate}
-            disabled={!name.trim()}
+            disabled={!name.trim() || (level !== 'Parent' && !immediateParentSlug)}
             className="rounded-[10px] border px-4 py-2 text-[13.5px] font-semibold text-white disabled:opacity-50"
             style={{ borderColor: 'var(--brand-500)', background: 'var(--brand-500)' }}
           >

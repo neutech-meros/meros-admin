@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { useAtom, useSetAtom } from 'jotai';
+import { useAtom } from 'jotai';
 import { toast } from 'sonner';
 
 import { CategoryRequestDetailDrawer } from '@/components/admin/category-requests/CategoryRequestDetailDrawer';
@@ -13,7 +13,7 @@ import {
   CreateCategoryModal,
   type CreateCategoryResult,
 } from '@/components/admin/category-requests/CreateCategoryModal';
-import { addCategory } from '@/lib/admin/categories-tree';
+import { addCategory, categoryExists, slugify } from '@/lib/admin/categories-tree';
 import { countByStatus, filterByTab } from '@/lib/admin/category-requests';
 import type { CategoryRequest, CategoryRequestStatus } from '@/lib/mocks/admin/category-requests';
 import { categoryTreeAtom } from '@/store/atoms/categories';
@@ -38,7 +38,7 @@ const TAB_LABEL_KEY: Record<CategoryRequestStatus | 'all', string> = {
 export default function CategoryRequestsPage() {
   const { t } = useTranslation();
   const [requests, setRequests] = useAtom(categoryRequestsAtom);
-  const setTree = useSetAtom(categoryTreeAtom);
+  const [tree, setTree] = useAtom(categoryTreeAtom);
   const [tab, setTab] = useState<CategoryRequestStatus | 'all'>('Pending');
   const [drawerRequest, setDrawerRequest] = useState<CategoryRequest | null>(null);
   const [createRequest, setCreateRequest] = useState<CategoryRequest | null>(null);
@@ -76,6 +76,15 @@ export default function CategoryRequestsPage() {
   function handleCreateConfirm(result: CreateCategoryResult) {
     if (!createRequest) return;
     const requestId = createRequest.id;
+    const slug = result.parentSlug
+      ? `${result.parentSlug}/${slugify(result.name)}`
+      : slugify(result.name);
+    if (categoryExists(tree, slug)) {
+      toast.error(t('admin.categories.toasts.alreadyExistsTitle'), {
+        description: t('admin.categories.toasts.alreadyExistsDescription'),
+      });
+      return;
+    }
     setTree((cur) => addCategory(cur, result.parentSlug, result.name, result.status, result.icon));
     setRequests((cur) => cur.map((r) => (r.id === requestId ? { ...r, status: 'Approved' } : r)));
     if (result.parentPath) {

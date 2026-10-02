@@ -239,4 +239,40 @@ describe('CategoryRequestsPage', () => {
 
     expect(screen.getByText('food/restaurant/vegan-food')).toBeInTheDocument();
   });
+
+  it('switching back from Parent to Subcategory creates under the parent shown, not at the top level', async () => {
+    const user = userEvent.setup();
+    render(
+      <Provider>
+        <CategoryRequestsPage />
+        <CategoriesPage />
+      </Provider>,
+    );
+    await user.click(within(row('Wellness')).getByRole('button', { name: 'Criar' }));
+    await user.click(screen.getByRole('button', { name: 'Categoria principal' }));
+    await user.click(screen.getByRole('button', { name: 'Subcategoria' }));
+
+    const parentSelect = screen.getByLabelText('Categoria principal') as HTMLSelectElement;
+    const shownParent = parentSelect.value;
+    expect(shownParent).not.toBe('');
+
+    await user.click(screen.getByRole('button', { name: 'Criar categoria' }));
+
+    expect(toast.success).not.toHaveBeenCalledWith('Categoria principal criada', expect.anything());
+    expect(screen.getByText(`${shownParent}/wellness`)).toBeInTheDocument();
+  });
+
+  it('refuses to approve into a name that already exists under the same parent', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(within(row('Wellness')).getByRole('button', { name: 'Criar' }));
+    const nameInput = screen.getByLabelText('Nome da categoria');
+    await user.clear(nameInput);
+    await user.type(nameInput, 'Outdoor');
+    await user.click(screen.getByRole('button', { name: 'Criar categoria' }));
+
+    expect(toast.error).toHaveBeenCalledWith('Já existe', expect.anything());
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Criar categoria' })).toBeInTheDocument();
+  });
 });
