@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
+import { useAtom } from 'jotai';
 import { toast } from 'sonner';
 
 import {
@@ -31,7 +32,8 @@ import {
   type CategoryRow,
 } from '@/lib/admin/categories-tree';
 import { DEFAULT_CATEGORY_ICON } from '@/lib/admin/category-icons';
-import { getCategoryTree, type CategoryNode } from '@/lib/mocks/admin/categories';
+import type { CategoryNode } from '@/lib/mocks/admin/categories';
+import { categoryTreeAtom } from '@/store/atoms/categories';
 
 interface CascadeState extends DeactivateCascadeState {
   slug: string;
@@ -41,7 +43,7 @@ interface CascadeState extends DeactivateCascadeState {
 
 export default function CategoriesPage() {
   const { t } = useTranslation();
-  const [tree, setTree] = useState<CategoryNode[]>(() => getCategoryTree());
+  const [tree, setTree] = useAtom(categoryTreeAtom);
   const [open, setOpen] = useState<Record<string, boolean> | undefined>(undefined);
   const [query, setQuery] = useState('');
   const [formState, setFormState] = useState<CategoryFormState | null>(null);

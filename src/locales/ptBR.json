@@ -188,6 +188,77 @@
         "deactivatedDescription_other": "\"{{name}}\" e {{count}} categorias filhas foram definidas como {{status}}."
       }
     },
+    "categoryRequests": {
+      "title": "Solicitações de categoria",
+      "subtitle": "Usuários e empresas pedem novas categorias aqui. Revise a solicitação, verifique sobreposições e crie na árvore ou rejeite.",
+      "kpiPending": "Aguardando revisão",
+      "kpiMoreInfo": "Aguardando o solicitante",
+      "kpiApproved": "Aprovadas",
+      "kpiRejected": "Rejeitadas",
+      "tabPending": "Pendentes ({{count}})",
+      "tabMoreInfo": "Aguardando o solicitante ({{count}})",
+      "tabApproved": "Aprovadas ({{count}})",
+      "tabRejected": "Rejeitadas ({{count}})",
+      "tabAll": "Todas as solicitações",
+      "table": {
+        "category": "Categoria proposta",
+        "parentPath": "Caminho da categoria pai",
+        "requestedBy": "Solicitado por",
+        "votes": "Votos",
+        "requested": "Solicitado em",
+        "status": "Status",
+        "create": "Criar",
+        "reject": "Rejeitar",
+        "view": "Ver"
+      },
+      "emptyTitle": "Nenhuma solicitação neste status",
+      "emptyDescription": "Troque de aba para ver solicitações em outro estágio de revisão.",
+      "status": {
+        "pending": "Pendente",
+        "moreInfo": "Mais informações",
+        "approved": "Aprovada",
+        "rejected": "Rejeitada"
+      },
+      "drawer": {
+        "subtitle": "Proposta sob {{parent}}",
+        "proposedName": "Nome proposto",
+        "parentPath": "Caminho da categoria pai",
+        "level": "Nível",
+        "requestedBy": "Solicitado por",
+        "account": "Conta",
+        "requestedOn": "Solicitado em",
+        "communityVotes": "Votos da comunidade",
+        "communityVotesValue_one": "{{count}} usuário pediu isso",
+        "communityVotesValue_other": "{{count}} usuários pediram isso",
+        "whyTheyNeedIt": "Por que precisam disso",
+        "overlapCheck": "Verificação de sobreposição",
+        "askForDetails": "Pedir mais detalhes",
+        "reject": "Rejeitar",
+        "createCategory": "Criar categoria",
+        "close": "Fechar"
+      },
+      "createModal": {
+        "title": "Criar categoria",
+        "subtitle": "Solicitado por {{requester}}. Confirme onde ela deve ficar na árvore antes de criar.",
+        "levelLabel": "Nível na árvore",
+        "levelParent": "Categoria principal",
+        "levelSubcategory": "Subcategoria",
+        "levelChildCategory": "Categoria filha",
+        "parentCategoryLabel": "Categoria principal",
+        "subcategoryLabel": "Subcategoria",
+        "nameLabel": "Nome da categoria",
+        "namePlaceholder": "Nome da categoria",
+        "previewLabel": "Pré-visualização"
+      },
+      "toasts": {
+        "detailsRequestedTitle": "Detalhes solicitados",
+        "detailsRequestedDescription": "{{requester}} foi solicitado(a) a esclarecer o pedido.",
+        "rejectedTitle": "Solicitação rejeitada",
+        "rejectedDescription": "{{requester}} foi notificado(a).",
+        "createdTitle": "Categoria criada",
+        "createdDescription": "\"{{name}}\" foi adicionada sob {{parent}}."
+      }
+    },
     "users": {
       "title": "Usuários e criadores",
       "subtitle": "Gerencie contas, verificações e planos.",
