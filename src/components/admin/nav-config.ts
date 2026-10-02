@@ -140,6 +140,10 @@ export function navHref(key: string): string {
   return key === 'dashboard' ? '/dashboard' : `/${key.replace(/-/g, '/')}`;
 }
 
+// Where the app lands after login and on `/`: the first shipped screen. Overview is not enabled,
+// so landing there would leave the user on a screen the sidebar can't navigate back to.
+export const HOME_PATH = navHref('users');
+
 // Inverse of navHref: derives a NAV key from the current pathname.
 export function keyFromPathname(pathname: string): string {
   if (pathname === '/dashboard') return 'dashboard';

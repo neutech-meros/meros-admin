@@ -1,4 +1,12 @@
-import { NAV, isNavKeyEnabled, labelForKey, navI18nKey, parentOfKey } from '../nav-config';
+import {
+  HOME_PATH,
+  NAV,
+  isNavKeyEnabled,
+  keyFromPathname,
+  labelForKey,
+  navI18nKey,
+  parentOfKey,
+} from '../nav-config';
 
 describe('NAV', () => {
   it('has the 9 top-level groups that actually rendered in the reference HTML, in that order', () => {
@@ -105,5 +113,15 @@ describe('isNavKeyEnabled', () => {
   it('disables the leaves of a disabled group too', () => {
     expect(isNavKeyEnabled('finance-commissions')).toBe(false);
     expect(isNavKeyEnabled('system-terms')).toBe(false);
+  });
+});
+
+describe('HOME_PATH', () => {
+  it('points at an enabled screen', () => {
+    expect(isNavKeyEnabled(keyFromPathname(HOME_PATH))).toBe(true);
+  });
+
+  it('is the Users & Creators screen', () => {
+    expect(HOME_PATH).toBe('/users');
   });
 });
