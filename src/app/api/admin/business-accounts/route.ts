@@ -13,7 +13,7 @@ const MAX_PAGES = 50;
 
 export async function GET() {
   try {
-    if (!isProxyEnabled()) {
+    if (!isProxyEnabled('ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED')) {
       return NextResponse.json({ error: PROXY_DISABLED_MESSAGE }, { status: 404 });
     }
 

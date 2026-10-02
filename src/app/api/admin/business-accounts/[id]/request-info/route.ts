@@ -14,7 +14,7 @@ interface RouteContext {
 
 export async function POST(_request: Request, { params }: RouteContext) {
   try {
-    if (!isProxyEnabled()) {
+    if (!isProxyEnabled('ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED')) {
       return NextResponse.json({ error: PROXY_DISABLED_MESSAGE }, { status: 404 });
     }
 

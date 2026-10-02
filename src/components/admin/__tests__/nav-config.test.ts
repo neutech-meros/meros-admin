@@ -24,6 +24,15 @@ describe('NAV', () => {
     });
   });
 
+  it('gives system 5 sub-items ending with terms & privacy', () => {
+    const system = NAV.find((g) => g.key === 'system')!;
+    expect(system.sub).toHaveLength(5);
+    expect(system.sub![system.sub!.length - 1]).toEqual({
+      key: 'system-terms',
+      label: 'Terms & privacy',
+    });
+  });
+
   it('labels the catalog group "Categories", matching the rendered title (not the script\'s "Catalog")', () => {
     const catalog = NAV.find((g) => g.key === 'catalog')!;
     expect(catalog.label).toBe('Categories');

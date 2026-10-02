@@ -24,6 +24,13 @@ const STATUS_MAP: Record<string, StatusStyle> = {
   Blocked: { color: 'var(--danger)', background: 'var(--danger-bg)' },
   Rejected: { color: 'var(--danger)', background: 'var(--danger-bg)' },
   Chargeback: { color: 'var(--danger)', background: 'var(--danger-bg)' },
+  // Report severity (moderation queue).
+  High: { color: 'var(--danger)', background: 'var(--danger-bg)' },
+  Average: { color: 'var(--warning)', background: 'var(--warning-bg)' },
+  Low: NEUTRAL,
+  // Report decision (moderation reviewed tab).
+  Kept: { color: 'var(--success)', background: 'var(--success-bg)' },
+  Removed: { color: 'var(--danger)', background: 'var(--danger-bg)' },
 };
 
 export function statusStyle(status: string): StatusStyle {
