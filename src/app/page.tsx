@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 
+import { HOME_PATH } from '@/components/admin/nav-config';
+
 export default function Home() {
-  redirect('/dashboard');
+  redirect(HOME_PATH);
 }
