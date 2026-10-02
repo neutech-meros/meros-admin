@@ -66,8 +66,21 @@ describe('UsersFilters', () => {
       ['all', 'Todos os status'],
       ['Active', 'Ativo'],
       ['Deactivated', 'Desativado'],
+      ['Suspended', 'Suspenso'],
       ['Deleted', 'Excluído'],
     ]);
+  });
+
+  it('disables the Plan filter, since real accounts have no plan data yet', () => {
+    render(
+      <UsersFilters
+        filters={DEFAULT_FILTERS}
+        onFiltersChange={jest.fn()}
+        showClear={false}
+        onClear={jest.fn()}
+      />,
+    );
+    expect(screen.getByTitle(/filtrar por plano/i)).toBeDisabled();
   });
 
   it('calls onFiltersChange when the Account filter changes', async () => {

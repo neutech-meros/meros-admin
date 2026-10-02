@@ -171,25 +171,28 @@
       "title": "Usuarios y creadores",
       "subtitle": "Gestiona cuentas, verificaciones y planes.",
       "toasts": {
-        "accountUpdatedTitle": "Cuenta actualizada",
-        "reactivated": "{{name}} fue reactivada.",
-        "deactivated": "{{name}} fue desactivada.",
-        "accountDeletedTitle": "Cuenta eliminada",
-        "deleted": "{{name}} fue eliminada de la plataforma.",
-        "profileSavedTitle": "Perfil guardado",
-        "profileSaved": "Se actualizó el perfil de {{name}}."
+        "notImplementedTitle": "Aún no disponible",
+        "reactivateNotImplemented": "Reactivar cuentas aún no está implementado — {{name}} no fue modificada.",
+        "deactivateNotImplemented": "Desactivar cuentas aún no está implementado — {{name}} no fue modificada.",
+        "deleteNotImplemented": "Eliminar cuentas aún no está implementado — {{name}} no fue eliminada.",
+        "profileSaveNotImplemented": "Guardar perfiles aún no está implementado — los cambios en {{name}} solo son visibles en esta sesión."
       },
       "searchPlaceholder": "Buscar por nombre o email...",
       "filterByAccount": "Filtrar por cuenta",
       "filterByPlan": "Filtrar por plan",
+      "filterByPlanUnavailable": "Filtrar por plan — los datos de plan aún no están disponibles para cuentas reales",
       "filterByStatus": "Filtrar por estado",
       "allAccounts": "Todas las cuentas",
       "allPlans": "Todos los planes",
       "allStatuses": "Todos los estados",
       "clearFilters": "Limpiar filtros",
-      "footerText": "Mostrando 1–{{count}} de 3.482 cuentas",
+      "footerText": "Mostrando 1–{{count}} de {{total}} cuentas",
+      "footerTextPartial": "Mostrando {{count}} de las últimas {{loaded}} de {{total}} cuentas — la búsqueda y los filtros solo cubren las cuentas cargadas",
       "emptyTitle": "Ningún usuario encontrado",
       "emptyDescription": "Intenta buscar por otro nombre o email.",
+      "loading": "Cargando cuentas...",
+      "loadError": "No se pudieron cargar las cuentas. Inténtalo de nuevo más tarde.",
+      "retry": "Reintentar",
       "drawer": {
         "tabProfile": "Perfil",
         "tabSubscriptions": "Suscripciones",
@@ -219,6 +222,8 @@
         "noSubscriptionDescription": "Este usuario está actualmente en el plan gratuito.",
         "noReportsTitle": "Sin reportes",
         "noReportsDescription": "Este usuario no tiene reportes presentados ni recibidos.",
+        "notAvailableTitle": "Aún no disponible",
+        "notAvailableDescription": "Estos datos todavía no están conectados para cuentas reales.",
         "subPlan": "Plan",
         "subAmount": "Monto",
         "subSince": "Suscriptor desde",
@@ -228,7 +233,8 @@
         "reportStatus": "Estado",
         "reportDate": "Fecha",
         "nameRequired": "Ingresa el nombre completo.",
-        "invalidEmail": "Ingresa un email válido."
+        "invalidEmail": "Ingresa un email válido.",
+        "historyAccountCreated": "Cuenta creada"
       },
       "resetPassword": {
         "title": "Restablecer contraseña",
@@ -246,12 +252,11 @@
         "invalidPhoneTitle": "Revisa el teléfono",
         "invalidHint": "No parece válido — corrígelo antes de enviar.",
         "missingHint": "No hay nada registrado — agrégalo antes de enviar.",
-        "sentTitle": "Enlace enviado",
-        "sentDescription": "Se envió un enlace de restablecimiento a {{destination}}.",
         "editEmail": "Editar email",
         "editPhone": "Editar teléfono",
         "emailInputLabel": "Dirección de email",
-        "phoneInputLabel": "Número de teléfono"
+        "phoneInputLabel": "Número de teléfono",
+        "sendNotImplemented": "Enviar enlaces de restablecimiento aún no está implementado — no se envió nada a {{destination}}."
       },
       "table": {
         "columnName": "Nombre",
@@ -280,6 +285,7 @@
       "statusOptions": {
         "active": "Activo",
         "deactivated": "Desactivado",
+        "suspended": "Suspendido",
         "deleted": "Eliminado"
       },
       "roleOptions": {
