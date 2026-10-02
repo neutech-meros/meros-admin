@@ -26,6 +26,7 @@ const PLAN_OPTIONS: Array<[PlanOption, string]> = [
 const STATUS_OPTIONS: Array<[StatusOption, string]> = [
   ['Active', 'admin.users.statusOptions.active'],
   ['Deactivated', 'admin.users.statusOptions.deactivated'],
+  ['Suspended', 'admin.users.statusOptions.suspended'],
   ['Deleted', 'admin.users.statusOptions.deleted'],
 ];
 

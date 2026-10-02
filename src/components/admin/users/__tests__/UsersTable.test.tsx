@@ -1,5 +1,5 @@
 // src/components/admin/users/__tests__/UsersTable.test.tsx
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { UserRecord } from '@/lib/mocks/admin/users';
@@ -48,6 +48,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}
@@ -63,13 +65,38 @@ describe('UsersTable', () => {
     expect(screen.getByText('Rafael Nogueira')).toBeInTheDocument();
   });
 
-  // The test setup initializes i18n with lng 'pt', so STATUS_LABEL_KEY/ROLE_LABEL_KEY must
-  // actually be translated here — an untranslated Record<UserRecord['status'], string> would
-  // still pass every other assertion above, since none of them check the badge text itself.
-  it('renders the status and role badges translated, not as the raw enum value', () => {
+  it('labels the account badge Business/Personal, not Creator/User', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
+        sort={{ key: null, dir: 'desc' }}
+        onSortChange={jest.fn()}
+        onRowClick={jest.fn()}
+        onViewProfile={jest.fn()}
+        onResetPassword={jest.fn()}
+        onDeactivate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('Empresarial')).toBeInTheDocument();
+    expect(screen.getByText('Pessoal')).toBeInTheDocument();
+    expect(screen.queryByText('Creator')).not.toBeInTheDocument();
+    expect(screen.queryByText('User')).not.toBeInTheDocument();
+  });
+
+  // The test setup initializes i18n with lng 'pt', so STATUS_LABEL_KEY must actually be
+  // translated here — an untranslated Record<UserRecord['status'], string> would still pass
+  // every other assertion above, since none of them check the badge text itself. (The role
+  // badge itself moved to the account-type badge tested above; ROLE_LABEL_KEY is still
+  // covered where it's actually used, in UserDetailDrawer's tests.)
+  it('renders the status badge translated, not as the raw enum value', () => {
+    render(
+      <UsersTable
+        users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}
@@ -80,11 +107,9 @@ describe('UsersTable', () => {
       />,
     );
     expect(screen.getByText('Ativo')).toBeInTheDocument();
-    expect(screen.getByText('Criador')).toBeInTheDocument();
     expect(screen.getByText('Desativado')).toBeInTheDocument();
-    expect(screen.getByText('Usuário')).toBeInTheDocument();
     expect(screen.queryByText('Active')).not.toBeInTheDocument();
-    expect(screen.queryByText('Creator')).not.toBeInTheDocument();
+    expect(screen.queryByText('Deactivated')).not.toBeInTheDocument();
   });
 
   it('calls onSortChange with the column key when a sortable header is clicked', async () => {
@@ -93,6 +118,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={onSortChange}
         onRowClick={jest.fn()}
@@ -112,6 +139,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={onSortChange}
         onRowClick={jest.fn()}
@@ -135,6 +164,8 @@ describe('UsersTable', () => {
   it('reflects the current sort column and direction via aria-sort', () => {
     const props = {
       users,
+      total: users.length,
+      loadedCount: users.length,
       onSortChange: jest.fn(),
       onRowClick: jest.fn(),
       onViewProfile: jest.fn(),
@@ -161,6 +192,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={onRowClick}
@@ -180,6 +213,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}
@@ -204,6 +239,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}
@@ -218,10 +255,12 @@ describe('UsersTable', () => {
     expect(screen.getByText('Reativar conta')).toBeInTheDocument();
   });
 
-  it('renders the decorative pager buttons as non-interactive', () => {
+  it('shows no pager when there are 8 or fewer users', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}
@@ -231,15 +270,169 @@ describe('UsersTable', () => {
         onDelete={jest.fn()}
       />,
     );
-    for (const label of ['‹', '1', '2', '3', '›']) {
-      expect(screen.getByRole('button', { name: label })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: '‹' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '›' })).not.toBeInTheDocument();
+  });
+
+  describe('pagination with more than 8 users', () => {
+    function manyUsers(count: number): UserRecord[] {
+      return Array.from({ length: count }, (_, i) => ({
+        ...users[0],
+        id: `page-${i}`,
+        name: `User ${String(i).padStart(2, '0')}`,
+        email: `user${i}@mail.com`,
+      }));
     }
+
+    it('shows only the first 8 users and a working pager', async () => {
+      const user = userEvent.setup();
+      render(
+        <UsersTable
+          users={manyUsers(20)}
+          total={20}
+          loadedCount={20}
+          sort={{ key: null, dir: 'desc' }}
+          onSortChange={jest.fn()}
+          onRowClick={jest.fn()}
+          onViewProfile={jest.fn()}
+          onResetPassword={jest.fn()}
+          onDeactivate={jest.fn()}
+          onDelete={jest.fn()}
+        />,
+      );
+      expect(screen.getByText('User 00')).toBeInTheDocument();
+      expect(screen.getByText('User 07')).toBeInTheDocument();
+      expect(screen.queryByText('User 08')).not.toBeInTheDocument();
+      expect(screen.getByText(/exibindo 1–8 de 20 contas/i)).toBeInTheDocument();
+
+      const pageTwo = screen.getByRole('button', { name: 'Página 2' });
+      await user.click(pageTwo);
+
+      expect(screen.getByText('User 08')).toBeInTheDocument();
+      expect(screen.getByText('User 15')).toBeInTheDocument();
+      expect(screen.queryByText('User 00')).not.toBeInTheDocument();
+      expect(screen.getByText(/exibindo 9–16 de 20 contas/i)).toBeInTheDocument();
+      expect(pageTwo).toHaveAttribute('aria-current', 'page');
+
+      await user.click(screen.getByRole('button', { name: 'Próxima página' }));
+      expect(screen.getByText('User 16')).toBeInTheDocument();
+      expect(screen.getByText('User 19')).toBeInTheDocument();
+      expect(screen.getByText(/exibindo 17–20 de 20 contas/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Próxima página' })).toBeDisabled();
+
+      await user.click(screen.getByRole('button', { name: 'Página anterior' }));
+      expect(screen.getByText(/exibindo 9–16 de 20 contas/i)).toBeInTheDocument();
+    });
+
+    it('resets to page 1 when the user list changes', () => {
+      const { rerender } = render(
+        <UsersTable
+          users={manyUsers(20)}
+          total={20}
+          loadedCount={20}
+          sort={{ key: null, dir: 'desc' }}
+          onSortChange={jest.fn()}
+          onRowClick={jest.fn()}
+          onViewProfile={jest.fn()}
+          onResetPassword={jest.fn()}
+          onDeactivate={jest.fn()}
+          onDelete={jest.fn()}
+        />,
+      );
+      rerender(
+        <UsersTable
+          users={manyUsers(5)}
+          total={5}
+          loadedCount={5}
+          sort={{ key: null, dir: 'desc' }}
+          onSortChange={jest.fn()}
+          onRowClick={jest.fn()}
+          onViewProfile={jest.fn()}
+          onResetPassword={jest.fn()}
+          onDeactivate={jest.fn()}
+          onDelete={jest.fn()}
+        />,
+      );
+      expect(screen.getByText(/exibindo 1–5 de 5 contas/i)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '‹' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders "—" for the plan and follower count of a real account with no plan data', () => {
+    const realAccount: UserRecord = {
+      ...users[1],
+      id: 'real-1',
+      name: 'Real Account',
+      plan: null,
+      followers: '—',
+      following: '—',
+    };
+    render(
+      <UsersTable
+        users={[realAccount]}
+        total={1}
+        loadedCount={1}
+        sort={{ key: null, dir: 'desc' }}
+        onSortChange={jest.fn()}
+        onRowClick={jest.fn()}
+        onViewProfile={jest.fn()}
+        onResetPassword={jest.fn()}
+        onDeactivate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    const row = screen.getByText('Real Account').closest('tr')!;
+    const cells = within(row).getAllByRole('cell');
+    expect(cells[2]).toHaveTextContent(/^—$/);
+    expect(cells[3]).toHaveTextContent(/^—$/);
+  });
+
+  it('shows the given total in the footer when everything is loaded', () => {
+    render(
+      <UsersTable
+        users={users}
+        total={1234}
+        loadedCount={1234}
+        sort={{ key: null, dir: 'desc' }}
+        onSortChange={jest.fn()}
+        onRowClick={jest.fn()}
+        onViewProfile={jest.fn()}
+        onResetPassword={jest.fn()}
+        onDeactivate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    expect(screen.getByText(/exibindo 1–2 de 1234 contas/i)).toBeInTheDocument();
+    expect(screen.queryByText(/3\.482/)).not.toBeInTheDocument();
+  });
+
+  it('shows an honest partial-load message when fewer rows were loaded than the server total', () => {
+    render(
+      <UsersTable
+        users={users}
+        total={3482}
+        loadedCount={100}
+        sort={{ key: null, dir: 'desc' }}
+        onSortChange={jest.fn()}
+        onRowClick={jest.fn()}
+        onViewProfile={jest.fn()}
+        onResetPassword={jest.fn()}
+        onDeactivate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    expect(
+      screen.getByText(/exibindo 1–2 das últimas 100 de 3482 contas.*apenas as contas carregadas/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/^exibindo 1–2 de 3482 contas$/i)).not.toBeInTheDocument();
   });
 
   it('renders the empty state when there are no users', () => {
     render(
       <UsersTable
         users={[]}
+        total={0}
+        loadedCount={0}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}

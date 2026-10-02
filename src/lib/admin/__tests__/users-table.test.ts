@@ -5,6 +5,8 @@ import {
   DEFAULT_SORT,
   filterAndSortUsers,
   isAnyFilterActive,
+  paginateUsers,
+  USERS_PAGE_SIZE,
 } from '../users-table';
 
 function user(overrides: Partial<UserRecord>): UserRecord {
@@ -95,6 +97,47 @@ describe('filterAndSortUsers', () => {
     expect(result.map((u) => u.id)).toEqual(['b', 'c', 'a']);
   });
 
+  describe('with a real account whose plan is unknown (null)', () => {
+    const withUnknownPlan = [
+      ...users,
+      user({ id: 'r', name: 'Real Account', plan: null, followers: '—', following: '—' }),
+    ];
+
+    it('never matches a null-plan row when a specific plan is selected', () => {
+      for (const plan of ['Premium', 'Free trial', 'Freemium'] as const) {
+        const result = filterAndSortUsers(
+          withUnknownPlan,
+          { ...DEFAULT_FILTERS, plan },
+          DEFAULT_SORT,
+        );
+        expect(result.map((u) => u.id)).not.toContain('r');
+      }
+    });
+
+    it('keeps the null-plan row when the plan filter is "all"', () => {
+      const result = filterAndSortUsers(withUnknownPlan, DEFAULT_FILTERS, DEFAULT_SORT);
+      expect(result.map((u) => u.id)).toContain('r');
+    });
+
+    it('sorts a null plan below every known plan', () => {
+      const desc = filterAndSortUsers(withUnknownPlan, DEFAULT_FILTERS, {
+        key: 'plan',
+        dir: 'desc',
+      });
+      expect(desc.map((u) => u.id)).toEqual(['b', 'c', 'a', 'r']);
+      const asc = filterAndSortUsers(withUnknownPlan, DEFAULT_FILTERS, { key: 'plan', dir: 'asc' });
+      expect(asc.map((u) => u.id)).toEqual(['r', 'a', 'c', 'b']);
+    });
+
+    it('sorts a "—" follower count as zero without crashing', () => {
+      const result = filterAndSortUsers(withUnknownPlan, DEFAULT_FILTERS, {
+        key: 'followers',
+        dir: 'asc',
+      });
+      expect(result.map((u) => u.id)).toEqual(['r', 'c', 'a', 'b']);
+    });
+  });
+
   it('sorts by joined date', () => {
     const result = filterAndSortUsers(users, DEFAULT_FILTERS, { key: 'joined', dir: 'asc' });
     expect(result.map((u) => u.id)).toEqual(['a', 'c', 'b']);
@@ -103,6 +146,65 @@ describe('filterAndSortUsers', () => {
   it('sorts by name case-insensitively', () => {
     const result = filterAndSortUsers(users, DEFAULT_FILTERS, { key: 'name', dir: 'asc' });
     expect(result.map((u) => u.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('paginateUsers', () => {
+  const items = Array.from({ length: 20 }, (_, i) => i);
+
+  it('uses a page size of 8 by default', () => {
+    expect(USERS_PAGE_SIZE).toBe(8);
+  });
+
+  it('returns the first page by default slice', () => {
+    const result = paginateUsers(items, 1);
+    expect(result.pageItems).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(result).toMatchObject({ page: 1, pageCount: 3, startIndex: 0, endIndex: 8 });
+  });
+
+  it('returns a middle page', () => {
+    const result = paginateUsers(items, 2);
+    expect(result.pageItems).toEqual([8, 9, 10, 11, 12, 13, 14, 15]);
+    expect(result).toMatchObject({ page: 2, pageCount: 3, startIndex: 8, endIndex: 16 });
+  });
+
+  it('returns a partial last page', () => {
+    const result = paginateUsers(items, 3);
+    expect(result.pageItems).toEqual([16, 17, 18, 19]);
+    expect(result).toMatchObject({ page: 3, pageCount: 3, startIndex: 16, endIndex: 20 });
+  });
+
+  it('clamps a page beyond the last page down to the last page', () => {
+    const result = paginateUsers(items, 99);
+    expect(result.page).toBe(3);
+    expect(result.pageItems).toEqual([16, 17, 18, 19]);
+  });
+
+  it('clamps a page below 1 up to 1', () => {
+    const result = paginateUsers(items, 0);
+    expect(result.page).toBe(1);
+  });
+
+  it('reports a single page of 1 for an empty list, with an empty slice', () => {
+    const result = paginateUsers([], 1);
+    expect(result).toMatchObject({
+      pageItems: [],
+      page: 1,
+      pageCount: 1,
+      startIndex: 0,
+      endIndex: 0,
+    });
+  });
+
+  it('reports a single page for a list at or under the page size', () => {
+    const eight = Array.from({ length: 8 }, (_, i) => i);
+    expect(paginateUsers(eight, 1).pageCount).toBe(1);
+  });
+
+  it('supports a custom page size', () => {
+    const result = paginateUsers(items, 2, 5);
+    expect(result.pageItems).toEqual([5, 6, 7, 8, 9]);
+    expect(result.pageCount).toBe(4);
   });
 });
 

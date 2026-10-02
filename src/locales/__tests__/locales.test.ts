@@ -67,6 +67,6 @@ describe('admin.users locales', () => {
   });
 
   it('renders the English footer in English', () => {
-    expect(leafValue(en, 'footerText')).toBe('Showing 1–{{count}} of 3,482 accounts');
+    expect(leafValue(en, 'footerText')).toBe('Showing {{start}}–{{end}} of {{total}} accounts');
   });
 });

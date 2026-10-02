@@ -263,13 +263,11 @@
       "title": "Usuários e criadores",
       "subtitle": "Gerencie contas, verificações e planos.",
       "toasts": {
-        "accountUpdatedTitle": "Conta atualizada",
-        "reactivated": "A conta de {{name}} foi reativada.",
-        "deactivated": "A conta de {{name}} foi desativada.",
-        "accountDeletedTitle": "Conta excluída",
-        "deleted": "A conta de {{name}} foi removida da plataforma.",
-        "profileSavedTitle": "Perfil salvo",
-        "profileSaved": "O perfil de {{name}} foi atualizado."
+        "notImplementedTitle": "Ainda não disponível",
+        "reactivateNotImplemented": "Reativar contas ainda não foi implementado — {{name}} não foi alterada.",
+        "deactivateNotImplemented": "Desativar contas ainda não foi implementado — {{name}} não foi alterada.",
+        "deleteNotImplemented": "Excluir contas ainda não foi implementado — {{name}} não foi removida.",
+        "profileSaveNotImplemented": "Salvar perfis ainda não foi implementado — as alterações em {{name}} só ficam visíveis nesta sessão."
       },
       "searchPlaceholder": "Buscar por nome ou e-mail...",
       "filterByAccount": "Filtrar por conta",
@@ -279,9 +277,13 @@
       "allPlans": "Todos os planos",
       "allStatuses": "Todos os status",
       "clearFilters": "Limpar filtros",
-      "footerText": "Exibindo 1–{{count}} de 3.482 contas",
+      "footerText": "Exibindo {{start}}–{{end}} de {{total}} contas",
+      "footerTextPartial": "Exibindo {{start}}–{{end}} das últimas {{loaded}} de {{total}} contas — a busca e os filtros cobrem apenas as contas carregadas",
       "emptyTitle": "Nenhum usuário encontrado",
       "emptyDescription": "Tente buscar por outro nome ou e-mail.",
+      "loading": "Carregando contas...",
+      "loadError": "Não foi possível carregar as contas. Tente novamente mais tarde.",
+      "retry": "Tentar novamente",
       "drawer": {
         "tabProfile": "Perfil",
         "tabSubscriptions": "Assinaturas",
@@ -309,18 +311,48 @@
         "cancel": "Cancelar",
         "noSubscriptionTitle": "Nenhuma assinatura ativa",
         "noSubscriptionDescription": "Este usuário está atualmente no plano gratuito.",
+        "noStoreSubscriptionPremiumDescription": "O acesso Premium desta conta não vem de uma assinatura da loja (teste grátis ou liberação manual).",
         "noReportsTitle": "Nenhuma denúncia",
         "noReportsDescription": "Este usuário não tem denúncias feitas nem recebidas.",
+        "notAvailableTitle": "Ainda não disponível",
+        "notAvailableDescription": "Esses dados ainda não estão integrados para contas reais.",
+        "loadErrorTitle": "Não foi possível carregar esses dados",
+        "loadErrorDescription": "Algo deu errado ao contatar o servidor. Tente novamente.",
+        "retry": "Tentar novamente",
         "subPlan": "Plano",
         "subAmount": "Valor",
+        "subListPrice": "Preço de tabela",
         "subSince": "Assinante desde",
         "subStatus": "Status",
+        "subAccessUntil": "Acesso até",
         "reportType": "Tipo",
         "reportReason": "Motivo",
         "reportStatus": "Status",
         "reportDate": "Data",
         "nameRequired": "Informe o nome completo.",
-        "invalidEmail": "Informe um e-mail válido."
+        "invalidEmail": "Informe um e-mail válido.",
+        "historyAccountCreated": "Conta criada",
+        "historyPasswordChanged": "Senha alterada",
+        "historySubscribed": "Assinou o plano {{plan}}",
+        "historyPlanChanged": "Mudou para o plano {{plan}}",
+        "historyCancelled": "Cancelou a assinatura",
+        "historyCancelledWithReason": "Cancelou a assinatura ({{reason}})",
+        "historyDeactivated": "Conta desativada",
+        "loadingDetails": "Carregando...",
+        "subscriptionStatus": {
+          "active": "Ativa",
+          "cancelled": "Cancelada",
+          "gracePeriod": "Período de carência",
+          "expired": "Expirada"
+        },
+        "cancelReason": {
+          "unsubscribe": "cancelamento voluntário",
+          "billingError": "um erro de cobrança",
+          "developerInitiated": "cancelado por um administrador",
+          "priceIncrease": "um aumento de preço",
+          "customerSupport": "atendimento ao cliente",
+          "unknown": "um motivo desconhecido"
+        }
       },
       "resetPassword": {
         "title": "Redefinir senha",
@@ -338,12 +370,11 @@
         "invalidPhoneTitle": "Verifique o telefone",
         "invalidHint": "Parece inválido — corrija antes de enviar.",
         "missingHint": "Não há nada cadastrado — adicione antes de enviar.",
-        "sentTitle": "Link de redefinição enviado",
-        "sentDescription": "Um link de redefinição de senha foi enviado para {{destination}}.",
         "editEmail": "Editar e-mail",
         "editPhone": "Editar telefone",
         "emailInputLabel": "Endereço de e-mail",
-        "phoneInputLabel": "Número de telefone"
+        "phoneInputLabel": "Número de telefone",
+        "sendNotImplemented": "Enviar links de redefinição ainda não foi implementado — nada foi enviado para {{destination}}."
       },
       "table": {
         "columnName": "Nome",
@@ -353,6 +384,10 @@
         "columnJoined": "Cadastro",
         "columnStatus": "Status",
         "actionsFor": "Ações para {{name}}",
+        "pagination": "Paginação",
+        "previousPage": "Página anterior",
+        "nextPage": "Próxima página",
+        "pageNumber": "Página {{number}}",
         "viewProfile": "Ver perfil",
         "resetPassword": "Redefinir senha",
         "deactivateAccount": "Desativar conta",
@@ -372,6 +407,7 @@
       "statusOptions": {
         "active": "Ativo",
         "deactivated": "Desativado",
+        "suspended": "Suspenso",
         "deleted": "Excluído"
       },
       "roleOptions": {

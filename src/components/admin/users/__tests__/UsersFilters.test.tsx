@@ -66,6 +66,7 @@ describe('UsersFilters', () => {
       ['all', 'Todos os status'],
       ['Active', 'Ativo'],
       ['Deactivated', 'Desativado'],
+      ['Suspended', 'Suspenso'],
       ['Deleted', 'Excluído'],
     ]);
   });

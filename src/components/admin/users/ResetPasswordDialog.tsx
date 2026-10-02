@@ -201,8 +201,8 @@ export function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProp
       );
       return;
     }
-    toast.success(t('admin.users.resetPassword.sentTitle'), {
-      description: t('admin.users.resetPassword.sentDescription', { destination: dest }),
+    toast.info(t('admin.users.toasts.notImplementedTitle'), {
+      description: t('admin.users.resetPassword.sendNotImplemented', { destination: dest }),
     });
     onClose();
   }
