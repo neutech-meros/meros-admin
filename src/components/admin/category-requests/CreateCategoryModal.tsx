@@ -69,13 +69,21 @@ export function CreateCategoryModal({ request, onCancel, onCreate }: CreateCateg
     )
       ? (request.level as Level)
       : 'Parent';
+    // Fall back to what the selects display when the request's parent no longer matches the
+    // tree (renamed or removed on the Categories screen), so state and UI never disagree.
+    const parent =
+      requestLevel === 'Parent' ? null : (findNode(tree, match.parentSlug) ?? tree[0] ?? null);
+    const subSlugValue =
+      requestLevel === 'Child category'
+        ? (match.subcategorySlug ?? parent?.children?.[0]?.slug ?? null)
+        : match.subcategorySlug;
     setName(request.name);
     setLevel(requestLevel);
-    setParentSlug(match.parentSlug);
-    setSubSlug(match.subcategorySlug);
+    setParentSlug(parent?.slug ?? null);
+    setSubSlug(subSlugValue);
     setStatus('Active');
     const immediateParentSlug =
-      requestLevel === 'Child category' ? match.subcategorySlug : match.parentSlug;
+      requestLevel === 'Child category' ? subSlugValue : (parent?.slug ?? null);
     setIcon(findNode(tree, immediateParentSlug)?.icon ?? DEFAULT_CATEGORY_ICON);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request?.id]);

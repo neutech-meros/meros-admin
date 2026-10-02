@@ -1,7 +1,12 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Provider } from 'jotai';
+import { Provider, createStore } from 'jotai';
 import { toast } from 'sonner';
+
+import { getCategoryTree } from '@/lib/mocks/admin/categories';
+import { getCategoryRequests } from '@/lib/mocks/admin/category-requests';
+import { categoryTreeAtom } from '@/store/atoms/categories';
+import { categoryRequestsAtom } from '@/store/atoms/category-requests';
 
 import CategoriesPage from '../../categories/page';
 import CategoryRequestsPage from '../page';
@@ -274,5 +279,58 @@ describe('CategoryRequestsPage', () => {
     expect(toast.error).toHaveBeenCalledWith('Já existe', expect.anything());
     expect(toast.success).not.toHaveBeenCalled();
     expect(screen.getByRole('heading', { name: 'Criar categoria' })).toBeInTheDocument();
+  });
+
+  it('falls back to the first parent shown when the request parent no longer exists', async () => {
+    const user = userEvent.setup();
+    const store = createStore();
+    store.set(
+      categoryRequestsAtom,
+      getCategoryRequests().map((r) =>
+        r.id === 'wellness' ? { ...r, parent: 'Renamed group' } : r,
+      ),
+    );
+    render(
+      <Provider store={store}>
+        <CategoryRequestsPage />
+        <CategoriesPage />
+      </Provider>,
+    );
+    await user.click(within(row('Wellness')).getByRole('button', { name: 'Criar' }));
+
+    const parentSelect = screen.getByLabelText('Categoria principal') as HTMLSelectElement;
+    const firstParent = store.get(categoryTreeAtom)[0]!.slug;
+    expect(parentSelect.value).toBe(firstParent);
+    expect(screen.getByRole('button', { name: 'Criar categoria' })).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: 'Criar categoria' }));
+
+    expect(screen.getByText(`${firstParent}/wellness`)).toBeInTheDocument();
+  });
+
+  it('disables Create while the chosen parent has no subcategory to nest a child under', async () => {
+    const user = userEvent.setup();
+    const store = createStore();
+    store.set(categoryTreeAtom, [
+      {
+        name: 'Empty group',
+        slug: 'empty-group',
+        items: 0,
+        status: 'Active',
+        icon: 'tag',
+        children: [],
+      },
+      ...getCategoryTree(),
+    ]);
+    render(
+      <Provider store={store}>
+        <CategoryRequestsPage />
+      </Provider>,
+    );
+    await user.click(within(row('Wellness')).getByRole('button', { name: 'Criar' }));
+    await user.selectOptions(screen.getByLabelText('Categoria principal'), 'empty-group');
+    await user.click(screen.getByRole('button', { name: 'Categoria filha' }));
+
+    expect(screen.getByRole('button', { name: 'Criar categoria' })).toBeDisabled();
   });
 });
