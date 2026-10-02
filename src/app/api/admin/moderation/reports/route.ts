@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { queueResponseSchema } from '@/lib/admin/moderation-api';
-import { getProxyEnv } from '@/lib/server/proxy-env';
+import { getProxyEnv, isProxyEnabled } from '@/lib/server/proxy-env';
 
 const UPSTREAM_ERROR_MESSAGE = 'Failed to reach the moderation API';
 // Stop-gap for the missing admin-auth guard, same pattern as the accounts/user-details
@@ -10,10 +10,10 @@ const PROXY_DISABLED_MESSAGE = 'This endpoint is disabled';
 
 export async function GET() {
   try {
-    const { MEROS_API_URL, MEROS_ADMIN_API_KEY, ADMIN_MODERATION_PROXY_ENABLED } = getProxyEnv();
-    if (!ADMIN_MODERATION_PROXY_ENABLED) {
+    if (!isProxyEnabled()) {
       return NextResponse.json({ error: PROXY_DISABLED_MESSAGE }, { status: 404 });
     }
+    const { MEROS_API_URL, MEROS_ADMIN_API_KEY } = getProxyEnv();
 
     const upstream = await fetch(`${MEROS_API_URL}/admin/moderation/reports`, {
       headers: { Authorization: `Bearer ${MEROS_ADMIN_API_KEY}` },

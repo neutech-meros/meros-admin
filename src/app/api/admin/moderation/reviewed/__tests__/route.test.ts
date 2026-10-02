@@ -51,6 +51,19 @@ describe('GET /api/admin/moderation/reviewed', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it('returns 404 (not 502) when disabled in production with the other proxy vars unset', async () => {
+    (process.env as { NODE_ENV: string }).NODE_ENV = 'production';
+    process.env.ADMIN_MODERATION_PROXY_ENABLED = 'false';
+    delete process.env.MEROS_API_URL;
+    delete process.env.MEROS_ADMIN_API_KEY;
+    global.fetch = jest.fn();
+
+    const res = await GET(request('http://localhost/api/admin/moderation/reviewed'));
+
+    expect(res.status).toBe(404);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('forwards the request with no limit query string when none is given', async () => {
     global.fetch = fetchOk(VALID_REVIEWED_RESPONSE);
 

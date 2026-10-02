@@ -88,6 +88,35 @@ describe('POST /api/admin/moderation/reports/:targetType/:targetId/decision', ()
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it('returns 415 for a CORS-safelisted MIME essence smuggling "application/json" in a parameter (text/plain; x=application/json)', async () => {
+    global.fetch = jest.fn();
+
+    const res = await POST(
+      new Request(URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain; x=application/json' },
+        body: JSON.stringify({ decision: 'REMOVED' }),
+      }),
+      { params: params() },
+    );
+
+    expect(res.status).toBe(415);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 (not 502) when disabled in production with the other proxy vars unset', async () => {
+    (process.env as { NODE_ENV: string }).NODE_ENV = 'production';
+    process.env.ADMIN_MODERATION_PROXY_ENABLED = 'false';
+    delete process.env.MEROS_API_URL;
+    delete process.env.MEROS_ADMIN_API_KEY;
+    global.fetch = jest.fn();
+
+    const res = await POST(postRequest(URL, { decision: 'KEPT' }), { params: params() });
+
+    expect(res.status).toBe(404);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('returns 400 without reaching upstream for malformed JSON', async () => {
     global.fetch = jest.fn();
 

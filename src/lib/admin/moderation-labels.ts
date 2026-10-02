@@ -70,10 +70,12 @@ export function targetKindLabel(t: Translate, targetType: TargetType | undefined
 export function whereItLivesLabel(t: Translate, report: ReportedItem): string {
   switch (report.targetType) {
     case 'LIST':
-      return t('admin.moderation.whereList', {
-        count: report.itemCount ?? 0,
-        date: report.publishedAt ?? '—',
-      });
+      return report.itemCount === null
+        ? t('admin.moderation.whereListUnknownCount', { date: report.publishedAt ?? '—' })
+        : t('admin.moderation.whereList', {
+            count: report.itemCount,
+            date: report.publishedAt ?? '—',
+          });
     case 'PLACE_IN_LIST':
       return t('admin.moderation.wherePlace', {
         list: report.listTitle ?? '—',

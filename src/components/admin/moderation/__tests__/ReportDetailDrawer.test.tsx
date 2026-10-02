@@ -54,12 +54,18 @@ const baseReport: ReportedItem = {
   avatarColor: '#7F00FF',
 };
 
-function renderDrawer(report: ReportedItem | null) {
+function renderDrawer(report: ReportedItem | null, busy = false) {
   const onClose = jest.fn();
   const onKeep = jest.fn();
   const onRemove = jest.fn();
   render(
-    <ReportDetailDrawer report={report} onClose={onClose} onKeep={onKeep} onRemove={onRemove} />,
+    <ReportDetailDrawer
+      report={report}
+      busy={busy}
+      onClose={onClose}
+      onKeep={onKeep}
+      onRemove={onRemove}
+    />,
   );
   return { onClose, onKeep, onRemove };
 }
@@ -187,6 +193,66 @@ describe('ReportDetailDrawer', () => {
 
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
     expect(onRemove).not.toHaveBeenCalled();
+  });
+
+  it('disables the action buttons while a decision is in flight for this report', () => {
+    renderDrawer(baseReport, true);
+    expect(screen.getByRole('button', { name: 'Manter conteúdo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Remover conteúdo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Abrir conta' })).toBeDisabled();
+  });
+
+  it('does not call onKeep when busy and the button is clicked', () => {
+    const { onKeep } = renderDrawer(baseReport, true);
+    fireEvent.click(screen.getByRole('button', { name: 'Manter conteúdo' }));
+    expect(onKeep).not.toHaveBeenCalled();
+  });
+
+  it('disables Cancel/Confirm in the remove dialog while busy', async () => {
+    const { rerender } = render(
+      <ReportDetailDrawer
+        report={baseReport}
+        busy={false}
+        onClose={jest.fn()}
+        onKeep={jest.fn()}
+        onRemove={jest.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Remover conteúdo' }));
+    const confirmDialog = await screen.findByRole('alertdialog');
+    expect(within(confirmDialog).getByRole('button', { name: 'Cancelar' })).not.toBeDisabled();
+    expect(within(confirmDialog).getByRole('button', { name: 'Sim, remover' })).not.toBeDisabled();
+
+    rerender(
+      <ReportDetailDrawer
+        report={baseReport}
+        busy
+        onClose={jest.fn()}
+        onKeep={jest.fn()}
+        onRemove={jest.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Sim, remover' })).toBeDisabled();
+  });
+
+  it('names the account in the remove-confirmation copy for a PROFILE report', async () => {
+    renderDrawer({ ...baseReport, targetType: 'PROFILE', title: 'Marina Alves' });
+    fireEvent.click(screen.getByRole('button', { name: 'Remover conteúdo' }));
+    const confirmDialog = await screen.findByRole('alertdialog');
+    expect(
+      within(confirmDialog).getByText(/suspende imediatamente a conta de Marina Alves/),
+    ).toBeInTheDocument();
+  });
+
+  it('names the item (not the account) in the remove-confirmation copy for a LIST report', async () => {
+    renderDrawer(baseReport);
+    fireEvent.click(screen.getByRole('button', { name: 'Remover conteúdo' }));
+    const confirmDialog = await screen.findByRole('alertdialog');
+    expect(
+      within(confirmDialog).getByText(/suspende imediatamente "Hidden waterfalls of Chapada"/),
+    ).toBeInTheDocument();
+    expect(within(confirmDialog).getByText(/a conta em si não é afetada/)).toBeInTheDocument();
   });
 
   it('shows an "Open account" button that toasts instead of navigating (Users & Creators isn\'t built here yet)', () => {

@@ -111,6 +111,7 @@
       "toastKept": "Contenido mantenido",
       "toastRemoved": "Contenido eliminado",
       "toastDecisionFailed": "No se pudo registrar la decisión",
+      "toastAlreadyResolved": "Ya fue resuelto por otra persona",
       "loading": "Cargando denuncias...",
       "loadError": "No se pudo cargar la cola de moderación. Inténtalo de nuevo más tarde.",
       "retry": "Intentar de nuevo",
@@ -135,6 +136,7 @@
       "reasonOther": "Otro",
       "whereList_one": "{{count}} parada · publicada el {{date}}",
       "whereList_other": "{{count}} paradas · publicada el {{date}}",
+      "whereListUnknownCount": "— paradas · publicada el {{date}}",
       "wherePlace": "En la lista \"{{list}}\" · {{city}}, {{country}}",
       "whereProfile": "Perfil creado el {{date}} · {{bio}}",
       "noBio": "Sin biografía",
@@ -159,7 +161,8 @@
         "accountHistory_one": "{{count}} acción de moderación previa en esta cuenta.",
         "accountHistory_other": "{{count}} acciones de moderación previas en esta cuenta.",
         "confirmRemoveTitle": "¿Eliminar este contenido?",
-        "confirmRemoveDescription": "Esto suspende de inmediato el contenido denunciado y el estado de la cuenta. Puedes revisar la decisión más tarde, pero entra en vigor de inmediato.",
+        "confirmRemoveDescriptionProfile": "Esto suspende de inmediato la cuenta de {{title}}. Esta acción no se puede deshacer desde aquí — la pestaña Revisados es de solo lectura.",
+        "confirmRemoveDescriptionItem": "Esto suspende de inmediato \"{{title}}\" — la cuenta en sí no se ve afectada. Esta acción no se puede deshacer desde aquí — la pestaña Revisados es de solo lectura.",
         "confirmRemoveCancel": "Cancelar",
         "confirmRemoveConfirm": "Sí, eliminar"
       }

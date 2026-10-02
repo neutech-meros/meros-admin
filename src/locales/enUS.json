@@ -111,6 +111,7 @@
       "toastKept": "Content kept",
       "toastRemoved": "Content removed",
       "toastDecisionFailed": "Couldn't record the decision",
+      "toastAlreadyResolved": "Already resolved by someone else",
       "loading": "Loading reports...",
       "loadError": "Couldn't load the moderation queue. Please try again later.",
       "retry": "Try again",
@@ -135,6 +136,7 @@
       "reasonOther": "Other",
       "whereList_one": "{{count}} stop · published {{date}}",
       "whereList_other": "{{count}} stops · published {{date}}",
+      "whereListUnknownCount": "— stops · published {{date}}",
       "wherePlace": "In list \"{{list}}\" · {{city}}, {{country}}",
       "whereProfile": "Profile created {{date}} · {{bio}}",
       "noBio": "No bio",
@@ -159,7 +161,8 @@
         "accountHistory_one": "{{count}} prior moderation action on this account.",
         "accountHistory_other": "{{count}} prior moderation actions on this account.",
         "confirmRemoveTitle": "Remove this content?",
-        "confirmRemoveDescription": "This immediately suspends the reported content and its account status. You can revisit the decision later, but it takes effect right away.",
+        "confirmRemoveDescriptionProfile": "This immediately suspends {{title}}'s account. This can't be undone from here — the Reviewed tab is read-only.",
+        "confirmRemoveDescriptionItem": "This immediately suspends \"{{title}}\" — the account itself isn't affected. This can't be undone from here — the Reviewed tab is read-only.",
         "confirmRemoveCancel": "Cancel",
         "confirmRemoveConfirm": "Yes, remove"
       }

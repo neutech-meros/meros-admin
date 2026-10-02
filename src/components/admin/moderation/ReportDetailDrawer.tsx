@@ -30,6 +30,7 @@ import { statusStyle } from '@/lib/admin/status-styles';
 
 interface ReportDetailDrawerProps {
   report: ReportedItem | null; // null = closed
+  busy: boolean; // true while this report's decision request is in flight
   onClose: () => void;
   onKeep: (id: string) => void;
   onRemove: (id: string) => void;
@@ -77,10 +78,15 @@ function ReporterAvatar() {
   );
 }
 
-export function ReportDetailDrawer({ report, onClose, onKeep, onRemove }: ReportDetailDrawerProps) {
+export function ReportDetailDrawer({
+  report,
+  busy,
+  onClose,
+  onKeep,
+  onRemove,
+}: ReportDetailDrawerProps) {
   const { t } = useTranslation();
   const [confirmingRemove, setConfirmingRemove] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'keep' | 'remove' | null>(null);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) onClose();
@@ -94,17 +100,13 @@ export function ReportDetailDrawer({ report, onClose, onKeep, onRemove }: Report
     );
   }
 
-  const busy = pendingAction !== null;
-
   function handleKeep() {
     if (!report || busy) return;
-    setPendingAction('keep');
     onKeep(report.id);
   }
 
   function handleConfirmRemove() {
     if (!report || busy) return;
-    setPendingAction('remove');
     setConfirmingRemove(false);
     onRemove(report.id);
   }
@@ -282,14 +284,20 @@ export function ReportDetailDrawer({ report, onClose, onKeep, onRemove }: Report
           <AlertDialogHeader>
             <AlertDialogTitle>{t('admin.moderation.drawer.confirmRemoveTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('admin.moderation.drawer.confirmRemoveDescription')}
+              {report?.targetType === 'PROFILE'
+                ? t('admin.moderation.drawer.confirmRemoveDescriptionProfile', {
+                    title: report.title,
+                  })
+                : t('admin.moderation.drawer.confirmRemoveDescriptionItem', {
+                    title: report?.title,
+                  })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>
               {t('admin.moderation.drawer.confirmRemoveCancel')}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmRemove}>
+            <AlertDialogAction disabled={busy} onClick={handleConfirmRemove}>
               {t('admin.moderation.drawer.confirmRemoveConfirm')}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -249,7 +249,12 @@ function expectCounts(queue: number, reviewed: number) {
 }
 
 function queueRow(title: string) {
-  const row = screen.getByText(title).closest('tr');
+  // While the drawer for this same item is open, its title also renders in the drawer's
+  // header and cover banner — pick the match that's actually inside a table row.
+  const row = screen
+    .getAllByText(title)
+    .map((el) => el.closest('tr'))
+    .find((el): el is HTMLTableRowElement => el !== null);
   if (!row) throw new Error(`No table row for "${title}"`);
   return row;
 }
@@ -475,5 +480,117 @@ describe('ReportedContentPage', () => {
         { description: QUEUE_TITLES[0] },
       ),
     );
+  });
+
+  it('keeps the drawer open and lets the admin retry when the decision request itself fails', async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+
+    fetchMock.mockImplementation((url, init) => {
+      const href = String(url);
+      if (href.includes('/decision') && init?.method === 'POST') {
+        return Promise.resolve(jsonResponse(500, { error: 'boom' }));
+      }
+      return defaultFetchImpl(url, init);
+    });
+
+    await user.click(within(queueRow(QUEUE_TITLES[0])).getByRole('button', { name: 'Revisar' }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Manter conteúdo' }),
+    );
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Não foi possível registrar a decisão', {
+        description: QUEUE_TITLES[0],
+      }),
+    );
+    // Unlike a successful decision, the drawer stays open (it never remounts and loses its
+    // busy guard) and the buttons are re-enabled so the admin can retry.
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Manter conteúdo' }),
+    ).not.toBeDisabled();
+    expect(screen.getAllByText(QUEUE_TITLES[0]).length).toBeGreaterThan(0);
+  });
+
+  it('disables the row while its decision is in flight, re-enabling it once settled', async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+
+    let resolveDecision!: () => void;
+    fetchMock.mockImplementation((url, init) => {
+      const href = String(url);
+      if (href.includes('/decision') && init?.method === 'POST') {
+        return new Promise((resolve) => {
+          resolveDecision = () => {
+            // Mirror what the real upstream does on a KEPT decision, so the refetch this
+            // triggers actually reflects the item moving out of the queue.
+            const decided = queueState.find((q) => q.title === QUEUE_TITLES[0]);
+            queueState = queueState.filter((q) => q.title !== QUEUE_TITLES[0]);
+            if (decided) {
+              reviewedState = [
+                {
+                  id: decided.id,
+                  title: decided.title,
+                  owner: decided.owner!.name,
+                  reportCount: decided.reporters.length,
+                  decision: 'KEPT',
+                  reviewedBy: null,
+                  reviewedAt: new Date().toISOString(),
+                },
+                ...reviewedState,
+              ];
+            }
+            resolve(jsonResponse(204, null));
+          };
+        });
+      }
+      return defaultFetchImpl(url, init);
+    });
+
+    await user.click(within(queueRow(QUEUE_TITLES[0])).getByRole('button', { name: 'Revisar' }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Manter conteúdo' }),
+    );
+
+    // The row sits behind the still-open drawer's modal overlay (aria-hidden), so the
+    // disabled check needs `hidden: true` to reach it the same way an assistive tech user
+    // couldn't, but a direct DOM assertion still can.
+    await waitFor(() =>
+      expect(
+        within(queueRow(QUEUE_TITLES[0])).getByRole('button', { name: 'Revisar', hidden: true }),
+      ).toBeDisabled(),
+    );
+
+    resolveDecision();
+    await waitFor(() => expect(screen.queryByText(QUEUE_TITLES[0])).not.toBeInTheDocument());
+  });
+
+  it('shows an "already resolved" toast and refreshes the queue when the decision 404s', async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+
+    fetchMock.mockImplementation((url, init) => {
+      const href = String(url);
+      if (href.includes('/decision') && init?.method === 'POST') {
+        // Someone else already resolved this report between page load and this click.
+        queueState = queueState.filter((q) => q.title !== QUEUE_TITLES[0]);
+        return Promise.resolve(jsonResponse(404, { error: 'No pending reports found' }));
+      }
+      return defaultFetchImpl(url, init);
+    });
+
+    await user.click(within(queueRow(QUEUE_TITLES[0])).getByRole('button', { name: 'Revisar' }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Manter conteúdo' }),
+    );
+
+    await waitFor(() =>
+      expect(toast.info).toHaveBeenCalledWith('Já foi resolvido por outra pessoa', {
+        description: QUEUE_TITLES[0],
+      }),
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.queryByText(QUEUE_TITLES[0])).not.toBeInTheDocument();
   });
 });

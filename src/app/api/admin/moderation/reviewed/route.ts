@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { reviewedResponseSchema } from '@/lib/admin/moderation-api';
-import { getProxyEnv } from '@/lib/server/proxy-env';
+import { getProxyEnv, isProxyEnabled } from '@/lib/server/proxy-env';
 
 const UPSTREAM_ERROR_MESSAGE = 'Failed to reach the moderation API';
 const PROXY_DISABLED_MESSAGE = 'This endpoint is disabled';
@@ -13,10 +13,10 @@ const limitSchema = z.coerce.number().int().min(1).max(500).optional();
 
 export async function GET(request: Request) {
   try {
-    const { MEROS_API_URL, MEROS_ADMIN_API_KEY, ADMIN_MODERATION_PROXY_ENABLED } = getProxyEnv();
-    if (!ADMIN_MODERATION_PROXY_ENABLED) {
+    if (!isProxyEnabled()) {
       return NextResponse.json({ error: PROXY_DISABLED_MESSAGE }, { status: 404 });
     }
+    const { MEROS_API_URL, MEROS_ADMIN_API_KEY } = getProxyEnv();
 
     const rawLimit = new URL(request.url).searchParams.get('limit');
     const parsedLimit = limitSchema.safeParse(rawLimit ?? undefined);

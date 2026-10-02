@@ -152,6 +152,7 @@ export default function ReportedContentPage() {
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [drawerReportId, setDrawerReportId] = useState<string | null>(null);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -177,11 +178,26 @@ export default function ReportedContentPage() {
 
   const drawerReport = queue.find((r) => r.id === drawerReportId) ?? null;
 
+  function setPending(id: string, isPending: boolean) {
+    setPendingIds((prev) => {
+      const next = new Set(prev);
+      if (isPending) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
   async function decide(id: string, decision: 'Kept' | 'Removed') {
     const item = queue.find((r) => r.id === id);
     if (!item || !item.targetType || !item.targetId) return;
-    setDrawerReportId(null);
+    if (pendingIds.has(id)) return; // already in flight for this row — ignore a duplicate click
+    setPending(id, true);
 
+    // The drawer and row stay open/enabled-as-pending until this settles — closing the drawer
+    // (and remounting it) before the request resolves used to throw away its own busy guard,
+    // letting an admin reopen the same row and fire a second, conflicting decision while the
+    // first was still in flight.
+    let outcome: 'resolved' | 'already-resolved' | 'failed';
     try {
       const response = await fetch(
         `/api/admin/moderation/reports/${item.targetType}/${item.targetId}/decision`,
@@ -191,20 +207,39 @@ export default function ReportedContentPage() {
           body: JSON.stringify({ decision: decision === 'Kept' ? 'KEPT' : 'REMOVED' }),
         },
       );
-      if (!response.ok) throw new Error(`Decision request failed with status ${response.status}`);
+      if (response.status === 404) {
+        outcome = 'already-resolved';
+      } else if (!response.ok) {
+        throw new Error(`Decision request failed with status ${response.status}`);
+      } else {
+        outcome = 'resolved';
+      }
     } catch {
+      outcome = 'failed';
+    }
+
+    if (outcome === 'failed') {
       toast.error(t('admin.moderation.toastDecisionFailed'), { description: item.title });
+      setPending(id, false);
       return;
     }
 
-    if (decision === 'Kept') {
+    if (outcome === 'already-resolved') {
+      toast.info(t('admin.moderation.toastAlreadyResolved'), { description: item.title });
+    } else if (decision === 'Kept') {
       toast.success(t('admin.moderation.toastKept'), { description: item.title });
     } else {
       toast.error(t('admin.moderation.toastRemoved'), { description: item.title });
     }
 
-    // The decision above already succeeded; a failure here only means the lists are stale,
-    // not that the decision itself was lost — so it gets its own, less alarming toast.
+    // Only close the drawer once the row's own fate is actually settled (resolved here, or
+    // already resolved by someone else) — a failed request leaves it open so the admin can see
+    // what happened and retry.
+    setDrawerReportId((current) => (current === id ? null : current));
+
+    // The decision above already succeeded (or was already applied by someone else); a failure
+    // here only means the lists are stale, not that the decision itself was lost — so it gets
+    // its own, less alarming toast. Either way, a stale 404'd row needs this refetch to clear.
     try {
       const [queueItems, reviewedItems] = await Promise.all([
         fetchQueue(i18n.language),
@@ -214,6 +249,8 @@ export default function ReportedContentPage() {
       setReviewed(reviewedItems);
     } catch {
       toast.error(t('admin.moderation.toastRefreshFailed'), { description: item.title });
+    } finally {
+      setPending(id, false);
     }
   }
 
@@ -324,64 +361,71 @@ export default function ReportedContentPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {queue.map((report) => (
-                      <TableRow
-                        key={report.id}
-                        onClick={() => setDrawerReportId(report.id)}
-                        className="cursor-pointer"
-                        style={ROW_STYLE}
-                      >
-                        <TableCell className={`${CELL_CLASS} max-w-[320px]`}>
-                          <TwoLineCell
-                            primary={report.title}
-                            secondary={targetKindLabel(t, report.targetType)}
-                          />
-                        </TableCell>
-                        <TableCell className={CELL_CLASS} style={{ color: 'var(--text-primary)' }}>
-                          {reasonLabel(t, report.reason)}
-                        </TableCell>
-                        <TableCell className={CELL_CLASS}>
-                          <div className="flex items-center gap-2.5">
-                            <span
-                              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                              style={{ background: report.avatarColor }}
-                              aria-hidden="true"
-                            >
-                              {report.initials}
-                            </span>
-                            <TwoLineCell primary={report.owner} secondary={report.handle} />
-                          </div>
-                        </TableCell>
-                        <TableCell
-                          className={CELL_CLASS}
-                          style={{ color: 'var(--text-secondary)' }}
+                    {queue.map((report) => {
+                      const isPending = pendingIds.has(report.id);
+                      return (
+                        <TableRow
+                          key={report.id}
+                          onClick={() => !isPending && setDrawerReportId(report.id)}
+                          className={isPending ? 'opacity-50' : 'cursor-pointer'}
+                          style={ROW_STYLE}
                         >
-                          {t('admin.moderation.reportCount', { count: report.reporters.length })}
-                        </TableCell>
-                        <TableCell className={CELL_CLASS}>
-                          <Badge toneKey={report.severity}>
-                            {t(SEVERITY_I18N_KEY[report.severity])}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className={`${CELL_CLASS} text-right`}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDrawerReportId(report.id);
-                            }}
-                            className="rounded-[10px] border px-3 py-1.5 text-[13px] font-medium"
-                            style={{
-                              borderColor: 'var(--border-subtle)',
-                              background: 'var(--bg-elevated)',
-                              color: 'var(--text-primary)',
-                            }}
+                          <TableCell className={`${CELL_CLASS} max-w-[320px]`}>
+                            <TwoLineCell
+                              primary={report.title}
+                              secondary={targetKindLabel(t, report.targetType)}
+                            />
+                          </TableCell>
+                          <TableCell
+                            className={CELL_CLASS}
+                            style={{ color: 'var(--text-primary)' }}
                           >
-                            {t('admin.moderation.review')}
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                            {reasonLabel(t, report.reason)}
+                          </TableCell>
+                          <TableCell className={CELL_CLASS}>
+                            <div className="flex items-center gap-2.5">
+                              <span
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                                style={{ background: report.avatarColor }}
+                                aria-hidden="true"
+                              >
+                                {report.initials}
+                              </span>
+                              <TwoLineCell primary={report.owner} secondary={report.handle} />
+                            </div>
+                          </TableCell>
+                          <TableCell
+                            className={CELL_CLASS}
+                            style={{ color: 'var(--text-secondary)' }}
+                          >
+                            {t('admin.moderation.reportCount', { count: report.reporters.length })}
+                          </TableCell>
+                          <TableCell className={CELL_CLASS}>
+                            <Badge toneKey={report.severity}>
+                              {t(SEVERITY_I18N_KEY[report.severity])}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className={`${CELL_CLASS} text-right`}>
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDrawerReportId(report.id);
+                              }}
+                              className="rounded-[10px] border px-3 py-1.5 text-[13px] font-medium disabled:opacity-50"
+                              style={{
+                                borderColor: 'var(--border-subtle)',
+                                background: 'var(--bg-elevated)',
+                                color: 'var(--text-primary)',
+                              }}
+                            >
+                              {t('admin.moderation.review')}
+                            </button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
@@ -462,6 +506,7 @@ export default function ReportedContentPage() {
       <ReportDetailDrawer
         key={drawerReport?.id ?? 'closed'}
         report={drawerReport}
+        busy={drawerReport !== null && pendingIds.has(drawerReport.id)}
         onClose={() => setDrawerReportId(null)}
         onKeep={(id) => decide(id, 'Kept')}
         onRemove={(id) => decide(id, 'Removed')}

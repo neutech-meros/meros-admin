@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { getProxyEnv } from '@/lib/server/proxy-env';
+import { getProxyEnv, isProxyEnabled } from '@/lib/server/proxy-env';
 
 const UPSTREAM_ERROR_MESSAGE = 'Failed to reach the moderation API';
 const PROXY_DISABLED_MESSAGE = 'This endpoint is disabled';
@@ -22,10 +22,10 @@ interface RouteContext {
 
 export async function POST(request: Request, { params }: RouteContext) {
   try {
-    const { MEROS_API_URL, MEROS_ADMIN_API_KEY, ADMIN_MODERATION_PROXY_ENABLED } = getProxyEnv();
-    if (!ADMIN_MODERATION_PROXY_ENABLED) {
+    if (!isProxyEnabled()) {
       return NextResponse.json({ error: PROXY_DISABLED_MESSAGE }, { status: 404 });
     }
+    const { MEROS_API_URL, MEROS_ADMIN_API_KEY } = getProxyEnv();
 
     const parsedParams = paramsSchema.safeParse(await params);
     if (!parsedParams.success) {
@@ -35,8 +35,11 @@ export async function POST(request: Request, { params }: RouteContext) {
     // Cheap CSRF hardening until real admin auth lands: a cross-site form POST (which can
     // fire without a CORS preflight) can only set simple Content-Types like text/plain, so
     // requiring application/json here blocks that vector even under the fail-open dev flag.
+    // Compare the MIME essence, not a substring — `text/plain; x=application/json` is still
+    // CORS-safelisted as text/plain and must not slip through a naive `.includes(...)` check.
     const contentType = request.headers.get('content-type') ?? '';
-    if (!contentType.toLowerCase().includes('application/json')) {
+    const contentTypeEssence = contentType.split(';')[0]!.trim().toLowerCase();
+    if (contentTypeEssence !== 'application/json') {
       return NextResponse.json({ error: 'Unsupported content type' }, { status: 415 });
     }
 
