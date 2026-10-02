@@ -95,6 +95,47 @@ describe('filterAndSortUsers', () => {
     expect(result.map((u) => u.id)).toEqual(['b', 'c', 'a']);
   });
 
+  describe('with a real account whose plan is unknown (null)', () => {
+    const withUnknownPlan = [
+      ...users,
+      user({ id: 'r', name: 'Real Account', plan: null, followers: '—', following: '—' }),
+    ];
+
+    it('never matches a null-plan row when a specific plan is selected', () => {
+      for (const plan of ['Premium', 'Free trial', 'Freemium'] as const) {
+        const result = filterAndSortUsers(
+          withUnknownPlan,
+          { ...DEFAULT_FILTERS, plan },
+          DEFAULT_SORT,
+        );
+        expect(result.map((u) => u.id)).not.toContain('r');
+      }
+    });
+
+    it('keeps the null-plan row when the plan filter is "all"', () => {
+      const result = filterAndSortUsers(withUnknownPlan, DEFAULT_FILTERS, DEFAULT_SORT);
+      expect(result.map((u) => u.id)).toContain('r');
+    });
+
+    it('sorts a null plan below every known plan', () => {
+      const desc = filterAndSortUsers(withUnknownPlan, DEFAULT_FILTERS, {
+        key: 'plan',
+        dir: 'desc',
+      });
+      expect(desc.map((u) => u.id)).toEqual(['b', 'c', 'a', 'r']);
+      const asc = filterAndSortUsers(withUnknownPlan, DEFAULT_FILTERS, { key: 'plan', dir: 'asc' });
+      expect(asc.map((u) => u.id)).toEqual(['r', 'a', 'c', 'b']);
+    });
+
+    it('sorts a "—" follower count as zero without crashing', () => {
+      const result = filterAndSortUsers(withUnknownPlan, DEFAULT_FILTERS, {
+        key: 'followers',
+        dir: 'asc',
+      });
+      expect(result.map((u) => u.id)).toEqual(['r', 'c', 'a', 'b']);
+    });
+  });
+
   it('sorts by joined date', () => {
     const result = filterAndSortUsers(users, DEFAULT_FILTERS, { key: 'joined', dir: 'asc' });
     expect(result.map((u) => u.id)).toEqual(['a', 'c', 'b']);

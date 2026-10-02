@@ -171,25 +171,28 @@
       "title": "Users & Creators",
       "subtitle": "Manage accounts, verifications and plans.",
       "toasts": {
-        "accountUpdatedTitle": "Account updated",
-        "reactivated": "{{name}} was reactivated.",
-        "deactivated": "{{name}} was deactivated.",
-        "accountDeletedTitle": "Account deleted",
-        "deleted": "{{name}} was removed from the platform.",
-        "profileSavedTitle": "Profile saved",
-        "profileSaved": "{{name}}’s profile was updated."
+        "notImplementedTitle": "Not available yet",
+        "reactivateNotImplemented": "Reactivating accounts isn’t implemented yet — {{name}} was not changed.",
+        "deactivateNotImplemented": "Deactivating accounts isn’t implemented yet — {{name}} was not changed.",
+        "deleteNotImplemented": "Deleting accounts isn’t implemented yet — {{name}} was not removed.",
+        "profileSaveNotImplemented": "Saving profiles isn’t implemented yet — changes to {{name}} are only visible in this session."
       },
       "searchPlaceholder": "Search by name or email...",
       "filterByAccount": "Filter by account",
       "filterByPlan": "Filter by plan",
+      "filterByPlanUnavailable": "Filter by plan — not available for real accounts yet",
       "filterByStatus": "Filter by status",
       "allAccounts": "All accounts",
       "allPlans": "All plans",
       "allStatuses": "All statuses",
       "clearFilters": "Clear filters",
-      "footerText": "Showing 1–{{count}} of 3,482 accounts",
+      "footerText": "Showing 1–{{count}} of {{total}} accounts",
+      "footerTextPartial": "Showing {{count}} of the latest {{loaded}} of {{total}} accounts — search and filters only cover loaded accounts",
       "emptyTitle": "No user found",
       "emptyDescription": "Try searching for another name or email.",
+      "loading": "Loading accounts...",
+      "loadError": "Couldn’t load accounts. Please try again later.",
+      "retry": "Try again",
       "drawer": {
         "tabProfile": "Profile",
         "tabSubscriptions": "Subscriptions",
@@ -219,6 +222,8 @@
         "noSubscriptionDescription": "This user is currently on the free plan.",
         "noReportsTitle": "No reports",
         "noReportsDescription": "This user has no reports filed or received.",
+        "notAvailableTitle": "Not available yet",
+        "notAvailableDescription": "This data isn't wired up for real accounts yet.",
         "subPlan": "Plan",
         "subAmount": "Amount",
         "subSince": "Subscriber since",
@@ -228,7 +233,8 @@
         "reportStatus": "Status",
         "reportDate": "Date",
         "nameRequired": "Enter the full name.",
-        "invalidEmail": "Enter a valid email address."
+        "invalidEmail": "Enter a valid email address.",
+        "historyAccountCreated": "Account created"
       },
       "resetPassword": {
         "title": "Reset password",
@@ -246,12 +252,11 @@
         "invalidPhoneTitle": "Check the phone number",
         "invalidHint": "It doesn’t look valid — edit it before sending.",
         "missingHint": "There’s nothing on file — add it before sending.",
-        "sentTitle": "Reset link sent",
-        "sentDescription": "A password reset link was sent to {{destination}}.",
         "editEmail": "Edit email",
         "editPhone": "Edit phone",
         "emailInputLabel": "Email address",
-        "phoneInputLabel": "Phone number"
+        "phoneInputLabel": "Phone number",
+        "sendNotImplemented": "Sending reset links isn’t implemented yet — nothing was sent to {{destination}}."
       },
       "table": {
         "columnName": "Name",
@@ -280,6 +285,7 @@
       "statusOptions": {
         "active": "Active",
         "deactivated": "Deactivated",
+        "suspended": "Suspended",
         "deleted": "Deleted"
       },
       "roleOptions": {

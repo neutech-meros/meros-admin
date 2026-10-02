@@ -3,7 +3,7 @@ import type { UserRecord } from '@/lib/mocks/admin/users';
 export interface UserFilters {
   query: string;
   account: 'all' | UserRecord['account'];
-  plan: 'all' | UserRecord['plan'];
+  plan: 'all' | NonNullable<UserRecord['plan']>;
   status: 'all' | UserRecord['status'];
 }
 
@@ -17,6 +17,7 @@ export const DEFAULT_FILTERS: UserFilters = {
 export const STATUS_LABEL_KEY: Record<UserRecord['status'], string> = {
   Active: 'admin.users.statusOptions.active',
   Deactivated: 'admin.users.statusOptions.deactivated',
+  Suspended: 'admin.users.statusOptions.suspended',
   Deleted: 'admin.users.statusOptions.deleted',
 };
 
@@ -44,7 +45,7 @@ export const SORT_COLUMNS: Array<{ key: SortKey; defaultDir: SortDir }> = [
   { key: 'status', defaultDir: 'asc' },
 ];
 
-const PLAN_RANK: Record<UserRecord['plan'], number> = {
+const PLAN_RANK: Record<NonNullable<UserRecord['plan']>, number> = {
   Premium: 3,
   'Free trial': 2,
   Freemium: 1,
@@ -69,7 +70,7 @@ function sortValue(user: UserRecord, key: SortKey): number | string {
     case 'followers':
       return followersNum(user.followers);
     case 'plan':
-      return PLAN_RANK[user.plan] ?? 0;
+      return user.plan ? PLAN_RANK[user.plan] : 0;
     case 'joined':
       return parseJoinedDate(user.joined);
     case 'account':

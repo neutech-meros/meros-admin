@@ -39,14 +39,19 @@ const productionFlag = proxyEnabledFlag('false');
 const developmentFlag = proxyEnabledFlag('true');
 
 // One flag per admin screen, so each proxy can be switched on independently.
-export type ProxyFlag = 'ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED' | 'ADMIN_MODERATION_PROXY_ENABLED';
+export type ProxyFlag =
+  | 'ADMIN_ACCOUNTS_PROXY_ENABLED'
+  | 'ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED'
+  | 'ADMIN_MODERATION_PROXY_ENABLED';
 
 // Reads only the feature flag, independent of the other (required-in-production) vars, so a
 // disabled route 404s even when the rest of the proxy config isn't set up yet, instead of
 // throwing out of getProxyEnv() and surfacing as a 502.
 export function isProxyEnabled(flag: ProxyFlag): boolean {
   const schema = process.env.NODE_ENV === 'production' ? productionFlag : developmentFlag;
-  return schema.parse(process.env[flag]);
+  const result = schema.safeParse(process.env[flag]);
+  if (!result.success) throw new Error(`Invalid environment variable: ${flag}`);
+  return result.data;
 }
 
 export function getProxyEnv(): ProxyEnv {

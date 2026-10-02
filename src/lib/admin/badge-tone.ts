@@ -25,6 +25,7 @@ const AUTO_TONE: Record<string, Tone> = {
   Processing: 'warning',
   Requested: 'warning',
   'In dispute': 'warning',
+  Suspended: 'warning',
   Reported: 'danger',
   Failed: 'danger',
   Denied: 'danger',
