@@ -6,6 +6,7 @@ import { GET } from './route';
 interface Deactivation {
   id: string;
   deactivatedAt: string;
+  kind: 'DEACTIVATED' | 'DELETION_INITIATED';
   reason: null;
 }
 
@@ -13,6 +14,7 @@ function deactivation(overrides: Partial<Deactivation> = {}): Deactivation {
   return {
     id: 'deact-1',
     deactivatedAt: '2025-06-01T12:00:00.000Z',
+    kind: 'DEACTIVATED',
     reason: null,
     ...overrides,
   };
@@ -68,6 +70,28 @@ describe('GET /api/admin/users/[id]/deactivation-history', () => {
     expect(consoleErrorMock).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ items: [newer, deactivation()] });
+  });
+
+  it('keeps the kind of each entry so deletion requests are not shown as deactivations', async () => {
+    const deletion = deactivation({ id: 'deact-2', kind: 'DELETION_INITIATED' });
+    fetchMock.mockResolvedValue(jsonResponse(200, { items: [deletion, deactivation()] }));
+
+    const response = await call('acc-1');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ items: [deletion, deactivation()] });
+  });
+
+  it('returns a 502 with a safe error body when an entry has an unknown kind', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(200, { items: [{ ...deactivation(), kind: 'SOMETHING_ELSE' }] }),
+    );
+
+    const response = await call('acc-1');
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual(SAFE_ERROR);
+    expectFailureLoggedWithoutSecrets();
   });
 
   it('passes an empty list through as a normal 200 response', async () => {
@@ -221,7 +245,7 @@ describe('GET /api/admin/users/[id]/deactivation-history', () => {
   it('returns a 502 with a safe error body when a deactivation has a malformed shape', async () => {
     fetchMock.mockResolvedValue(
       jsonResponse(200, {
-        items: [{ id: 42, deactivatedAt: '2025-06-01T12:00:00.000Z', reason: null }],
+        items: [{ ...deactivation(), id: 42 }],
       }),
     );
 
@@ -235,7 +259,7 @@ describe('GET /api/admin/users/[id]/deactivation-history', () => {
   it('returns a 502 with a safe error body when a deactivation has a non-null reason', async () => {
     fetchMock.mockResolvedValue(
       jsonResponse(200, {
-        items: [{ id: 'deact-1', deactivatedAt: '2025-06-01T12:00:00.000Z', reason: 42 }],
+        items: [{ ...deactivation(), reason: 42 }],
       }),
     );
 

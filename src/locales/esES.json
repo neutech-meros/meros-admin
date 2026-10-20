@@ -336,8 +336,10 @@
         "historySubscribed": "Se suscribió al plan {{plan}}",
         "historyPlanChanged": "Cambió al plan {{plan}}",
         "historyCancelled": "Canceló la suscripción",
-        "historyCancelledWithReason": "Canceló la suscripción ({{reason}})",
         "historyDeactivated": "Cuenta desactivada",
+        "historyDeletionRequested": "Eliminación de la cuenta solicitada",
+        "historyTruncatedTitle": "Historial parcial",
+        "historyTruncatedDescription": "Aquí solo aparecen los restablecimientos de contraseña más recientes.",
         "loadingDetails": "Cargando...",
         "subscriptionStatus": {
           "active": "Activa",
@@ -345,13 +347,13 @@
           "gracePeriod": "Período de gracia",
           "expired": "Vencida"
         },
-        "cancelReason": {
-          "unsubscribe": "cancelación voluntaria",
-          "billingError": "un error de facturación",
-          "developerInitiated": "cancelado por un administrador",
-          "priceIncrease": "un aumento de precio",
-          "customerSupport": "atención al cliente",
-          "unknown": "un motivo desconocido"
+        "historyCancelReason": {
+          "unsubscribe": "Canceló la suscripción",
+          "billingError": "Suscripción cancelada por un error de facturación",
+          "developerInitiated": "Suscripción cancelada por un administrador",
+          "priceIncrease": "Suscripción cancelada tras un aumento de precio",
+          "customerSupport": "Suscripción cancelada por atención al cliente",
+          "unknown": "Suscripción cancelada por un motivo desconocido"
         }
       },
       "resetPassword": {

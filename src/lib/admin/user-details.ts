@@ -13,6 +13,9 @@ export const passwordResetLogsResponseSchema = z.object({
       createdAt: isoDateTime,
     }),
   ),
+  // meros-app caps this list (MER-783) and sets `truncated` when the cap is hit, so History
+  // can say older entries are missing. Defaults to false for a backend that predates it.
+  truncated: z.boolean().default(false),
 });
 
 export const subscriptionEventsResponseSchema = z.object({
@@ -59,6 +62,9 @@ export const deactivationHistoryResponseSchema = z.object({
     z.object({
       id: z.string(),
       deactivatedAt: isoDateTime,
+      // MER-792 returns self-service deletion requests in the same list; without `kind` they
+      // would render as a plain deactivation.
+      kind: z.enum(['DEACTIVATED', 'DELETION_INITIATED']),
       // #249's spec leaves room for a reason to be added later; z.null() would reject the
       // whole response the day that ships, while this accepts both today's always-null
       // value and a future real one.

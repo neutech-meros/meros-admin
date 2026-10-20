@@ -532,7 +532,7 @@ describe('UserDetailDrawer', () => {
         await waitFor(() =>
           expect(timelineTitles(history)).toEqual([
             'Account created',
-            'Cancelled the subscription (a billing error)',
+            'Subscription cancelled due to a billing error',
           ]),
         );
         expect(within(history).queryByText(/BILLING_ERROR/)).not.toBeInTheDocument();
@@ -540,6 +540,45 @@ describe('UserDetailDrawer', () => {
         await act(() => i18n.changeLanguage('pt'));
       }
     });
+
+    it('attributes a DEVELOPER_INITIATED cancellation to an administrator, not the user', async () => {
+      mockDetailRoutes({
+        cancellations: respond(200, {
+          items: [
+            { id: 'c1', cancelledAt: '2025-07-01T15:00:00.000Z', reason: 'DEVELOPER_INITIATED' },
+          ],
+        }),
+      });
+      renderRealUser();
+
+      const history = await openTab('Histórico');
+
+      await waitFor(() =>
+        expect(timelineTitles(history)).toEqual([
+          'Conta criada',
+          'Assinatura cancelada por um administrador',
+        ]),
+      );
+    });
+
+    it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty'])(
+      'falls back to the plain cancellation copy for the inherited key %s',
+      async (reason) => {
+        mockDetailRoutes({
+          cancellations: respond(200, {
+            items: [{ id: 'c1', cancelledAt: '2025-07-01T15:00:00.000Z', reason }],
+          }),
+        });
+        renderRealUser();
+
+        const history = await openTab('Histórico');
+
+        await waitFor(() =>
+          expect(timelineTitles(history)).toEqual(['Conta criada', 'Cancelou a assinatura']),
+        );
+        expect(consoleErrorMock).not.toHaveBeenCalled();
+      },
+    );
 
     it('falls back to the plain cancellation copy for an unmapped reason', async () => {
       mockDetailRoutes({
@@ -598,7 +637,7 @@ describe('UserDetailDrawer', () => {
           'Assinou o plano Teste grátis',
           'Cancelou a assinatura',
           'Assinou o plano Premium',
-          'Cancelou a assinatura (atendimento ao cliente)',
+          'Assinatura cancelada pelo atendimento ao cliente',
         ]),
       );
       expect(consoleErrorMock).not.toHaveBeenCalled();
@@ -632,7 +671,14 @@ describe('UserDetailDrawer', () => {
     it('shows a deactivation as "Conta desativada" with its date', async () => {
       mockDetailRoutes({
         deactivations: respond(200, {
-          items: [{ id: 'd1', deactivatedAt: '2025-07-01T15:00:00.000Z', reason: null }],
+          items: [
+            {
+              id: 'd1',
+              deactivatedAt: '2025-07-01T15:00:00.000Z',
+              kind: 'DEACTIVATED',
+              reason: null,
+            },
+          ],
         }),
       });
       renderRealUser();
@@ -646,12 +692,48 @@ describe('UserDetailDrawer', () => {
       expect(consoleErrorMock).not.toHaveBeenCalled();
     });
 
-    it('translates the deactivation entry into the UI language', async () => {
+    it('shows a deletion request as its own entry, not as a deactivation', async () => {
+      mockDetailRoutes({
+        deactivations: respond(200, {
+          items: [
+            {
+              id: 'd1',
+              deactivatedAt: '2025-07-01T15:00:00.000Z',
+              kind: 'DELETION_INITIATED',
+              reason: null,
+            },
+          ],
+        }),
+      });
+      renderRealUser();
+
+      const history = await openTab('Histórico');
+
+      await waitFor(() =>
+        expect(timelineTitles(history)).toEqual(['Conta criada', 'Exclusão da conta solicitada']),
+      );
+      expect(within(history).queryByText('Conta desativada')).not.toBeInTheDocument();
+    });
+
+    it('translates the deactivation entries into the UI language', async () => {
       await act(() => i18n.changeLanguage('en'));
       try {
         mockDetailRoutes({
           deactivations: respond(200, {
-            items: [{ id: 'd1', deactivatedAt: '2025-07-01T15:00:00.000Z', reason: null }],
+            items: [
+              {
+                id: 'd2',
+                deactivatedAt: '2025-08-01T15:00:00.000Z',
+                kind: 'DELETION_INITIATED',
+                reason: null,
+              },
+              {
+                id: 'd1',
+                deactivatedAt: '2025-07-01T15:00:00.000Z',
+                kind: 'DEACTIVATED',
+                reason: null,
+              },
+            ],
           }),
         });
         renderRealUser();
@@ -659,7 +741,11 @@ describe('UserDetailDrawer', () => {
         const history = await openTab('History');
 
         await waitFor(() =>
-          expect(timelineTitles(history)).toEqual(['Account created', 'Account deactivated']),
+          expect(timelineTitles(history)).toEqual([
+            'Account created',
+            'Account deactivated',
+            'Account deletion requested',
+          ]),
         );
         expect(within(history).getByText('Jul 01, 2025')).toBeInTheDocument();
       } finally {
@@ -685,8 +771,18 @@ describe('UserDetailDrawer', () => {
         }),
         deactivations: respond(200, {
           items: [
-            { id: 'd2', deactivatedAt: '2025-09-01T15:00:00.000Z', reason: null },
-            { id: 'd1', deactivatedAt: '2025-05-01T15:00:00.000Z', reason: null },
+            {
+              id: 'd2',
+              deactivatedAt: '2025-09-01T15:00:00.000Z',
+              kind: 'DEACTIVATED',
+              reason: null,
+            },
+            {
+              id: 'd1',
+              deactivatedAt: '2025-05-01T15:00:00.000Z',
+              kind: 'DEACTIVATED',
+              reason: null,
+            },
           ],
         }),
       });
@@ -757,6 +853,47 @@ describe('UserDetailDrawer', () => {
         expect(timelineTitles(history)).toEqual(['Conta criada', 'Senha alterada']),
       );
       expect(within(history).queryByText('01 de jul. de 2025')).not.toBeInTheDocument();
+    });
+
+    it('says older password resets are missing when the list was truncated', async () => {
+      mockDetailRoutes({
+        resetLogs: respond(200, {
+          items: [
+            { id: 'r1', ip: null, outcome: 'SUCCESS', createdAt: '2025-06-01T15:00:00.000Z' },
+          ],
+          truncated: true,
+        }),
+      });
+      renderRealUser();
+
+      const history = await openTab('Histórico');
+
+      await waitFor(() =>
+        expect(timelineTitles(history)).toEqual(['Conta criada', 'Senha alterada']),
+      );
+      expect(within(history).getByText('Histórico parcial')).toBeInTheDocument();
+      expect(
+        within(history).getByText('Apenas as redefinições de senha mais recentes aparecem aqui.'),
+      ).toBeInTheDocument();
+    });
+
+    it('shows no partial-history note when the list was not truncated', async () => {
+      mockDetailRoutes({
+        resetLogs: respond(200, {
+          items: [
+            { id: 'r1', ip: null, outcome: 'SUCCESS', createdAt: '2025-06-01T15:00:00.000Z' },
+          ],
+          truncated: false,
+        }),
+      });
+      renderRealUser();
+
+      const history = await openTab('Histórico');
+
+      await waitFor(() =>
+        expect(timelineTitles(history)).toEqual(['Conta criada', 'Senha alterada']),
+      );
+      expect(within(history).queryByText('Histórico parcial')).not.toBeInTheDocument();
     });
 
     it('shows only the account-created event when every history source is empty', async () => {

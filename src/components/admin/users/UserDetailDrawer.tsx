@@ -25,16 +25,29 @@ import type { UserRecord } from '@/lib/mocks/admin/users';
 
 import { DrawerBlocks, type DrawerBlock } from '../drawer/DrawerBlocks';
 
-// RevenueCat's known cancel_reason values. Unmapped values (a future reason RevenueCat adds,
-// or any other unexpected string) fall back to the plain "Cancelled the subscription" copy
-// rather than interpolating a raw enum into a translated sentence.
-const CANCEL_REASON_I18N_KEY: Record<string, string> = {
-  UNSUBSCRIBE: 'admin.users.drawer.cancelReason.unsubscribe',
-  BILLING_ERROR: 'admin.users.drawer.cancelReason.billingError',
-  DEVELOPER_INITIATED: 'admin.users.drawer.cancelReason.developerInitiated',
-  PRICE_INCREASE: 'admin.users.drawer.cancelReason.priceIncrease',
-  CUSTOMER_SUPPORT: 'admin.users.drawer.cancelReason.customerSupport',
-  UNKNOWN: 'admin.users.drawer.cancelReason.unknown',
+// RevenueCat's known cancel_reason values, each with its own full-sentence History title (a
+// fragment interpolated into one sentence misattributed DEVELOPER_INITIATED to the user).
+// The reason is external input, so it's parsed against the known set rather than used as a
+// lookup key: unmapped values — a future reason, or inherited keys like "constructor" — fall
+// back to the plain "Cancelled the subscription" copy.
+const CANCEL_REASONS = [
+  'UNSUBSCRIBE',
+  'BILLING_ERROR',
+  'DEVELOPER_INITIATED',
+  'PRICE_INCREASE',
+  'CUSTOMER_SUPPORT',
+  'UNKNOWN',
+] as const;
+
+const cancelReasonSchema = z.enum(CANCEL_REASONS).optional().catch(undefined);
+
+const CANCEL_REASON_I18N_KEY: Record<(typeof CANCEL_REASONS)[number], string> = {
+  UNSUBSCRIBE: 'admin.users.drawer.historyCancelReason.unsubscribe',
+  BILLING_ERROR: 'admin.users.drawer.historyCancelReason.billingError',
+  DEVELOPER_INITIATED: 'admin.users.drawer.historyCancelReason.developerInitiated',
+  PRICE_INCREASE: 'admin.users.drawer.historyCancelReason.priceIncrease',
+  CUSTOMER_SUPPORT: 'admin.users.drawer.historyCancelReason.customerSupport',
+  UNKNOWN: 'admin.users.drawer.historyCancelReason.unknown',
 };
 
 const profileSchema = z.object({
@@ -132,12 +145,11 @@ function realHistoryEvents(details: UserDetails, t: Translate): DatedEvent[] {
     : [];
   const cancellations = details.planCancellations.ok
     ? details.planCancellations.data.items.map((cancellation) => {
-        const reasonKey =
-          cancellation.reason !== null ? CANCEL_REASON_I18N_KEY[cancellation.reason] : undefined;
+        const reason = cancelReasonSchema.parse(cancellation.reason ?? undefined);
         return {
           at: cancellation.cancelledAt,
-          title: reasonKey
-            ? t('admin.users.drawer.historyCancelledWithReason', { reason: t(reasonKey) })
+          title: reason
+            ? t(CANCEL_REASON_I18N_KEY[reason])
             : t('admin.users.drawer.historyCancelled'),
         };
       })
@@ -145,7 +157,10 @@ function realHistoryEvents(details: UserDetails, t: Translate): DatedEvent[] {
   const deactivations = details.deactivationHistory.ok
     ? details.deactivationHistory.data.items.map((deactivation) => ({
         at: deactivation.deactivatedAt,
-        title: t('admin.users.drawer.historyDeactivated'),
+        title:
+          deactivation.kind === 'DELETION_INITIATED'
+            ? t('admin.users.drawer.historyDeletionRequested')
+            : t('admin.users.drawer.historyDeactivated'),
       }))
     : [];
   return [...passwordChanges, ...planChanges, ...cancellations, ...deactivations];
@@ -303,7 +318,17 @@ function tabBlocks(
       const events = [...created, ...real]
         .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
         .map((e) => ({ title: e.title, time: formatDate(e.at) }));
-      return [{ kind: 'timeline', events }];
+      const truncatedNote: DrawerBlock[] =
+        details?.passwordResetLogs.ok && details.passwordResetLogs.data.truncated
+          ? [
+              {
+                kind: 'text',
+                label: t('admin.users.drawer.historyTruncatedTitle'),
+                value: t('admin.users.drawer.historyTruncatedDescription'),
+              },
+            ]
+          : [];
+      return [...truncatedNote, { kind: 'timeline', events }];
     }
     const seeded = getUserHistory(user.id);
     const events =

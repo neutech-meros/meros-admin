@@ -64,7 +64,9 @@ describe('GET /api/admin/users/[id]/password-reset-logs', () => {
 
   it('returns the validated logs, without the client IP', async () => {
     const failure = logItem({ id: 'log-2', ip: null, outcome: 'FAILURE' });
-    fetchMock.mockResolvedValue(jsonResponse(200, { items: [logItem(), failure] }));
+    fetchMock.mockResolvedValue(
+      jsonResponse(200, { items: [logItem(), failure], truncated: false }),
+    );
 
     const response = await call('acc-1');
 
@@ -75,7 +77,39 @@ describe('GET /api/admin/users/[id]/password-reset-logs', () => {
         { id: 'log-1', outcome: 'SUCCESS', createdAt: '2025-04-01T12:00:00.000Z' },
         { id: 'log-2', outcome: 'FAILURE', createdAt: '2025-04-01T12:00:00.000Z' },
       ],
+      truncated: false,
     });
+  });
+
+  it('passes the truncated flag through when the upstream hit its row cap', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { items: [logItem()], truncated: true }));
+
+    const response = await call('acc-1');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      items: [{ id: 'log-1', outcome: 'SUCCESS', createdAt: '2025-04-01T12:00:00.000Z' }],
+      truncated: true,
+    });
+  });
+
+  it('treats a response without the truncated flag as not truncated', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { items: [] }));
+
+    const response = await call('acc-1');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ items: [], truncated: false });
+  });
+
+  it('returns a 502 with a safe error body when the truncated flag is not a boolean', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { items: [], truncated: 'yes' }));
+
+    const response = await call('acc-1');
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual(SAFE_ERROR);
+    expectFailureLoggedWithoutSecrets();
   });
 
   it('does not forward fields the upstream sends beyond the documented shape', async () => {
