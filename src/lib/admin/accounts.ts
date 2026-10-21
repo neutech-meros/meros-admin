@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { avatarColorForIndex, initialsOf } from '@/lib/mocks/admin/avatar';
 import type { UserRecord } from '@/lib/mocks/admin/users';
 
+export const planBucketSchema = z.enum(['FREEMIUM', 'PREMIUM', 'FREE_TRIAL']);
+
 export const domainAccountRowSchema = z.object({
   id: z.string(),
   profileId: z.string().nullable(),
@@ -12,6 +14,8 @@ export const domainAccountRowSchema = z.object({
   accountType: z.enum(['INDIVIDUAL', 'BUSINESS']).nullable(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED']),
   createdAt: z.string().datetime({ offset: true }),
+  planBucket: planBucketSchema.nullable(),
+  followerCount: z.number().int().nonnegative().nullable(),
 });
 
 export const accountsResponseSchema = z.object({
@@ -19,6 +23,7 @@ export const accountsResponseSchema = z.object({
   total: z.number().int().nonnegative(),
 });
 
+export type PlanBucket = z.infer<typeof planBucketSchema>;
 export type DomainAccountRow = z.infer<typeof domainAccountRowSchema>;
 export type AccountsResponse = z.infer<typeof accountsResponseSchema>;
 
@@ -29,6 +34,12 @@ const STATUS_MAP: Record<DomainAccountRow['status'], UserRecord['status']> = {
   INACTIVE: 'Deactivated',
   SUSPENDED: 'Suspended',
   DELETED: 'Deleted',
+};
+
+const PLAN_MAP: Record<PlanBucket, NonNullable<UserRecord['plan']>> = {
+  FREEMIUM: 'Freemium',
+  PREMIUM: 'Premium',
+  FREE_TRIAL: 'Free trial',
 };
 
 function formatLocalDayMonthYear(date: Date): string {
@@ -48,8 +59,8 @@ export function toUserRecord(account: DomainAccountRow, index: number): UserReco
     location: '',
     bio: '',
     account: isBusiness ? 'Business' : 'Personal',
-    plan: null,
-    followers: UNKNOWN_VALUE,
+    plan: account.planBucket === null ? null : PLAN_MAP[account.planBucket],
+    followers: account.followerCount === null ? UNKNOWN_VALUE : String(account.followerCount),
     following: UNKNOWN_VALUE,
     joined: formatLocalDayMonthYear(new Date(account.createdAt)),
     createdAtIso: account.createdAt,

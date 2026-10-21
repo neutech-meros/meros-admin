@@ -25,8 +25,9 @@ export type DrawerBlock =
       }>;
     }
   | { kind: 'timeline'; events: Array<{ title: string; time: string }> }
-  | { kind: 'empty'; title: string; description: string }
-  | { kind: 'text'; label: string; value: string };
+  | { kind: 'empty'; title: string; description: string; onRetry?: () => void; retryLabel?: string }
+  | { kind: 'text'; label: string; value: string }
+  | { kind: 'loading'; label: string };
 
 function KvBlock({ block }: { block: Extract<DrawerBlock, { kind: 'kv' }> }) {
   return (
@@ -176,6 +177,16 @@ function EmptyBlock({ block }: { block: Extract<DrawerBlock, { kind: 'empty' }> 
         {block.title}
       </h3>
       <p className="max-w-[320px] text-[13px]">{block.description}</p>
+      {block.onRetry ? (
+        <button
+          type="button"
+          onClick={block.onRetry}
+          className="mt-4 inline-flex items-center rounded-[10px] border px-4 py-2 text-[13.5px] font-medium"
+          style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+        >
+          {block.retryLabel}
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -193,6 +204,17 @@ export function DrawerBlocks({ blocks }: { blocks: DrawerBlock[] }) {
             return <TimelineBlock key={i} block={block} />;
           case 'empty':
             return <EmptyBlock key={i} block={block} />;
+          case 'loading':
+            return (
+              <div
+                key={i}
+                role="status"
+                className="px-4 py-10 text-center text-[13.5px]"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {block.label}
+              </div>
+            );
           case 'text':
             return <TextBlock key={i} block={block} />;
         }

@@ -42,7 +42,8 @@ const developmentFlag = proxyEnabledFlag('true');
 export type ProxyFlag =
   | 'ADMIN_ACCOUNTS_PROXY_ENABLED'
   | 'ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED'
-  | 'ADMIN_MODERATION_PROXY_ENABLED';
+  | 'ADMIN_MODERATION_PROXY_ENABLED'
+  | 'ADMIN_USER_DETAILS_PROXY_ENABLED';
 
 // Reads only the feature flag, independent of the other (required-in-production) vars, so a
 // disabled route 404s even when the rest of the proxy config isn't set up yet, instead of

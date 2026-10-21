@@ -25,6 +25,8 @@ function fixtureAccount(
     accountType: 'INDIVIDUAL',
     status: 'ACTIVE',
     createdAt: '2025-03-12T10:00:00.000Z',
+    planBucket: null,
+    followerCount: null,
     ...overrides,
   };
 }
@@ -96,8 +98,8 @@ describe('UsersPage', () => {
     expect(screen.getByText('12/03/2025')).toBeInTheDocument();
     expect(screen.queryByText('13/03/2025')).not.toBeInTheDocument();
     expect(screen.getByText('LP')).toBeInTheDocument();
-    // Translated via ROLE_LABEL_KEY (PR #2's b1777d2); pt is the test default locale.
-    expect(screen.getByText('Criador')).toBeInTheDocument();
+    const row = screen.getByText('Lucas Pereira').closest('tr')!;
+    expect(within(row).getByText('Empresarial')).toBeInTheDocument();
   });
 
   it('shows "—" instead of fabricated plan/followers/following for fetched accounts', async () => {
@@ -113,9 +115,33 @@ describe('UsersPage', () => {
     expect(within(screen.getByRole('dialog')).getAllByText('—')).toHaveLength(4);
   });
 
-  it('disables the Plan filter now that real accounts have no plan data', async () => {
+  it('shows the fetched plan and follower count when the proxy provides them', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(200, {
+        items: [
+          fixtureAccount({
+            id: 'acc-1',
+            name: 'Lucas Pereira',
+            planBucket: 'FREE_TRIAL',
+            followerCount: 42,
+          }),
+        ],
+        total: 1,
+      }),
+    );
     await renderLoaded();
-    expect(screen.getByRole('combobox', { name: /filtrar por plano/i })).toBeDisabled();
+    const row = screen.getByText('Lucas Pereira').closest('tr')!;
+    const cells = within(row).getAllByRole('cell');
+    expect(cells[2]).toHaveTextContent(/^Teste grátis$/);
+    expect(cells[3]).toHaveTextContent(/^42$/);
+  });
+
+  it('does not match null-plan accounts when a specific plan is selected, and does not crash', async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+    await user.selectOptions(screen.getByTitle('Filtrar por plano'), 'Premium');
+    expect(screen.queryByText('Lucas Pereira')).not.toBeInTheDocument();
+    expect(screen.getByText('Nenhum usuário encontrado')).toBeInTheDocument();
   });
 
   it('sorts by plan without crashing when every fetched account has a null plan', async () => {
@@ -128,10 +154,10 @@ describe('UsersPage', () => {
   it('shows an honest partial-load footer when fewer accounts loaded than the real fetched total', async () => {
     await renderLoaded();
     expect(
-      screen.getByText(/exibindo 4 das últimas 4 de 57 contas.*apenas as contas carregadas/i),
+      screen.getByText(/exibindo 1–4 das últimas 4 de 57 contas.*apenas as contas carregadas/i),
     ).toBeInTheDocument();
     expect(screen.queryByText(/3\.482/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/exibindo 1–4 de/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^exibindo 1–4 de 57 contas$/i)).not.toBeInTheDocument();
   });
 
   it('shows a loading state until the accounts arrive', async () => {

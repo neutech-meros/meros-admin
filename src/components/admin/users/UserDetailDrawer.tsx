@@ -12,11 +12,43 @@ import { z } from 'zod';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { UNKNOWN_VALUE } from '@/lib/admin/accounts';
 import { badgeTone } from '@/lib/admin/badge-tone';
-import { ROLE_LABEL_KEY, STATUS_LABEL_KEY } from '@/lib/admin/users-table';
+import {
+  loadUserDetails,
+  productPlan,
+  type SubscriptionEvent,
+  type SubscriptionStatus,
+  type UserDetails,
+} from '@/lib/admin/user-details';
+import { PLAN_LABEL_KEY, ROLE_LABEL_KEY, STATUS_LABEL_KEY } from '@/lib/admin/users-table';
 import { getUserHistory, getUserReports, getUserSubscriptions } from '@/lib/mocks/admin/users';
 import type { UserRecord } from '@/lib/mocks/admin/users';
 
 import { DrawerBlocks, type DrawerBlock } from '../drawer/DrawerBlocks';
+
+// RevenueCat's known cancel_reason values, each with its own full-sentence History title (a
+// fragment interpolated into one sentence misattributed DEVELOPER_INITIATED to the user).
+// The reason is external input, so it's parsed against the known set rather than used as a
+// lookup key: unmapped values — a future reason, or inherited keys like "constructor" — fall
+// back to the plain "Cancelled the subscription" copy.
+const CANCEL_REASONS = [
+  'UNSUBSCRIBE',
+  'BILLING_ERROR',
+  'DEVELOPER_INITIATED',
+  'PRICE_INCREASE',
+  'CUSTOMER_SUPPORT',
+  'UNKNOWN',
+] as const;
+
+const cancelReasonSchema = z.enum(CANCEL_REASONS).optional().catch(undefined);
+
+const CANCEL_REASON_I18N_KEY: Record<(typeof CANCEL_REASONS)[number], string> = {
+  UNSUBSCRIBE: 'admin.users.drawer.historyCancelReason.unsubscribe',
+  BILLING_ERROR: 'admin.users.drawer.historyCancelReason.billingError',
+  DEVELOPER_INITIATED: 'admin.users.drawer.historyCancelReason.developerInitiated',
+  PRICE_INCREASE: 'admin.users.drawer.historyCancelReason.priceIncrease',
+  CUSTOMER_SUPPORT: 'admin.users.drawer.historyCancelReason.customerSupport',
+  UNKNOWN: 'admin.users.drawer.historyCancelReason.unknown',
+};
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, 'admin.users.drawer.nameRequired'),
@@ -60,6 +92,91 @@ function draftFromUser(user: UserRecord): ProfileDraft {
   };
 }
 
+type Translate = (key: string, opts?: Record<string, unknown>) => string;
+
+const SUBSCRIPTION_STATUS: Record<
+  SubscriptionStatus,
+  { labelKey: string; tone: Parameters<typeof badgeTone>[1] }
+> = {
+  ACTIVE: { labelKey: 'admin.users.drawer.subscriptionStatus.active', tone: 'success' },
+  CANCELLED: { labelKey: 'admin.users.drawer.subscriptionStatus.cancelled', tone: 'neutral' },
+  GRACE_PERIOD: { labelKey: 'admin.users.drawer.subscriptionStatus.gracePeriod', tone: 'warning' },
+  EXPIRED: { labelKey: 'admin.users.drawer.subscriptionStatus.expired', tone: 'danger' },
+};
+
+function planDisplay(plan: UserRecord['plan'], t: Translate): string {
+  return plan ? t(PLAN_LABEL_KEY[plan]) : UNKNOWN_VALUE;
+}
+
+function planLabel(productId: string | null, t: Translate): string {
+  if (productId === null) return UNKNOWN_VALUE;
+  const plan = productPlan(productId);
+  return plan === null ? productId : t(`admin.users.planOptions.${plan}`);
+}
+
+function subscriptionEventTitle(event: SubscriptionEvent, t: Translate): string {
+  const plan = planLabel(event.newProductId, t);
+  const subscribed =
+    event.previousProductId === null || productPlan(event.previousProductId) === 'freemium';
+  return subscribed
+    ? t('admin.users.drawer.historySubscribed', { plan })
+    : t('admin.users.drawer.historyPlanChanged', { plan });
+}
+
+interface DatedEvent {
+  at: string;
+  title: string;
+}
+
+function realHistoryEvents(details: UserDetails, t: Translate): DatedEvent[] {
+  const passwordChanges = details.passwordResetLogs.ok
+    ? details.passwordResetLogs.data.items
+        .filter((log) => log.outcome === 'SUCCESS')
+        .map((log) => ({
+          at: log.createdAt,
+          title: t('admin.users.drawer.historyPasswordChanged'),
+        }))
+    : [];
+  const planChanges = details.subscriptionEvents.ok
+    ? details.subscriptionEvents.data.items.map((event) => ({
+        at: event.createdAt,
+        title: subscriptionEventTitle(event, t),
+      }))
+    : [];
+  const cancellations = details.planCancellations.ok
+    ? details.planCancellations.data.items.map((cancellation) => {
+        const reason = cancelReasonSchema.parse(cancellation.reason ?? undefined);
+        return {
+          at: cancellation.cancelledAt,
+          title: reason
+            ? t(CANCEL_REASON_I18N_KEY[reason])
+            : t('admin.users.drawer.historyCancelled'),
+        };
+      })
+    : [];
+  const deactivations = details.deactivationHistory.ok
+    ? details.deactivationHistory.data.items.map((deactivation) => ({
+        at: deactivation.deactivatedAt,
+        title:
+          deactivation.kind === 'DELETION_INITIATED'
+            ? t('admin.users.drawer.historyDeletionRequested')
+            : t('admin.users.drawer.historyDeactivated'),
+      }))
+    : [];
+  return [...passwordChanges, ...planChanges, ...cancellations, ...deactivations];
+}
+
+const ACTIVE_SUBSCRIPTION_STATUSES: ReadonlySet<SubscriptionStatus> = new Set([
+  'ACTIVE',
+  'GRACE_PERIOD',
+]);
+
+interface TabContext {
+  createdAtDisplay: string | undefined;
+  details: UserDetails | null;
+  formatDate: (iso: string) => string;
+}
+
 // `t` is threaded in explicitly (rather than calling useTranslation() here)
 // because this is a plain function, not a component or hook — it's only
 // ever called from inside UserDetailDrawer's render, which already has `t`
@@ -67,22 +184,93 @@ function draftFromUser(user: UserRecord): ProfileDraft {
 function tabBlocks(
   user: UserRecord,
   tab: TabKey,
-  t: (key: string, opts?: Record<string, unknown>) => string,
-  createdAtDisplay: string | undefined,
+  t: Translate,
+  { createdAtDisplay, details, formatDate }: TabContext,
+  onRetry: () => void,
 ): DrawerBlock[] {
+  if ((tab === 'subscriptions' || tab === 'historico') && details === null) {
+    return [{ kind: 'loading', label: t('admin.users.drawer.loadingDetails') }];
+  }
   const isRealAccount = Boolean(createdAtDisplay);
   if (tab === 'subscriptions') {
+    // A real account's own data failing to load is a fetch problem, not "no
+    // subscription" — conflating the two would report an outage as a fact
+    // about the user. Mock accounts always fail this fetch (they aren't real
+    // upstream ids), so this only applies once we know the account is real.
+    if (isRealAccount && details && !details.subscription.ok) {
+      return [
+        {
+          kind: 'empty',
+          title: t('admin.users.drawer.loadErrorTitle'),
+          description: t('admin.users.drawer.loadErrorDescription'),
+          onRetry,
+          retryLabel: t('admin.users.drawer.retry'),
+        },
+      ];
+    }
+    const real = details?.subscription.ok ? details.subscription.data.subscription : null;
+    const cancelledInPeriod =
+      real?.status === 'CANCELLED' && new Date(real.currentPeriodEnd).getTime() > Date.now();
+    if (real && (ACTIVE_SUBSCRIPTION_STATUSES.has(real.status) || cancelledInPeriod)) {
+      const status = SUBSCRIPTION_STATUS[real.status];
+      const tone = badgeTone(real.status, status.tone);
+      return [
+        { kind: 'kv', label: t('admin.users.drawer.subPlan'), value: planDisplay(user.plan, t) },
+        {
+          kind: 'kv',
+          label: t('admin.users.drawer.subListPrice'),
+          value: real.fallbackPrice,
+          numeric: true,
+        },
+        {
+          kind: 'kv',
+          label: t('admin.users.drawer.subSince'),
+          value: formatDate(real.subscriberSince),
+          numeric: true,
+        },
+        {
+          kind: 'kv',
+          label: t('admin.users.drawer.subStatus'),
+          value: t(status.labelKey),
+          badge: true,
+          toneColor: tone.color,
+          toneBackground: tone.background,
+        },
+        ...(cancelledInPeriod
+          ? [
+              {
+                kind: 'kv' as const,
+                label: t('admin.users.drawer.subAccessUntil'),
+                value: formatDate(real.currentPeriodEnd),
+                numeric: true,
+              },
+            ]
+          : []),
+      ];
+    }
+    // A real account's subscription fetch already succeeded by this point (the failed-fetch
+    // case returned above) — a null/inactive `real` here is a definitive "no active
+    // subscription" answer, not an "we haven't wired this up" placeholder.
+    if (isRealAccount) {
+      return [
+        {
+          kind: 'empty',
+          title: t('admin.users.drawer.noSubscriptionTitle'),
+          description: t(
+            user.plan === 'Premium'
+              ? 'admin.users.drawer.noStoreSubscriptionPremiumDescription'
+              : 'admin.users.drawer.noSubscriptionDescription',
+          ),
+        },
+      ];
+    }
     const subs = getUserSubscriptions(user.id);
     if (!subs.length) {
       return [
         {
           kind: 'empty',
-          title: isRealAccount
-            ? t('admin.users.drawer.notAvailableTitle')
-            : t('admin.users.drawer.noSubscriptionTitle'),
-          description: isRealAccount
-            ? t('admin.users.drawer.notAvailableDescription')
-            : t('admin.users.drawer.noSubscriptionDescription'),
+          title: t('admin.users.drawer.noSubscriptionTitle'),
+          description: t('admin.users.drawer.noSubscriptionDescription'),
         },
       ];
     }
@@ -104,6 +292,44 @@ function tabBlocks(
     });
   }
   if (tab === 'historico') {
+    const allSourcesFailed =
+      isRealAccount &&
+      details !== null &&
+      !details.passwordResetLogs.ok &&
+      !details.subscriptionEvents.ok &&
+      !details.planCancellations.ok &&
+      !details.deactivationHistory.ok;
+    if (allSourcesFailed) {
+      return [
+        {
+          kind: 'empty',
+          title: t('admin.users.drawer.loadErrorTitle'),
+          description: t('admin.users.drawer.loadErrorDescription'),
+          onRetry,
+          retryLabel: t('admin.users.drawer.retry'),
+        },
+      ];
+    }
+    const real = details ? realHistoryEvents(details, t) : [];
+    if (real.length > 0) {
+      const created: DatedEvent[] = user.createdAtIso
+        ? [{ at: user.createdAtIso, title: t('admin.users.drawer.historyAccountCreated') }]
+        : [];
+      const events = [...created, ...real]
+        .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
+        .map((e) => ({ title: e.title, time: formatDate(e.at) }));
+      const truncatedNote: DrawerBlock[] =
+        details?.passwordResetLogs.ok && details.passwordResetLogs.data.truncated
+          ? [
+              {
+                kind: 'text',
+                label: t('admin.users.drawer.historyTruncatedTitle'),
+                value: t('admin.users.drawer.historyTruncatedDescription'),
+              },
+            ]
+          : [];
+      return [...truncatedNote, { kind: 'timeline', events }];
+    }
     const seeded = getUserHistory(user.id);
     const events =
       seeded.length === 0 && createdAtDisplay
@@ -287,10 +513,30 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
   const [tab, setTab] = useState<TabKey>('perfil');
   const [editing, setEditing] = useState(false);
 
+  const [loadedDetails, setLoadedDetails] = useState<UserDetails | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
+  const userId = user?.id;
+
   useEffect(() => {
     setTab('perfil');
     setEditing(false);
   }, [user?.id]);
+
+  useEffect(() => {
+    if (userId === undefined) return;
+    let cancelled = false;
+    loadUserDetails(userId).then((details) => {
+      if (!cancelled) setLoadedDetails(details);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, retryToken]);
+
+  function retryLoadDetails() {
+    setLoadedDetails(null);
+    setRetryToken((n) => n + 1);
+  }
 
   if (!user) {
     return (
@@ -301,16 +547,17 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
   }
 
   const badge = badgeTone(user.type);
-  const createdAtDisplay = user.createdAtIso
-    ? new Intl.DateTimeFormat(i18n.language, {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      }).format(new Date(user.createdAtIso))
-    : undefined;
+  const dateFormat = new Intl.DateTimeFormat(i18n.language, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+  const formatDate = (iso: string) => dateFormat.format(new Date(iso));
+  const createdAtDisplay = user.createdAtIso ? formatDate(user.createdAtIso) : undefined;
+  const details = loadedDetails?.userId === user.id ? loadedDetails : null;
 
   const stats = [
-    { label: t('admin.users.drawer.statPlan'), value: user.plan ?? UNKNOWN_VALUE },
+    { label: t('admin.users.drawer.statPlan'), value: planDisplay(user.plan, t) },
     { label: t('admin.users.drawer.statFollowers'), value: user.followers },
     { label: t('admin.users.drawer.statFollowing'), value: user.following },
     {
@@ -474,7 +721,7 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
                     <div style={{ color: 'var(--text-secondary)' }}>
                       {t('admin.users.drawer.plan')}
                     </div>
-                    <div className="text-right font-medium">{user.plan ?? UNKNOWN_VALUE}</div>
+                    <div className="text-right font-medium">{planDisplay(user.plan, t)}</div>
                   </div>
                   <div
                     className="flex items-baseline justify-between gap-4 border-b py-2.5 text-[13.5px]"
@@ -544,7 +791,15 @@ export function UserDetailDrawer({ user, onClose, onSaveProfile }: UserDetailDra
               value={key}
               className="flex min-h-0 flex-1 flex-col outline-none"
             >
-              <DrawerBlocks blocks={tabBlocks(user, key, t, createdAtDisplay)} />
+              <DrawerBlocks
+                blocks={tabBlocks(
+                  user,
+                  key,
+                  t,
+                  { createdAtDisplay, details, formatDate },
+                  retryLoadDetails,
+                )}
+              />
             </TabsPrimitive.Content>
           ))}
         </TabsPrimitive.Root>
