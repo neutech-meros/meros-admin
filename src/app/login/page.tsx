@@ -8,6 +8,7 @@ import { useAtom } from 'jotai';
 import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { HOME_PATH } from '@/components/admin/nav-config';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,7 +34,7 @@ export default function LoginPage() {
 
     try {
       await login(formData);
-      router.push('/dashboard');
+      router.push(HOME_PATH);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     }

@@ -9,7 +9,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { IconChevronRight, IconCollapse } from './icons';
-import { NAV, keyFromPathname, navHref, navI18nKey, type NavLeaf } from './nav-config';
+import {
+  NAV,
+  isNavKeyEnabled,
+  keyFromPathname,
+  navHref,
+  navI18nKey,
+  type NavLeaf,
+} from './nav-config';
 
 // Keeps sub-item leaves mounted through the closing transition so they visibly
 // recede as the wrapper's max-height collapses (matching the reference's
@@ -47,20 +54,39 @@ function NavSubItems({
       }}
     >
       {mounted &&
-        leaves.map((leaf) => (
-          <Link
-            key={leaf.key}
-            href={navHref(leaf.key)}
-            aria-current={currentKey === leaf.key ? 'page' : undefined}
-            className="block rounded-md px-3 py-1.5 text-[13px]"
-            style={{
-              color: currentKey === leaf.key ? 'var(--brand-600)' : 'var(--text-secondary)',
-              fontWeight: currentKey === leaf.key ? 600 : 400,
-            }}
-          >
-            {t(navI18nKey(leaf.key), { defaultValue: leaf.label })}
-          </Link>
-        ))}
+        leaves.map((leaf) => {
+          const label = t(navI18nKey(leaf.key), { defaultValue: leaf.label });
+          const isCurrent = currentKey === leaf.key;
+          if (!isNavKeyEnabled(leaf.key)) {
+            return (
+              <span
+                key={leaf.key}
+                data-nav-key={leaf.key}
+                data-nav-disabled="true"
+                aria-disabled="true"
+                className="block cursor-not-allowed rounded-md px-3 py-1.5 text-[13px]"
+                style={{ color: 'var(--text-disabled)' }}
+              >
+                {label}
+              </span>
+            );
+          }
+          return (
+            <Link
+              key={leaf.key}
+              href={navHref(leaf.key)}
+              data-nav-key={leaf.key}
+              aria-current={isCurrent ? 'page' : undefined}
+              className="block rounded-md px-3 py-1.5 text-[13px]"
+              style={{
+                color: isCurrent ? 'var(--brand-600)' : 'var(--text-secondary)',
+                fontWeight: isCurrent ? 600 : 400,
+              }}
+            >
+              {label}
+            </Link>
+          );
+        })}
     </div>
   );
 }
@@ -116,10 +142,44 @@ export function Sidebar() {
           const isOpen = group.sub ? (openGroups[group.key] ?? activeParent) : false;
           const Icon = group.icon;
           const groupLabel = t(navI18nKey(group.key), { defaultValue: group.label });
+          const disabled = !isNavKeyEnabled(group.key);
+          const rowClassName =
+            'flex w-full items-center gap-3 overflow-hidden whitespace-nowrap rounded-md px-3 py-2 text-[13.5px] font-medium';
+          const rowStyle = {
+            background: activeParent && !disabled ? 'var(--brand-100)' : 'transparent',
+            color: disabled
+              ? 'var(--text-disabled)'
+              : activeParent
+                ? 'var(--brand-600)'
+                : 'var(--text-secondary)',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+          };
 
           return (
             <div key={group.key} className="mb-1">
-              {group.sub ? (
+              {disabled ? (
+                // Disabled: neither a link nor an active button, so it cannot be reached by
+                // click or by keyboard, and a group with sub-items does not expand.
+                <button
+                  type="button"
+                  disabled
+                  data-nav-key={group.key}
+                  data-active={!!activeParent}
+                  data-nav-disabled="true"
+                  aria-disabled="true"
+                  className={`${rowClassName} cursor-not-allowed`}
+                  style={rowStyle}
+                  title={groupLabel}
+                >
+                  <Icon size={18} className="flex-shrink-0" />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 text-left">{groupLabel}</span>
+                      {group.sub && <IconChevronRight size={18} />}
+                    </>
+                  )}
+                </button>
+              ) : group.sub ? (
                 <button
                   type="button"
                   data-nav-key={group.key}
