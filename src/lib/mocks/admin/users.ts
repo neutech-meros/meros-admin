@@ -8,11 +8,12 @@ export interface UserRecord {
   location: string;
   bio: string;
   account: 'Personal' | 'Business';
-  plan: 'Free trial' | 'Freemium' | 'Premium';
+  plan: 'Free trial' | 'Freemium' | 'Premium' | null;
   followers: string;
   following: string;
   joined: string;
-  status: 'Active' | 'Deactivated' | 'Deleted';
+  createdAtIso?: string;
+  status: 'Active' | 'Deactivated' | 'Suspended' | 'Deleted';
   type: 'User' | 'Creator';
   initials: string;
   avatarColor: string;
@@ -26,7 +27,7 @@ interface UserSeed {
   location: string;
   bio: string;
   account: UserRecord['account'];
-  plan: UserRecord['plan'];
+  plan: NonNullable<UserRecord['plan']>;
   followers: string;
   following: string;
   joined: string;

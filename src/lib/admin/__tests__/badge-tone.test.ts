@@ -13,6 +13,12 @@ describe('badgeTone', () => {
       background: 'var(--info-bg)',
     });
   });
+  it('auto-colors Suspended as warning, distinct from Deactivated', () => {
+    expect(badgeTone('Suspended')).toEqual({
+      color: 'var(--warning)',
+      background: 'var(--warning-bg)',
+    });
+  });
   it('falls back to neutral for a status with no auto entry (e.g. Deleted)', () => {
     expect(badgeTone('Deleted')).toEqual({
       color: 'var(--text-secondary)',

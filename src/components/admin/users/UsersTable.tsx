@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { UNKNOWN_VALUE } from '@/lib/admin/accounts';
 import { badgeTone } from '@/lib/admin/badge-tone';
 import {
   ROLE_LABEL_KEY,
@@ -38,6 +39,8 @@ const COLUMN_LABEL_KEY: Record<SortKey, string> = {
 
 interface UsersTableProps {
   users: UserRecord[];
+  total: number;
+  loadedCount: number;
   sort: SortState;
   onSortChange: (key: SortKey) => void;
   onRowClick: (user: UserRecord) => void;
@@ -59,6 +62,8 @@ function ariaSort(sort: SortState, key: SortKey): 'ascending' | 'descending' | '
 
 export function UsersTable({
   users,
+  total,
+  loadedCount,
   sort,
   onSortChange,
   onRowClick,
@@ -82,7 +87,7 @@ export function UsersTable({
                 {SORT_COLUMNS.map(({ key }) => (
                   <TableHead
                     key={key}
-                    aria-sort={ariaSort(sort, key)}
+                    aria-sort={key === 'plan' ? undefined : ariaSort(sort, key)}
                     className="select-none"
                     style={{
                       color: sort.key === key ? 'var(--brand-600)' : 'var(--text-secondary)',
@@ -90,8 +95,10 @@ export function UsersTable({
                   >
                     <button
                       type="button"
-                      onClick={() => onSortChange(key)}
-                      className="inline-flex cursor-pointer items-center gap-1 font-[inherit] text-inherit"
+                      onClick={() => key !== 'plan' && onSortChange(key)}
+                      disabled={key === 'plan'}
+                      title={key === 'plan' ? t('admin.users.filterByPlanUnavailable') : undefined}
+                      className="inline-flex cursor-pointer items-center gap-1 font-[inherit] text-inherit disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {t(COLUMN_LABEL_KEY[key])}
                       <span aria-hidden="true" className="text-[9px]">
@@ -134,7 +141,7 @@ export function UsersTable({
                         {t(ROLE_LABEL_KEY[role])}
                       </span>
                     </TableCell>
-                    <TableCell>{u.plan}</TableCell>
+                    <TableCell>{u.plan ?? UNKNOWN_VALUE}</TableCell>
                     <TableCell className="tabular-nums">{u.followers}</TableCell>
                     <TableCell className="tabular-nums">{u.joined}</TableCell>
                     <TableCell>
@@ -201,7 +208,15 @@ export function UsersTable({
             className="flex items-center justify-between border-t px-4 py-3 text-[13px]"
             style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
           >
-            <span>{t('admin.users.footerText', { count: users.length })}</span>
+            <span>
+              {loadedCount < total
+                ? t('admin.users.footerTextPartial', {
+                    count: users.length,
+                    loaded: loadedCount,
+                    total,
+                  })
+                : t('admin.users.footerText', { count: users.length, total })}
+            </span>
             <div className="flex gap-1">
               {['‹', '1', '2', '3', '›'].map((label, i) => (
                 <button

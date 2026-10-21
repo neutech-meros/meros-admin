@@ -1,7 +1,18 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { toast } from 'sonner';
 
 import { ResetPasswordDialog } from '../ResetPasswordDialog';
+
+jest.mock('sonner', () => ({
+  toast: { success: jest.fn(), info: jest.fn(), error: jest.fn() },
+}));
+
+const toastMock = jest.mocked(toast);
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 const target = { name: 'Camila Duarte', email: 'camila@mail.com', phone: '+55 21 98888-1234' };
 
@@ -82,6 +93,17 @@ describe('ResetPasswordDialog', () => {
     render(<ResetPasswordDialog target={target} onClose={onClose} />);
     await user.click(screen.getByRole('button', { name: /enviar link por e-mail/i }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('shows an honest not-implemented toast instead of claiming a reset link was sent', async () => {
+    const user = userEvent.setup();
+    render(<ResetPasswordDialog target={target} onClose={jest.fn()} />);
+    await user.click(screen.getByRole('button', { name: /enviar link por e-mail/i }));
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.info).toHaveBeenCalledWith('Ainda não disponível', {
+      description:
+        'Enviar links de redefinição ainda não foi implementado — nada foi enviado para camila@mail.com.',
+    });
   });
 
   it('does not close and switches the email field to edit mode on an invalid email', async () => {

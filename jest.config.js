@@ -1,5 +1,9 @@
 const nextJest = require('next/jest');
 
+// Pinned so date-formatting tests are deterministic on any machine or CI runner (Jest workers
+// inherit this; setting TZ from inside a test file does not reach the native Date implementation).
+process.env.TZ = 'America/Sao_Paulo';
+
 const createJestConfig = nextJest({
   // Provide the path to your Next.js app to load next.config.js and .env files
   dir: './',

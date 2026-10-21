@@ -1,5 +1,5 @@
 // src/components/admin/users/__tests__/UsersTable.test.tsx
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { UserRecord } from '@/lib/mocks/admin/users';
@@ -48,6 +48,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}
@@ -70,6 +72,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}
@@ -93,6 +97,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={onSortChange}
         onRowClick={jest.fn()}
@@ -112,6 +118,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={onSortChange}
         onRowClick={jest.fn()}
@@ -135,6 +143,8 @@ describe('UsersTable', () => {
   it('reflects the current sort column and direction via aria-sort', () => {
     const props = {
       users,
+      total: users.length,
+      loadedCount: users.length,
       onSortChange: jest.fn(),
       onRowClick: jest.fn(),
       onViewProfile: jest.fn(),
@@ -161,6 +171,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={onRowClick}
@@ -180,6 +192,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}
@@ -204,6 +218,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}
@@ -222,6 +238,8 @@ describe('UsersTable', () => {
     render(
       <UsersTable
         users={users}
+        total={users.length}
+        loadedCount={users.length}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}
@@ -236,10 +254,81 @@ describe('UsersTable', () => {
     }
   });
 
+  it('renders "—" for the plan and follower count of a real account with no plan data', () => {
+    const realAccount: UserRecord = {
+      ...users[1],
+      id: 'real-1',
+      name: 'Real Account',
+      plan: null,
+      followers: '—',
+      following: '—',
+    };
+    render(
+      <UsersTable
+        users={[realAccount]}
+        total={1}
+        loadedCount={1}
+        sort={{ key: null, dir: 'desc' }}
+        onSortChange={jest.fn()}
+        onRowClick={jest.fn()}
+        onViewProfile={jest.fn()}
+        onResetPassword={jest.fn()}
+        onDeactivate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    const row = screen.getByText('Real Account').closest('tr')!;
+    const cells = within(row).getAllByRole('cell');
+    expect(cells[2]).toHaveTextContent(/^—$/);
+    expect(cells[3]).toHaveTextContent(/^—$/);
+  });
+
+  it('shows the given total in the footer when everything is loaded', () => {
+    render(
+      <UsersTable
+        users={users}
+        total={1234}
+        loadedCount={1234}
+        sort={{ key: null, dir: 'desc' }}
+        onSortChange={jest.fn()}
+        onRowClick={jest.fn()}
+        onViewProfile={jest.fn()}
+        onResetPassword={jest.fn()}
+        onDeactivate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    expect(screen.getByText(/exibindo 1–2 de 1234 contas/i)).toBeInTheDocument();
+    expect(screen.queryByText(/3\.482/)).not.toBeInTheDocument();
+  });
+
+  it('shows an honest partial-load message when fewer rows were loaded than the server total', () => {
+    render(
+      <UsersTable
+        users={users}
+        total={3482}
+        loadedCount={100}
+        sort={{ key: null, dir: 'desc' }}
+        onSortChange={jest.fn()}
+        onRowClick={jest.fn()}
+        onViewProfile={jest.fn()}
+        onResetPassword={jest.fn()}
+        onDeactivate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    expect(
+      screen.getByText(/exibindo 2 das últimas 100 de 3482 contas.*apenas as contas carregadas/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/exibindo 1–2 de/i)).not.toBeInTheDocument();
+  });
+
   it('renders the empty state when there are no users', () => {
     render(
       <UsersTable
         users={[]}
+        total={0}
+        loadedCount={0}
         sort={{ key: null, dir: 'desc' }}
         onSortChange={jest.fn()}
         onRowClick={jest.fn()}

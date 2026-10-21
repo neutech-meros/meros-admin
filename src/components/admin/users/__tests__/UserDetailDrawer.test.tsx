@@ -1,6 +1,7 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import i18n from '@/i18n';
 import type { UserRecord } from '@/lib/mocks/admin/users';
 
 import { UserDetailDrawer } from '../UserDetailDrawer';
@@ -68,6 +69,70 @@ describe('UserDetailDrawer', () => {
     render(<UserDetailDrawer user={user} onClose={jest.fn()} onSaveProfile={jest.fn()} />);
     await uiUser.click(screen.getByRole('tab', { name: 'Denúncias' }));
     expect(screen.getByText('Nenhuma denúncia')).toBeInTheDocument();
+  });
+
+  describe('History tab for a real account with no seeded mock history', () => {
+    const realUser: UserRecord = {
+      ...user,
+      id: 'real-account-id',
+      createdAtIso: '2025-03-12T10:00:00.000Z',
+    };
+
+    afterEach(async () => {
+      await act(() => i18n.changeLanguage('pt'));
+    });
+
+    it('shows a translated "Account created" entry with the Intl-formatted date', async () => {
+      const uiUser = userEvent.setup();
+      render(<UserDetailDrawer user={realUser} onClose={jest.fn()} onSaveProfile={jest.fn()} />);
+      await uiUser.click(screen.getByRole('tab', { name: 'Histórico' }));
+      expect(screen.getByText('Conta criada')).toBeInTheDocument();
+      expect(screen.getByText('12 de mar. de 2025')).toBeInTheDocument();
+    });
+
+    it('follows the UI language for both the title and the date format', async () => {
+      await act(() => i18n.changeLanguage('en'));
+      const uiUser = userEvent.setup();
+      render(<UserDetailDrawer user={realUser} onClose={jest.fn()} onSaveProfile={jest.fn()} />);
+      await uiUser.click(screen.getByRole('tab', { name: 'History' }));
+      expect(screen.getByText('Account created')).toBeInTheDocument();
+      expect(screen.getByText('Mar 12, 2025')).toBeInTheDocument();
+    });
+
+    it('shows no synthetic entry for an account without createdAtIso', async () => {
+      const uiUser = userEvent.setup();
+      const withoutIso: UserRecord = { ...realUser };
+      delete withoutIso.createdAtIso;
+      render(<UserDetailDrawer user={withoutIso} onClose={jest.fn()} onSaveProfile={jest.fn()} />);
+      await uiUser.click(screen.getByRole('tab', { name: 'Histórico' }));
+      expect(screen.queryByText('Conta criada')).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows "—" in the plan/followers/following stat tiles and the account plan row for a real account', () => {
+    render(
+      <UserDetailDrawer
+        user={{ ...user, id: 'real-1', plan: null, followers: '—', following: '—' }}
+        onClose={jest.fn()}
+        onSaveProfile={jest.fn()}
+      />,
+    );
+    expect(screen.getAllByText('—')).toHaveLength(4);
+    expect(screen.queryByText('Premium')).not.toBeInTheDocument();
+  });
+
+  it('keeps showing the seeded mock history for a seeded user', async () => {
+    const uiUser = userEvent.setup();
+    render(
+      <UserDetailDrawer
+        user={{ ...user, createdAtIso: '2025-03-12T10:00:00.000Z' }}
+        onClose={jest.fn()}
+        onSaveProfile={jest.fn()}
+      />,
+    );
+    await uiUser.click(screen.getByRole('tab', { name: 'Histórico' }));
+    expect(screen.getByText('Upgraded to Premium')).toBeInTheDocument();
+    expect(screen.queryByText('Conta criada')).not.toBeInTheDocument();
   });
 
   it('enters edit mode and calls onSaveProfile with the edited draft', async () => {

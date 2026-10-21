@@ -86,3 +86,21 @@ describe('per-user tab data', () => {
     expect(getUserReports('nope')).toEqual([]);
   });
 });
+
+describe('getUserHistory', () => {
+  it('is a pure one-argument mock-data lookup', () => {
+    expect(getUserHistory).toHaveLength(1);
+  });
+
+  it('returns the seeded history for a seeded id', () => {
+    expect(getUserHistory('u1')).toEqual([
+      { title: 'Published new list "10 dias na Patagônia"', time: '18 Sep 2026, 09:12' },
+      { title: 'Upgraded to Premium', time: '12 Mar 2025, 14:30' },
+      { title: 'Account created', time: '02 Feb 2025, 10:00' },
+    ]);
+  });
+
+  it('returns an empty array for an id with no seeded history', () => {
+    expect(getUserHistory('real-account-id')).toEqual([]);
+  });
+});
