@@ -1,4 +1,12 @@
-import { NAV, labelForKey, navI18nKey, parentOfKey } from '../nav-config';
+import {
+  HOME_PATH,
+  NAV,
+  isNavKeyEnabled,
+  keyFromPathname,
+  labelForKey,
+  navI18nKey,
+  parentOfKey,
+} from '../nav-config';
 
 describe('NAV', () => {
   it('has the 9 top-level groups that actually rendered in the reference HTML, in that order', () => {
@@ -79,5 +87,50 @@ describe('navI18nKey', () => {
   });
   it('passes through a key with no hyphen', () => {
     expect(navI18nKey('dashboard')).toBe('admin.nav.dashboard');
+  });
+});
+
+describe('isNavKeyEnabled', () => {
+  it('enables exactly the shipped and in-flight screens, and their leaves', () => {
+    const enabled = [...NAV.flatMap((g) => [g.key, ...(g.sub ?? []).map((s) => s.key)])].filter(
+      isNavKeyEnabled,
+    );
+    expect(enabled).toEqual([
+      'users',
+      'moderation',
+      'moderation-reported',
+      'moderation-business',
+      'catalog',
+      'catalog-categories',
+      'catalog-requests',
+    ]);
+  });
+
+  it('disables Overview and every group with no screen behind it', () => {
+    for (const key of [
+      'dashboard',
+      'analytics',
+      'subscriptions',
+      'bookings',
+      'finance',
+      'system',
+    ]) {
+      expect(isNavKeyEnabled(key)).toBe(false);
+    }
+  });
+
+  it('disables the leaves of a disabled group too', () => {
+    expect(isNavKeyEnabled('finance-commissions')).toBe(false);
+    expect(isNavKeyEnabled('system-terms')).toBe(false);
+  });
+});
+
+describe('HOME_PATH', () => {
+  it('points at an enabled screen', () => {
+    expect(isNavKeyEnabled(keyFromPathname(HOME_PATH))).toBe(true);
+  });
+
+  it('is the Users & Creators screen', () => {
+    expect(HOME_PATH).toBe('/users');
   });
 });
