@@ -1,9 +1,11 @@
+import i18n from '@/i18n';
 import type { CategoryNode } from '@/lib/mocks/admin/categories';
 import type { CategoryRequest } from '@/lib/mocks/admin/category-requests';
 
 import {
   countByStatus,
   filterByTab,
+  LEVEL_LABEL_KEY,
   matchParentPath,
   requestStatusTone,
 } from '../category-requests';
@@ -130,5 +132,18 @@ describe('matchParentPath', () => {
       parentSlug: 'food',
       subcategorySlug: null,
     });
+  });
+});
+
+describe('LEVEL_LABEL_KEY', () => {
+  it('points every tree level at an existing translation', () => {
+    expect(Object.keys(LEVEL_LABEL_KEY).sort()).toEqual([
+      'Child category',
+      'Parent',
+      'Subcategory',
+    ]);
+    for (const key of Object.values(LEVEL_LABEL_KEY)) {
+      expect(i18n.exists(key)).toBe(true);
+    }
   });
 });

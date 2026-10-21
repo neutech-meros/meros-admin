@@ -27,6 +27,14 @@ export const STATUS_LABEL_KEY: Record<CategoryRequestStatus, string> = {
   Rejected: 'admin.categoryRequests.status.rejected',
 };
 
+export type CategoryRequestLevel = 'Parent' | 'Subcategory' | 'Child category';
+
+export const LEVEL_LABEL_KEY: Record<CategoryRequestLevel, string> = {
+  Parent: 'admin.categoryRequests.createModal.levelParent',
+  Subcategory: 'admin.categoryRequests.createModal.levelSubcategory',
+  'Child category': 'admin.categoryRequests.createModal.levelChildCategory',
+};
+
 export function requestStatusTone(status: CategoryRequestStatus): {
   color: string;
   background: string;

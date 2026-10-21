@@ -28,6 +28,12 @@ const categoryRequestSchema = z.object({
     nickname: z.string().nullable(),
     avatarUrl: z.string().nullable(),
   }),
+  // Optional until meros-app PR #357 is on dev. decidedBy is deliberately not declared:
+  // it echoes MEROS_ADMIN_ACTOR, which must never reach the browser.
+  reason: z.string().nullable().optional(),
+  decidedAt: z.string().datetime({ offset: true }).nullable().optional(),
+  groupId: z.string().nullable().optional(),
+  categoryId: z.string().nullable().optional(),
 });
 
 const listResponseSchema = z.object({

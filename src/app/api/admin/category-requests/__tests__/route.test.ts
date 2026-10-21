@@ -153,6 +153,35 @@ describe('GET /api/admin/category-requests', () => {
     expect(await res.json()).toEqual({ items: [first], total: 1 });
   });
 
+  it('forwards the decision fields when the upstream sends them, without decidedBy', async () => {
+    const [, approved] = VALID_LIST_RESPONSE.items;
+    const decision = {
+      reason: null,
+      decidedAt: '2026-09-21T10:00:00.000Z',
+      groupId: '00000000-0000-0000-0000-0000000000cc',
+      categoryId: '00000000-0000-0000-0000-0000000000dd',
+    };
+    global.fetch = fetchOk({
+      items: [{ ...approved, ...decision, decidedBy: 'meros-admin' }],
+      total: 1,
+    });
+
+    const res = await GET(request());
+
+    const body = (await res.json()) as { items: Array<Record<string, unknown>> };
+    expect(body.items[0]).toEqual({ ...approved, ...decision });
+    expect(JSON.stringify(body)).not.toContain('meros-admin');
+  });
+
+  it('returns 502 when a decision field has the wrong type', async () => {
+    const [first] = VALID_LIST_RESPONSE.items;
+    global.fetch = fetchOk({ items: [{ ...first, decidedAt: 'yesterday' }], total: 1 });
+
+    const res = await GET(request());
+
+    expect(res.status).toBe(502);
+  });
+
   it('returns 502 when upstream responds with a non-2xx status', async () => {
     global.fetch = fetchStatus(500);
 
