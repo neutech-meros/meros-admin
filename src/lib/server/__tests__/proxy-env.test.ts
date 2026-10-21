@@ -3,7 +3,11 @@
  */
 import { isProxyEnabled } from '../proxy-env';
 
-const FLAGS = ['ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED', 'ADMIN_MODERATION_PROXY_ENABLED'] as const;
+const FLAGS = [
+  'ADMIN_BUSINESS_ACCOUNTS_PROXY_ENABLED',
+  'ADMIN_CATEGORIES_PROXY_ENABLED',
+  'ADMIN_MODERATION_PROXY_ENABLED',
+] as const;
 const originalEnv = { ...process.env };
 
 function setNodeEnv(value: string) {
