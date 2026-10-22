@@ -148,7 +148,7 @@ describe('CategoryRequestsPage', () => {
     ]);
   });
 
-  it('renders each row with the real fields and marks unavailable ones', async () => {
+  it('renders each row with the real fields only', async () => {
     serve(backend());
     const user = userEvent.setup();
     render(<CategoryRequestsPage />);
@@ -160,7 +160,9 @@ describe('CategoryRequestsPage', () => {
     expect(within(tiki).getByText('ana')).toBeInTheDocument();
     expect(within(tiki).getByText('Approved')).toBeInTheDocument();
     expect(within(tiki).getByText(/2026/)).toBeInTheDocument();
-    expect(within(tiki).getAllByText('—').length).toBeGreaterThanOrEqual(2);
+    expect(within(tiki).queryByText('—')).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Parent path' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Votes' })).not.toBeInTheDocument();
 
     const ramen = screen.getByText('Late Night Ramen').closest('tr')!;
     expect(within(ramen).getByText('Child category')).toBeInTheDocument();
@@ -172,10 +174,10 @@ describe('CategoryRequestsPage', () => {
 
     const ramen = (await screen.findByText('Ramen Spots')).closest('tr')!;
     expect(within(ramen).queryByText('ana')).not.toBeInTheDocument();
-    expect(within(ramen).getAllByText('—').length).toBeGreaterThanOrEqual(3);
+    expect(within(ramen).getAllByText('—')).toHaveLength(2);
   });
 
-  it('does not offer actions that are not wired to the API yet', async () => {
+  it('opens the read-only drawer of the clicked request and closes it', async () => {
     serve(backend());
     const user = userEvent.setup();
     render(<CategoryRequestsPage />);
@@ -183,7 +185,19 @@ describe('CategoryRequestsPage', () => {
 
     expect(within(row).queryByRole('button')).not.toBeInTheDocument();
     await user.click(row);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: 'Rooftop Bars' })).toBeInTheDocument();
+    expect(within(dialog).getByText('Requested by ana')).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('button', { name: 'Ask for details' }),
+    ).not.toBeInTheDocument();
+
+    const footerClose = within(dialog)
+      .getAllByRole('button', { name: 'Close' })
+      .find((button) => button.textContent === 'Close')!;
+    await user.click(footerClose);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
   it('shows the empty state when a status has no requests', async () => {

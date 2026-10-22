@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
+import { CategoryRequestDetailDrawer } from '@/components/admin/category-requests/CategoryRequestDetailDrawer';
 import { CategoryRequestsTable } from '@/components/admin/category-requests/CategoryRequestsTable';
 import {
   fetchCategoryRequests,
@@ -49,6 +50,7 @@ export default function CategoryRequestsPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [list, setList] = useState<ListState>({ status: 'loading' });
   const [totals, setTotals] = useState<CategoryRequestTotalsResult | null>(null);
+  const [openRequest, setOpenRequest] = useState<CategoryRequestItem | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +99,7 @@ export default function CategoryRequestsPage() {
           page={page}
           pageSize={PAGE_SIZE}
           onPageChange={setPage}
+          onRowClick={setOpenRequest}
         />
       );
     }
@@ -197,6 +200,8 @@ export default function CategoryRequestsPage() {
       </div>
 
       {renderList()}
+
+      <CategoryRequestDetailDrawer request={openRequest} onClose={() => setOpenRequest(null)} />
     </div>
   );
 }

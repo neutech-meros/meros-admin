@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import {
   LEVEL_LABEL_KEY,
+  requesterInitials,
   requestStatusTone,
   STATUS_LABEL_KEY,
 } from '@/lib/admin/category-requests';
@@ -26,15 +27,7 @@ interface CategoryRequestsTableProps {
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
-}
-
-function initialsOf(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
+  onRowClick: (request: CategoryRequestItem) => void;
 }
 
 function Pagination({
@@ -42,7 +35,7 @@ function Pagination({
   page,
   pageSize,
   onPageChange,
-}: Omit<CategoryRequestsTableProps, 'requests'>) {
+}: Omit<CategoryRequestsTableProps, 'requests' | 'onRowClick'>) {
   const { t } = useTranslation();
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const start = (page - 1) * pageSize + 1;
@@ -121,6 +114,7 @@ export function CategoryRequestsTable({
   page,
   pageSize,
   onPageChange,
+  onRowClick,
 }: CategoryRequestsTableProps) {
   const { t } = useTranslation();
 
@@ -137,9 +131,7 @@ export function CategoryRequestsTable({
             <TableHeader>
               <TableRow>
                 <TableHead>{t('admin.categoryRequests.table.category')}</TableHead>
-                <TableHead>{t('admin.categoryRequests.table.parentPath')}</TableHead>
                 <TableHead>{t('admin.categoryRequests.table.requestedBy')}</TableHead>
-                <TableHead>{t('admin.categoryRequests.table.votes')}</TableHead>
                 <TableHead>{t('admin.categoryRequests.table.requested')}</TableHead>
                 <TableHead>{t('admin.categoryRequests.table.status')}</TableHead>
               </TableRow>
@@ -148,14 +140,17 @@ export function CategoryRequestsTable({
               {requests.map((request) => {
                 const tone = requestStatusTone(request.status);
                 return (
-                  <TableRow key={request.id}>
+                  <TableRow
+                    key={request.id}
+                    onClick={() => onRowClick(request)}
+                    className="cursor-pointer"
+                  >
                     <TableCell>
                       <div className="font-medium">{request.name}</div>
                       <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                         {request.level === null ? UNAVAILABLE : t(LEVEL_LABEL_KEY[request.level])}
                       </div>
                     </TableCell>
-                    <TableCell style={{ color: 'var(--text-secondary)' }}>{UNAVAILABLE}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2.5">
                         <Avatar className="h-7 w-7">
@@ -166,18 +161,12 @@ export function CategoryRequestsTable({
                             className="text-[11px] font-semibold"
                             style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}
                           >
-                            {initialsOf(request.requester)}
+                            {requesterInitials(request.requester)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <div>{request.requester}</div>
-                          <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                            {UNAVAILABLE}
-                          </div>
-                        </div>
+                        <div>{request.requester}</div>
                       </div>
                     </TableCell>
-                    <TableCell className="tabular-nums">{UNAVAILABLE}</TableCell>
                     <TableCell className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>
                       {request.date}
                     </TableCell>
