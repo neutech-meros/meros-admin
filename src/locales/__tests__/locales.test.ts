@@ -70,3 +70,43 @@ describe('admin.users locales', () => {
     expect(leafValue(en, 'footerText')).toBe('Showing {{start}}–{{end}} of {{total}} accounts');
   });
 });
+
+describe('admin.categoryRequests locales', () => {
+  const en = enUS.admin.categoryRequests as Tree;
+  const pt = ptBR.admin.categoryRequests as Tree;
+  const es = esES.admin.categoryRequests as Tree;
+  const enPaths = leafPaths(en).sort();
+
+  it('has the same keys in every locale', () => {
+    expect(leafPaths(pt).sort()).toEqual(enPaths);
+    expect(leafPaths(es).sort()).toEqual(enPaths);
+  });
+
+  it('keeps the same interpolation placeholders in every locale', () => {
+    for (const path of enPaths) {
+      expect([path, placeholders(leafValue(pt, path))]).toEqual([
+        path,
+        placeholders(leafValue(en, path)),
+      ]);
+      expect([path, placeholders(leafValue(es, path))]).toEqual([
+        path,
+        placeholders(leafValue(en, path)),
+      ]);
+    }
+  });
+
+  it('has the list states and pagination the screen renders', () => {
+    for (const path of [
+      'loading',
+      'loadError',
+      'retry',
+      'footerText',
+      'pagination',
+      'previousPage',
+      'nextPage',
+      'pageNumber',
+    ]) {
+      expect(enPaths).toContain(path);
+    }
+  });
+});

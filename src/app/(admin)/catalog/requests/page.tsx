@@ -1,153 +1,171 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { useAtom } from 'jotai';
-import { toast } from 'sonner';
-
-import { CategoryRequestDetailDrawer } from '@/components/admin/category-requests/CategoryRequestDetailDrawer';
 import { CategoryRequestsTable } from '@/components/admin/category-requests/CategoryRequestsTable';
 import {
-  CreateCategoryModal,
-  type CreateCategoryResult,
-} from '@/components/admin/category-requests/CreateCategoryModal';
-import { addCategory, categoryExists, slugify } from '@/lib/admin/categories-tree';
-import { countByStatus, filterByTab } from '@/lib/admin/category-requests';
-import type { CategoryRequest, CategoryRequestStatus } from '@/lib/mocks/admin/category-requests';
-import { categoryTreeAtom } from '@/store/atoms/categories';
-import { categoryRequestsAtom } from '@/store/atoms/category-requests';
+  fetchCategoryRequests,
+  fetchCategoryRequestTotals,
+  type CategoryRequestApiStatus,
+  type CategoryRequestItem,
+  type CategoryRequestTotalsResult,
+} from '@/lib/admin/category-requests-api';
 
-const TAB_ORDER: Array<CategoryRequestStatus | 'all'> = [
-  'Pending',
-  'More info',
-  'Approved',
-  'Rejected',
-  'all',
+type Tab = CategoryRequestApiStatus | 'all';
+type ListState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'loaded'; items: CategoryRequestItem[]; total: number };
+
+const K = 'admin.categoryRequests';
+const PAGE_SIZE = 20;
+const UNAVAILABLE = '—';
+
+const TABS: Array<{ key: Tab; labelKey: string }> = [
+  { key: 'PENDING', labelKey: `${K}.tabPending` },
+  { key: 'APPROVED', labelKey: `${K}.tabApproved` },
+  { key: 'REJECTED', labelKey: `${K}.tabRejected` },
+  { key: 'all', labelKey: `${K}.tabAll` },
 ];
 
-const TAB_LABEL_KEY: Record<CategoryRequestStatus | 'all', string> = {
-  Pending: 'admin.categoryRequests.tabPending',
-  'More info': 'admin.categoryRequests.tabMoreInfo',
-  Approved: 'admin.categoryRequests.tabApproved',
-  Rejected: 'admin.categoryRequests.tabRejected',
-  all: 'admin.categoryRequests.tabAll',
-};
+const KPIS: Array<{ key: CategoryRequestApiStatus; labelKey: string; color: string }> = [
+  { key: 'PENDING', labelKey: `${K}.kpiPending`, color: 'var(--warning)' },
+  { key: 'APPROVED', labelKey: `${K}.kpiApproved`, color: 'var(--success)' },
+  { key: 'REJECTED', labelKey: `${K}.kpiRejected`, color: 'var(--danger)' },
+];
+
+const TOTAL_KEY = { PENDING: 'pending', APPROVED: 'approved', REJECTED: 'rejected' } as const;
+
+function formatDate(iso: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(iso));
+}
 
 export default function CategoryRequestsPage() {
-  const { t } = useTranslation();
-  const [requests, setRequests] = useAtom(categoryRequestsAtom);
-  const [tree, setTree] = useAtom(categoryTreeAtom);
-  const [tab, setTab] = useState<CategoryRequestStatus | 'all'>('Pending');
-  const [drawerRequest, setDrawerRequest] = useState<CategoryRequest | null>(null);
-  const [createRequest, setCreateRequest] = useState<CategoryRequest | null>(null);
+  const { t, i18n } = useTranslation();
+  const [tab, setTab] = useState<Tab>('PENDING');
+  const [page, setPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [list, setList] = useState<ListState>({ status: 'loading' });
+  const [totals, setTotals] = useState<CategoryRequestTotalsResult | null>(null);
 
-  const visible = useMemo(() => filterByTab(requests, tab), [requests, tab]);
-
-  const kpis = [
-    {
-      label: t('admin.categoryRequests.kpiPending'),
-      value: countByStatus(requests, 'Pending'),
-      color: 'var(--warning)',
-    },
-    {
-      label: t('admin.categoryRequests.kpiMoreInfo'),
-      value: countByStatus(requests, 'More info'),
-      color: 'inherit',
-    },
-    {
-      label: t('admin.categoryRequests.kpiApproved'),
-      value: countByStatus(requests, 'Approved'),
-      color: 'var(--success)',
-    },
-    {
-      label: t('admin.categoryRequests.kpiRejected'),
-      value: countByStatus(requests, 'Rejected'),
-      color: 'var(--danger)',
-    },
-  ];
-
-  function handleApprove(request: CategoryRequest) {
-    setDrawerRequest(null);
-    setCreateRequest(request);
-  }
-
-  function handleCreateConfirm(result: CreateCategoryResult) {
-    if (!createRequest) return;
-    const requestId = createRequest.id;
-    const slug = result.parentSlug
-      ? `${result.parentSlug}/${slugify(result.name)}`
-      : slugify(result.name);
-    if (categoryExists(tree, slug)) {
-      toast.error(t('admin.categories.toasts.alreadyExistsTitle'), {
-        description: t('admin.categories.toasts.alreadyExistsDescription'),
-      });
-      return;
-    }
-    setTree((cur) => addCategory(cur, result.parentSlug, result.name, result.status, result.icon));
-    setRequests((cur) => cur.map((r) => (r.id === requestId ? { ...r, status: 'Approved' } : r)));
-    if (result.parentPath) {
-      toast.success(t('admin.categoryRequests.toasts.createdTitle'), {
-        description: t('admin.categoryRequests.toasts.createdDescription', {
-          name: result.name,
-          parent: result.parentPath,
-        }),
-      });
-    } else {
-      toast.success(t('admin.categories.toasts.parentCreatedTitle'), {
-        description: t('admin.categories.toasts.parentCreatedDescription', { name: result.name }),
-      });
-    }
-    setCreateRequest(null);
-  }
-
-  function handleReject(request: CategoryRequest) {
-    setRequests((cur) => cur.map((r) => (r.id === request.id ? { ...r, status: 'Rejected' } : r)));
-    toast.error(t('admin.categoryRequests.toasts.rejectedTitle'), {
-      description: t('admin.categoryRequests.toasts.rejectedDescription', {
-        requester: request.requester,
-      }),
+  useEffect(() => {
+    let cancelled = false;
+    setList({ status: 'loading' });
+    fetchCategoryRequests(
+      { status: tab === 'all' ? undefined : tab, page, limit: PAGE_SIZE },
+      (iso) => formatDate(iso, i18n.language),
+    ).then((result) => {
+      if (cancelled) return;
+      setList(
+        result.ok
+          ? { status: 'loaded', items: result.items, total: result.total }
+          : { status: 'error' },
+      );
     });
-    setDrawerRequest(null);
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, page, reloadKey, i18n.language]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCategoryRequestTotals().then((result) => {
+      if (!cancelled) setTotals(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
+
+  function totalFor(status: CategoryRequestApiStatus): number | string {
+    return totals?.ok ? totals.totals[TOTAL_KEY[status]] : UNAVAILABLE;
   }
 
-  function handleAskForDetails(request: CategoryRequest) {
-    setRequests((cur) => cur.map((r) => (r.id === request.id ? { ...r, status: 'More info' } : r)));
-    toast.info(t('admin.categoryRequests.toasts.detailsRequestedTitle'), {
-      description: t('admin.categoryRequests.toasts.detailsRequestedDescription', {
-        requester: request.requester,
-      }),
-    });
-    setDrawerRequest(null);
+  function selectTab(next: Tab) {
+    setTab(next);
+    setPage(1);
+  }
+
+  function renderList() {
+    if (list.status === 'loaded') {
+      return (
+        <CategoryRequestsTable
+          requests={list.items}
+          total={list.total}
+          page={page}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      );
+    }
+    if (list.status === 'error') {
+      return (
+        <div
+          role="alert"
+          className="flex flex-col items-center gap-3 rounded-[14px] border px-6 py-14 text-center text-[13.5px]"
+          style={{
+            borderColor: 'var(--border-subtle)',
+            background: 'var(--bg-elevated)',
+            color: 'var(--danger)',
+          }}
+        >
+          <div>{t(`${K}.loadError`)}</div>
+          <button
+            type="button"
+            onClick={() => setReloadKey((key) => key + 1)}
+            className="rounded-[10px] border px-3.5 py-1.5 text-xs font-semibold"
+            style={{
+              borderColor: 'var(--border-subtle)',
+              background: 'var(--bg-elevated)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            {t(`${K}.retry`)}
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div
+        role="status"
+        className="rounded-[14px] border px-6 py-14 text-center text-[13.5px]"
+        style={{
+          borderColor: 'var(--border-subtle)',
+          background: 'var(--bg-elevated)',
+          color: 'var(--text-secondary)',
+        }}
+      >
+        {t(`${K}.loading`)}
+      </div>
+    );
   }
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {t('admin.categoryRequests.title')}
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t(`${K}.title`)}</h1>
         <div className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-          {t('admin.categoryRequests.subtitle')}
+          {t(`${K}.subtitle`)}
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-4 gap-6">
-        {kpis.map((kpi) => (
+      <div className="mb-6 grid grid-cols-3 gap-6">
+        {KPIS.map((kpi) => (
           <div
-            key={kpi.label}
+            key={kpi.key}
             className="rounded-[14px] border p-6"
             style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-elevated)' }}
           >
             <div className="mb-2 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-              {kpi.label}
+              {t(kpi.labelKey)}
             </div>
             <div
               className="text-[28px] font-bold tabular-nums tracking-tight"
               style={{ color: kpi.color }}
             >
-              {kpi.value}
+              {totalFor(kpi.key)}
             </div>
           </div>
         ))}
@@ -157,17 +175,14 @@ export default function CategoryRequestsPage() {
         className="mb-5 flex gap-1 overflow-x-auto border-b"
         style={{ borderColor: 'var(--border-subtle)' }}
       >
-        {TAB_ORDER.map((key) => {
+        {TABS.map(({ key, labelKey }) => {
           const active = tab === key;
-          const label =
-            key === 'all'
-              ? t(TAB_LABEL_KEY[key])
-              : t(TAB_LABEL_KEY[key], { count: countByStatus(requests, key) });
           return (
             <button
               key={key}
               type="button"
-              onClick={() => setTab(key)}
+              aria-pressed={active}
+              onClick={() => selectTab(key)}
               className="flex-shrink-0 whitespace-nowrap px-3 py-2 text-[13.5px] font-medium"
               style={{
                 color: active ? 'var(--brand-500)' : 'var(--text-secondary)',
@@ -175,32 +190,13 @@ export default function CategoryRequestsPage() {
                 marginBottom: '-1px',
               }}
             >
-              {label}
+              {key === 'all' ? t(labelKey) : t(labelKey, { count: totalFor(key) })}
             </button>
           );
         })}
       </div>
 
-      <CategoryRequestsTable
-        requests={visible}
-        onRowClick={setDrawerRequest}
-        onApprove={handleApprove}
-        onReject={handleReject}
-      />
-
-      <CategoryRequestDetailDrawer
-        request={drawerRequest}
-        onClose={() => setDrawerRequest(null)}
-        onAskForDetails={handleAskForDetails}
-        onReject={handleReject}
-        onApprove={handleApprove}
-      />
-
-      <CreateCategoryModal
-        request={createRequest}
-        onCancel={() => setCreateRequest(null)}
-        onCreate={handleCreateConfirm}
-      />
+      {renderList()}
     </div>
   );
 }

@@ -257,7 +257,15 @@
         "rejectedDescription": "{{requester}} was notified.",
         "createdTitle": "Category created",
         "createdDescription": "\"{{name}}\" was added under {{parent}}."
-      }
+      },
+      "loading": "Loading category requests...",
+      "loadError": "Couldn't load category requests. Please try again later.",
+      "retry": "Try again",
+      "footerText": "Showing {{start}}–{{end}} of {{total}} requests",
+      "pagination": "Pagination",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "pageNumber": "Page {{number}}"
     },
     "users": {
       "title": "Users & Creators",

@@ -257,7 +257,15 @@
         "rejectedDescription": "{{requester}} fue notificado(a).",
         "createdTitle": "Categoría creada",
         "createdDescription": "\"{{name}}\" se agregó bajo {{parent}}."
-      }
+      },
+      "loading": "Cargando solicitudes de categoría...",
+      "loadError": "No se pudieron cargar las solicitudes de categoría. Inténtalo de nuevo más tarde.",
+      "retry": "Intentar de nuevo",
+      "footerText": "Mostrando {{start}}–{{end}} de {{total}} solicitudes",
+      "pagination": "Paginación",
+      "previousPage": "Página anterior",
+      "nextPage": "Página siguiente",
+      "pageNumber": "Página {{number}}"
     },
     "users": {
       "title": "Usuarios y creadores",
