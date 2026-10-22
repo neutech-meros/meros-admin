@@ -160,7 +160,7 @@ export function CreateCategoryModal({
     }
     if (level === 'Parent') return null;
     return (
-      <div className={level === 'Child category' ? 'mb-4 grid grid-cols-2 gap-3' : 'mb-4'}>
+      <div className="mb-4 flex flex-col gap-4">
         <NodeSelect
           id="create-category-parent"
           label={t(`${K}.parentCategoryLabel`)}
@@ -199,16 +199,7 @@ export function CreateCategoryModal({
         </div>
         <div className="mb-4 flex gap-2">
           {LEVELS.map((option) => (
-            <ToggleButton
-              key={option}
-              on={level === option}
-              onClick={() => setLevel(option)}
-              activeStyle={{
-                borderColor: 'var(--brand-500)',
-                background: 'var(--brand-100)',
-                color: 'var(--brand-500)',
-              }}
-            >
+            <ToggleButton key={option} on={level === option} onClick={() => setLevel(option)}>
               {t(LEVEL_LABEL_KEY[option])}
             </ToggleButton>
           ))}
@@ -240,26 +231,10 @@ export function CreateCategoryModal({
           {t('admin.categories.modal.statusLabel')}
         </div>
         <div className="mb-4 flex gap-2">
-          <ToggleButton
-            on={status === 'ACTIVE'}
-            onClick={() => setStatus('ACTIVE')}
-            activeStyle={{
-              borderColor: 'var(--success)',
-              background: 'var(--success-bg)',
-              color: 'var(--success)',
-            }}
-          >
+          <ToggleButton on={status === 'ACTIVE'} onClick={() => setStatus('ACTIVE')}>
             {t('admin.categories.modal.statusActive')}
           </ToggleButton>
-          <ToggleButton
-            on={status === 'INACTIVE'}
-            onClick={() => setStatus('INACTIVE')}
-            activeStyle={{
-              borderColor: 'var(--border-strong)',
-              background: 'var(--bg-surface-hover)',
-              color: 'var(--text-primary)',
-            }}
-          >
+          <ToggleButton on={status === 'INACTIVE'} onClick={() => setStatus('INACTIVE')}>
             {t('admin.categories.modal.statusDeactivated')}
           </ToggleButton>
         </div>

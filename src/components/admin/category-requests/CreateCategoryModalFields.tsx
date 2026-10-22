@@ -60,12 +60,10 @@ export function ToggleButton({
   on,
   onClick,
   children,
-  activeStyle,
 }: {
   on: boolean;
   onClick: () => void;
   children: string;
-  activeStyle: CSSProperties;
 }) {
   return (
     <button
@@ -75,7 +73,12 @@ export function ToggleButton({
       className="flex-1 rounded-[10px] border px-2 py-2 text-[13px]"
       style={
         on
-          ? { ...activeStyle, fontWeight: 600 }
+          ? {
+              borderColor: 'var(--brand-500)',
+              background: 'var(--brand-100)',
+              color: 'var(--brand-500)',
+              fontWeight: 600,
+            }
           : {
               borderColor: 'var(--border-subtle)',
               background: 'var(--bg-elevated)',
