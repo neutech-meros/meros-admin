@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { CategoryRequestLevel } from '@/lib/admin/category-requests';
 
 const BASE_PATH = '/api/admin/category-requests';
-const EMPTY = '—';
+export const REQUESTER_UNAVAILABLE = '—';
 
 const apiStatusSchema = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
 const apiLevelSchema = z.enum(['GROUP', 'CATEGORY', 'SUBCATEGORY']);
@@ -88,7 +88,7 @@ export function toCategoryRequestItem(
     name: raw.suggestedName,
     status: STATUS[raw.status],
     level: raw.level === null ? null : LEVEL[raw.level],
-    requester: raw.submitter.nickname ?? EMPTY,
+    requester: raw.submitter.nickname ?? REQUESTER_UNAVAILABLE,
     avatarUrl: raw.submitter.avatarUrl,
     date: formatDate(raw.createdAt),
     decision:
@@ -110,7 +110,7 @@ export interface CategoryRequestListQuery {
 }
 
 export type CategoryRequestListResult =
-  { ok: true; items: CategoryRequestItem[]; total: number } | { ok: false };
+  { ok: true; items: CategoryRequestItem[]; total: number } | { ok: false; disabled?: true };
 
 export type CategoryRequestTotalsResult =
   { ok: true; totals: { pending: number; approved: number; rejected: number } } | { ok: false };
@@ -139,7 +139,15 @@ type Failure =
   | { kind: 'name-exists' }
   | { kind: 'error' };
 
-async function loadList(query: CategoryRequestListQuery) {
+type ListResponse = z.infer<typeof listResponseSchema>;
+
+function isLoaded(result: ListResponse | 'disabled' | null): result is ListResponse {
+  return result !== null && result !== 'disabled';
+}
+
+async function loadList(
+  query: CategoryRequestListQuery,
+): Promise<ListResponse | 'disabled' | null> {
   const params = new URLSearchParams();
   if (query.status !== undefined) params.set('status', query.status);
   if (query.page !== undefined) params.set('page', String(query.page));
@@ -147,6 +155,8 @@ async function loadList(query: CategoryRequestListQuery) {
   const queryString = params.toString();
   const search = queryString === '' ? '' : `?${queryString}`;
   const response = await fetch(`${BASE_PATH}${search}`);
+  // The proxy only answers 404 when ADMIN_CATEGORIES_PROXY_ENABLED is off.
+  if (response.status === 404) return 'disabled';
   if (!response.ok) return null;
   const parsed = listResponseSchema.safeParse(await response.json());
   return parsed.success ? parsed.data : null;
@@ -158,6 +168,7 @@ export async function fetchCategoryRequests(
 ): Promise<CategoryRequestListResult> {
   try {
     const data = await loadList(query);
+    if (data === 'disabled') return { ok: false, disabled: true };
     if (data === null) return { ok: false };
     return {
       ok: true,
@@ -176,7 +187,7 @@ export async function fetchCategoryRequestTotals(): Promise<CategoryRequestTotal
         loadList({ status, limit: 1 }),
       ),
     );
-    if (pending === null || approved === null || rejected === null) return { ok: false };
+    if (!isLoaded(pending) || !isLoaded(approved) || !isLoaded(rejected)) return { ok: false };
     return {
       ok: true,
       totals: { pending: pending.total, approved: approved.total, rejected: rejected.total },

@@ -253,10 +253,12 @@
         "notFoundDescription": "Esta solicitação não existe mais. A lista foi atualizada.",
         "approveFailedTitle": "Não foi possível criar a categoria",
         "rejectFailedTitle": "Não foi possível rejeitar a solicitação",
-        "actionFailedDescription": "Algo deu errado. Tente novamente."
+        "actionFailedDescription": "Algo deu errado. Tente novamente.",
+        "rejectedDescriptionNoRequester": "O solicitante foi notificado."
       },
       "loading": "Carregando solicitações de categoria...",
       "loadError": "Não foi possível carregar as solicitações de categoria. Tente novamente mais tarde.",
+      "disabled": "As solicitações de categoria não estão habilitadas neste ambiente.",
       "retry": "Tentar novamente",
       "footerText": "Exibindo {{start}}–{{end}} de {{total}} solicitações",
       "pagination": "Paginação",

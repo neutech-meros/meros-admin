@@ -253,10 +253,12 @@
         "notFoundDescription": "This request no longer exists. The list was refreshed.",
         "approveFailedTitle": "Couldn't create the category",
         "rejectFailedTitle": "Couldn't reject the request",
-        "actionFailedDescription": "Something went wrong. Please try again."
+        "actionFailedDescription": "Something went wrong. Please try again.",
+        "rejectedDescriptionNoRequester": "The requester was notified."
       },
       "loading": "Loading category requests...",
       "loadError": "Couldn't load category requests. Please try again later.",
+      "disabled": "Category requests are not enabled in this environment.",
       "retry": "Try again",
       "footerText": "Showing {{start}}–{{end}} of {{total}} requests",
       "pagination": "Pagination",

@@ -192,6 +192,15 @@ describe('fetchCategoryRequests', () => {
 
     await expect(fetchCategoryRequests({}, formatDate)).resolves.toEqual({ ok: false });
   });
+
+  it('flags a disabled proxy (404) so the screen does not offer a retry', async () => {
+    mockFetch(respond(404, { error: 'This endpoint is disabled' }));
+
+    await expect(fetchCategoryRequests({}, formatDate)).resolves.toEqual({
+      ok: false,
+      disabled: true,
+    });
+  });
 });
 
 describe('fetchCategoryRequestTotals', () => {

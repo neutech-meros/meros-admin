@@ -22,6 +22,7 @@ type Tab = CategoryRequestApiStatus | 'all';
 type ListState =
   | { status: 'loading' }
   | { status: 'error' }
+  | { status: 'disabled' }
   | { status: 'loaded'; items: CategoryRequestItem[]; total: number };
 
 const K = 'admin.categoryRequests';
@@ -75,11 +76,16 @@ export default function CategoryRequestsPage() {
       (iso) => formatDate(iso, i18n.language),
     ).then((result) => {
       if (cancelled) return;
-      setList(
-        result.ok
-          ? { status: 'loaded', items: result.items, total: result.total }
-          : { status: 'error' },
-      );
+      if (!result.ok) {
+        setList({ status: result.disabled ? 'disabled' : 'error' });
+        return;
+      }
+      // A decision can empty the page the admin is on; land on the last page that still has rows.
+      if (result.items.length === 0 && page > 1 && result.total > 0) {
+        setPage(Math.ceil(result.total / PAGE_SIZE));
+        return;
+      }
+      setList({ status: 'loaded', items: result.items, total: result.total });
     });
     return () => {
       cancelled = true;
@@ -120,7 +126,7 @@ export default function CategoryRequestsPage() {
         />
       );
     }
-    if (list.status === 'error') {
+    if (list.status === 'error' || list.status === 'disabled') {
       return (
         <div
           role="alert"
@@ -131,19 +137,21 @@ export default function CategoryRequestsPage() {
             color: 'var(--danger)',
           }}
         >
-          <div>{t(`${K}.loadError`)}</div>
-          <button
-            type="button"
-            onClick={() => setReloadKey((key) => key + 1)}
-            className="rounded-[10px] border px-3.5 py-1.5 text-xs font-semibold"
-            style={{
-              borderColor: 'var(--border-subtle)',
-              background: 'var(--bg-elevated)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            {t(`${K}.retry`)}
-          </button>
+          <div>{t(list.status === 'disabled' ? `${K}.disabled` : `${K}.loadError`)}</div>
+          {list.status === 'error' ? (
+            <button
+              type="button"
+              onClick={() => setReloadKey((key) => key + 1)}
+              className="rounded-[10px] border px-3.5 py-1.5 text-xs font-semibold"
+              style={{
+                borderColor: 'var(--border-subtle)',
+                background: 'var(--bg-elevated)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {t(`${K}.retry`)}
+            </button>
+          ) : null}
         </div>
       );
     }

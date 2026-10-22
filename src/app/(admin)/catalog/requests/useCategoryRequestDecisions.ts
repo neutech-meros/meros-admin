@@ -8,6 +8,7 @@ import type { CreateCategorySummary } from '@/components/admin/category-requests
 import {
   approveCategoryRequest,
   rejectCategoryRequest,
+  REQUESTER_UNAVAILABLE,
   type ApproveCategoryRequestPayload,
   type CategoryRequestItem,
 } from '@/lib/admin/category-requests-api';
@@ -101,7 +102,10 @@ export function useCategoryRequestDecisions(onChanged: () => void) {
         return reportFailure(outcome.kind, `${K}.rejectFailedTitle`, request.name);
       }
       toast.success(t(`${K}.rejectedTitle`), {
-        description: t(`${K}.rejectedDescription`, { requester: request.requester }),
+        description:
+          request.requester === REQUESTER_UNAVAILABLE
+            ? t(`${K}.rejectedDescriptionNoRequester`)
+            : t(`${K}.rejectedDescription`, { requester: request.requester }),
       });
       return false;
     });

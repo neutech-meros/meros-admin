@@ -212,14 +212,15 @@ describe('CategoryRequestsPage', () => {
     expect(screen.queryByRole('navigation', { name: 'Pagination' })).not.toBeInTheDocument();
   });
 
-  it('shows the load error when the category requests proxy is disabled', async () => {
+  it('explains that the screen is disabled, without a retry that cannot succeed', async () => {
     serve(() => ({ status: 404, body: { error: 'This endpoint is disabled' } }));
 
     render(<CategoryRequestsPage />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "Couldn't load category requests. Please try again later.",
+      'Category requests are not enabled in this environment.',
     );
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
     await waitFor(() => expect(kpi('Pending review')).toHaveTextContent('—'));
   });
 
@@ -563,6 +564,51 @@ describe('CategoryRequestsPage decisions', () => {
 
     await waitFor(() => expect(toast.success).toHaveBeenCalled());
     expect(posts).toHaveLength(1);
+  });
+
+  it('does not name an unknown requester in the rejection toast', async () => {
+    serveDecisions();
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+
+    await user.click(await openRejectFromRow(user, 'Ramen Spots'));
+
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('Request rejected', {
+        description: 'The requester was notified.',
+      }),
+    );
+  });
+
+  it('goes back to the last page that still has requests after a decision empties the current one', async () => {
+    let decided = false;
+    const pageOne = Array.from({ length: 20 }, (_, i) =>
+      item({ id: `p1-${i}`, suggestedName: `Request ${i + 1}` }),
+    );
+    const lastOne = item({ id: 'p2-0', suggestedName: 'Request 21' });
+    const fetchMock = jest.fn(async (input: string, init?: RequestInit) => {
+      const url = new URL(input, 'http://localhost');
+      if (init?.method === 'POST') {
+        decided = true;
+        return json(204);
+      }
+      if (url.searchParams.get('limit') === '1') return json(200, { items: [], total: 1 });
+      const page = url.searchParams.get('page');
+      if (page === '2')
+        return json(200, { items: decided ? [] : [lastOne], total: decided ? 20 : 21 });
+      return json(200, { items: pageOne, total: decided ? 20 : 21 });
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    const nav = await screen.findByRole('navigation', { name: 'Pagination' });
+    await user.click(within(nav).getByRole('button', { name: 'Page 2' }));
+
+    await user.click(await openRejectFromRow(user, 'Request 21'));
+
+    expect(await screen.findByText('Request 1')).toBeInTheDocument();
+    expect(screen.queryByText('No requests in this status')).not.toBeInTheDocument();
+    expect(listCalls(fetchMock).at(-1)).toEqual({ status: 'PENDING', page: '1', limit: '20' });
   });
 
   it('rejects a request from its row with a reason and refreshes', async () => {

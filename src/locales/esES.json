@@ -253,10 +253,12 @@
         "notFoundDescription": "Esta solicitud ya no existe. La lista se actualizó.",
         "approveFailedTitle": "No se pudo crear la categoría",
         "rejectFailedTitle": "No se pudo rechazar la solicitud",
-        "actionFailedDescription": "Algo salió mal. Inténtalo de nuevo."
+        "actionFailedDescription": "Algo salió mal. Inténtalo de nuevo.",
+        "rejectedDescriptionNoRequester": "Se notificó al solicitante."
       },
       "loading": "Cargando solicitudes de categoría...",
       "loadError": "No se pudieron cargar las solicitudes de categoría. Inténtalo de nuevo más tarde.",
+      "disabled": "Las solicitudes de categoría no están habilitadas en este entorno.",
       "retry": "Intentar de nuevo",
       "footerText": "Mostrando {{start}}–{{end}} de {{total}} solicitudes",
       "pagination": "Paginación",
