@@ -236,13 +236,25 @@
         "subcategoryLabel": "Subcategory",
         "nameLabel": "Category name",
         "namePlaceholder": "Category name",
-        "previewLabel": "Preview"
+        "previewLabel": "Preview",
+        "treeLoading": "Loading categories...",
+        "treeError": "Couldn't load the categories. Please try again.",
+        "retry": "Try again"
       },
       "toasts": {
         "rejectedTitle": "Request rejected",
         "rejectedDescription": "{{requester}} was notified.",
         "createdTitle": "Category created",
-        "createdDescription": "\"{{name}}\" was added under {{parent}}."
+        "createdDescription": "\"{{name}}\" was added under {{parent}}.",
+        "nameExistsTitle": "Name already in use",
+        "nameExistsDescription": "A category named \"{{name}}\" already exists. Reject this request or rename the existing category first.",
+        "alreadyResolvedTitle": "Request already reviewed",
+        "alreadyResolvedDescription": "This request was already approved or rejected. The list was refreshed.",
+        "notFoundTitle": "Request not found",
+        "notFoundDescription": "This request no longer exists. The list was refreshed.",
+        "approveFailedTitle": "Couldn't create the category",
+        "rejectFailedTitle": "Couldn't reject the request",
+        "actionFailedDescription": "Something went wrong. Please try again."
       },
       "loading": "Loading category requests...",
       "loadError": "Couldn't load category requests. Please try again later.",
@@ -251,7 +263,18 @@
       "pagination": "Pagination",
       "previousPage": "Previous page",
       "nextPage": "Next page",
-      "pageNumber": "Page {{number}}"
+      "pageNumber": "Page {{number}}",
+      "rejectDialog": {
+        "title": "Reject this request?",
+        "description": "\"{{name}}\" will be rejected and {{requester}} will be notified.",
+        "reasonLabel": "Reason",
+        "optional": "optional",
+        "placeholder": "Tell the requester why, for example that it overlaps an existing category.",
+        "counter": "{{count}}/{{max}}",
+        "tooLong": "Keep the reason under 500 characters.",
+        "cancel": "Cancel",
+        "confirm": "Reject request"
+      }
     },
     "users": {
       "title": "Users & Creators",

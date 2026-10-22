@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 
 import { CategoryRequestDetailDrawer } from '@/components/admin/category-requests/CategoryRequestDetailDrawer';
 import { CategoryRequestsTable } from '@/components/admin/category-requests/CategoryRequestsTable';
+import { CreateCategoryModal } from '@/components/admin/category-requests/CreateCategoryModal';
+import { RejectCategoryRequestDialog } from '@/components/admin/category-requests/RejectCategoryRequestDialog';
 import {
   fetchCategoryRequests,
   fetchCategoryRequestTotals,
@@ -13,6 +15,8 @@ import {
   type CategoryRequestItem,
   type CategoryRequestTotalsResult,
 } from '@/lib/admin/category-requests-api';
+
+import { useCategoryRequestDecisions } from './useCategoryRequestDecisions';
 
 type Tab = CategoryRequestApiStatus | 'all';
 type ListState =
@@ -51,6 +55,17 @@ export default function CategoryRequestsPage() {
   const [list, setList] = useState<ListState>({ status: 'loading' });
   const [totals, setTotals] = useState<CategoryRequestTotalsResult | null>(null);
   const [openRequest, setOpenRequest] = useState<CategoryRequestItem | null>(null);
+  const decisions = useCategoryRequestDecisions(() => setReloadKey((key) => key + 1));
+
+  function approve(request: CategoryRequestItem) {
+    setOpenRequest(null);
+    decisions.startApprove(request);
+  }
+
+  function reject(request: CategoryRequestItem) {
+    setOpenRequest(null);
+    decisions.startReject(request);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +115,8 @@ export default function CategoryRequestsPage() {
           pageSize={PAGE_SIZE}
           onPageChange={setPage}
           onRowClick={setOpenRequest}
+          onApprove={approve}
+          onReject={reject}
         />
       );
     }
@@ -201,7 +218,26 @@ export default function CategoryRequestsPage() {
 
       {renderList()}
 
-      <CategoryRequestDetailDrawer request={openRequest} onClose={() => setOpenRequest(null)} />
+      <CategoryRequestDetailDrawer
+        request={openRequest}
+        onClose={() => setOpenRequest(null)}
+        onApprove={approve}
+        onReject={reject}
+      />
+
+      <CreateCategoryModal
+        request={decisions.approving}
+        submitting={decisions.submitting}
+        onCancel={decisions.cancel}
+        onCreate={decisions.confirmApprove}
+      />
+
+      <RejectCategoryRequestDialog
+        request={decisions.rejecting}
+        submitting={decisions.submitting}
+        onCancel={decisions.cancel}
+        onConfirm={decisions.confirmReject}
+      />
     </div>
   );
 }

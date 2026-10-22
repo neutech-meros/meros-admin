@@ -19,6 +19,8 @@ const UNAVAILABLE = '—';
 interface CategoryRequestDetailDrawerProps {
   request: CategoryRequestItem | null;
   onClose: () => void;
+  onApprove: (request: CategoryRequestItem) => void;
+  onReject: (request: CategoryRequestItem) => void;
 }
 
 function decisionBlocks(request: CategoryRequestItem, t: (key: string) => string): DrawerBlock[] {
@@ -44,6 +46,8 @@ function decisionBlocks(request: CategoryRequestItem, t: (key: string) => string
 export function CategoryRequestDetailDrawer({
   request,
   onClose,
+  onApprove,
+  onReject,
 }: CategoryRequestDetailDrawerProps) {
   const { t } = useTranslation();
 
@@ -116,18 +120,43 @@ export function CategoryRequestDetailDrawer({
           className="flex flex-shrink-0 justify-end gap-2 border-t p-5"
           style={{ borderColor: 'var(--border-subtle)' }}
         >
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-[10px] border px-4 py-2.5 text-[13.5px] font-semibold"
-            style={{
-              borderColor: 'var(--border-subtle)',
-              background: 'var(--bg-elevated)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            {t(`${K}.close`)}
-          </button>
+          {request.status === 'Pending' ? (
+            <>
+              <button
+                type="button"
+                onClick={() => onReject(request)}
+                className="rounded-[10px] border px-4 py-2.5 text-[13.5px] font-semibold"
+                style={{
+                  borderColor: 'var(--danger)',
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--danger)',
+                }}
+              >
+                {t(`${K}.reject`)}
+              </button>
+              <button
+                type="button"
+                onClick={() => onApprove(request)}
+                className="rounded-[10px] border px-4 py-2.5 text-[13.5px] font-semibold text-white"
+                style={{ borderColor: 'var(--brand-500)', background: 'var(--brand-500)' }}
+              >
+                {t(`${K}.createCategory`)}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-[10px] border px-4 py-2.5 text-[13.5px] font-semibold"
+              style={{
+                borderColor: 'var(--border-subtle)',
+                background: 'var(--bg-elevated)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {t(`${K}.close`)}
+            </button>
+          )}
         </div>
       </SheetContent>
     </Sheet>

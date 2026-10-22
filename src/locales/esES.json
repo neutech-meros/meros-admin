@@ -236,13 +236,25 @@
         "subcategoryLabel": "Subcategoría",
         "nameLabel": "Nombre de la categoría",
         "namePlaceholder": "Nombre de la categoría",
-        "previewLabel": "Vista previa"
+        "previewLabel": "Vista previa",
+        "treeLoading": "Cargando categorías...",
+        "treeError": "No se pudieron cargar las categorías. Inténtalo de nuevo.",
+        "retry": "Intentar de nuevo"
       },
       "toasts": {
         "rejectedTitle": "Solicitud rechazada",
         "rejectedDescription": "{{requester}} fue notificado(a).",
         "createdTitle": "Categoría creada",
-        "createdDescription": "\"{{name}}\" se agregó bajo {{parent}}."
+        "createdDescription": "\"{{name}}\" se agregó bajo {{parent}}.",
+        "nameExistsTitle": "Nombre ya en uso",
+        "nameExistsDescription": "Ya existe una categoría llamada \"{{name}}\". Rechaza esta solicitud o renombra primero la categoría existente.",
+        "alreadyResolvedTitle": "Solicitud ya revisada",
+        "alreadyResolvedDescription": "Esta solicitud ya fue aprobada o rechazada. La lista se actualizó.",
+        "notFoundTitle": "Solicitud no encontrada",
+        "notFoundDescription": "Esta solicitud ya no existe. La lista se actualizó.",
+        "approveFailedTitle": "No se pudo crear la categoría",
+        "rejectFailedTitle": "No se pudo rechazar la solicitud",
+        "actionFailedDescription": "Algo salió mal. Inténtalo de nuevo."
       },
       "loading": "Cargando solicitudes de categoría...",
       "loadError": "No se pudieron cargar las solicitudes de categoría. Inténtalo de nuevo más tarde.",
@@ -251,7 +263,18 @@
       "pagination": "Paginación",
       "previousPage": "Página anterior",
       "nextPage": "Página siguiente",
-      "pageNumber": "Página {{number}}"
+      "pageNumber": "Página {{number}}",
+      "rejectDialog": {
+        "title": "¿Rechazar esta solicitud?",
+        "description": "\"{{name}}\" será rechazada y se notificará a {{requester}}.",
+        "reasonLabel": "Motivo",
+        "optional": "opcional",
+        "placeholder": "Explica el motivo al solicitante, por ejemplo que se superpone con una categoría existente.",
+        "counter": "{{count}}/{{max}}",
+        "tooLong": "Mantén el motivo en 500 caracteres o menos.",
+        "cancel": "Cancelar",
+        "confirm": "Rechazar solicitud"
+      }
     },
     "users": {
       "title": "Usuarios y creadores",

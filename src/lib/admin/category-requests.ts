@@ -1,5 +1,4 @@
 import type { CategoryRequestScreenStatus } from '@/lib/admin/category-requests-api';
-import type { CategoryNode } from '@/lib/mocks/admin/categories';
 
 export const STATUS_LABEL_KEY: Record<CategoryRequestScreenStatus, string> = {
   Pending: 'admin.categoryRequests.status.pending',
@@ -37,22 +36,4 @@ export function requesterInitials(requester: string): string {
     .map((part) => part[0]?.toUpperCase() ?? '')
     .filter((initial) => /[\p{L}\p{N}]/u.test(initial))
     .join('');
-}
-
-const PATH_SEPARATOR = ' › ';
-
-export interface MatchedParentPath {
-  parentSlug: string | null;
-  subcategorySlug: string | null;
-}
-
-// Matches a request's proposed parent path (e.g. "Food › Restaurant") against the real
-// category tree by name, to preselect where a request would land if approved.
-export function matchParentPath(tree: CategoryNode[], parentPath: string): MatchedParentPath {
-  const [topName, subName] = parentPath.split(PATH_SEPARATOR).map((part) => part.trim());
-  const top = tree.find((node) => node.name === topName);
-  if (!top) return { parentSlug: null, subcategorySlug: null };
-  if (!subName) return { parentSlug: top.slug, subcategorySlug: null };
-  const sub = (top.children ?? []).find((node) => node.name === subName);
-  return { parentSlug: top.slug, subcategorySlug: sub?.slug ?? null };
 }

@@ -33,13 +33,27 @@ function field(label: string) {
 
 describe('CategoryRequestDetailDrawer', () => {
   it('renders nothing when there is no request', () => {
-    render(<CategoryRequestDetailDrawer request={null} onClose={jest.fn()} />);
+    render(
+      <CategoryRequestDetailDrawer
+        request={null}
+        onClose={jest.fn()}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
+      />,
+    );
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('shows the real fields of a pending request and no decision', () => {
-    render(<CategoryRequestDetailDrawer request={requestItem()} onClose={jest.fn()} />);
+    render(
+      <CategoryRequestDetailDrawer
+        request={requestItem()}
+        onClose={jest.fn()}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
+      />,
+    );
 
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByRole('heading', { name: 'Rooftop Bars' })).toBeInTheDocument();
@@ -58,6 +72,8 @@ describe('CategoryRequestDetailDrawer', () => {
       <CategoryRequestDetailDrawer
         request={requestItem({ level: 'Child category' })}
         onClose={jest.fn()}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
       />,
     );
 
@@ -73,6 +89,8 @@ describe('CategoryRequestDetailDrawer', () => {
           decision: { reason: null, decidedAt: 'Oct 2, 2026', groupId: null, categoryId: null },
         })}
         onClose={jest.fn()}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
       />,
     );
 
@@ -93,6 +111,8 @@ describe('CategoryRequestDetailDrawer', () => {
           },
         })}
         onClose={jest.fn()}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
       />,
     );
 
@@ -108,6 +128,8 @@ describe('CategoryRequestDetailDrawer', () => {
           decision: { reason: null, decidedAt: 'Oct 2, 2026', groupId: null, categoryId: null },
         })}
         onClose={jest.fn()}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
       />,
     );
 
@@ -115,7 +137,14 @@ describe('CategoryRequestDetailDrawer', () => {
   });
 
   it('does not show fields the API does not provide nor unsupported actions', () => {
-    render(<CategoryRequestDetailDrawer request={requestItem()} onClose={jest.fn()} />);
+    render(
+      <CategoryRequestDetailDrawer
+        request={requestItem()}
+        onClose={jest.fn()}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
+      />,
+    );
 
     const dialog = screen.getByRole('dialog');
     for (const label of [
@@ -130,11 +159,64 @@ describe('CategoryRequestDetailDrawer', () => {
     expect(
       within(dialog).queryByRole('button', { name: 'Ask for details' }),
     ).not.toBeInTheDocument();
-    expect(within(dialog).getAllByRole('button', { name: 'Close' }).length).toBeGreaterThan(0);
+  });
+
+  it('offers Reject and Create category for a pending request', async () => {
+    const onApprove = jest.fn();
+    const onReject = jest.fn();
+    const user = userEvent.setup();
+    const request = requestItem();
+    render(
+      <CategoryRequestDetailDrawer
+        request={request}
+        onClose={jest.fn()}
+        onApprove={onApprove}
+        onReject={onReject}
+      />,
+    );
+
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Reject' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Create category' }));
+
+    expect(onReject).toHaveBeenCalledWith(request);
+    expect(onApprove).toHaveBeenCalledWith(request);
+  });
+
+  it('offers only Close for a decided request', () => {
+    render(
+      <CategoryRequestDetailDrawer
+        request={requestItem({
+          status: 'Approved',
+          decision: { reason: null, decidedAt: 'Oct 2, 2026', groupId: null, categoryId: null },
+        })}
+        onClose={jest.fn()}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
+      />,
+    );
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).queryByRole('button', { name: 'Reject' })).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('button', { name: 'Create category' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog)
+        .getAllByRole('button', { name: 'Close' })
+        .some((button) => button.textContent === 'Close'),
+    ).toBe(true);
   });
 
   it('shows the requester initials when there is no avatar', () => {
-    render(<CategoryRequestDetailDrawer request={requestItem()} onClose={jest.fn()} />);
+    render(
+      <CategoryRequestDetailDrawer
+        request={requestItem()}
+        onClose={jest.fn()}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
+      />,
+    );
 
     expect(within(screen.getByRole('dialog')).getByText('AS')).toBeInTheDocument();
   });
@@ -142,11 +224,18 @@ describe('CategoryRequestDetailDrawer', () => {
   it('calls onClose from the Close button', async () => {
     const onClose = jest.fn();
     const user = userEvent.setup();
-    render(<CategoryRequestDetailDrawer request={requestItem()} onClose={onClose} />);
+    render(
+      <CategoryRequestDetailDrawer
+        request={requestItem({ status: 'Rejected' })}
+        onClose={onClose}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
+      />,
+    );
 
-    const [footerClose] = within(screen.getByRole('dialog'))
+    const footerClose = within(screen.getByRole('dialog'))
       .getAllByRole('button', { name: 'Close' })
-      .filter((button) => button.textContent === 'Close');
+      .find((button) => button.textContent === 'Close')!;
     await user.click(footerClose);
 
     expect(onClose).toHaveBeenCalled();

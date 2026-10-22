@@ -28,6 +28,8 @@ interface CategoryRequestsTableProps {
   pageSize: number;
   onPageChange: (page: number) => void;
   onRowClick: (request: CategoryRequestItem) => void;
+  onApprove: (request: CategoryRequestItem) => void;
+  onReject: (request: CategoryRequestItem) => void;
 }
 
 function Pagination({
@@ -35,7 +37,7 @@ function Pagination({
   page,
   pageSize,
   onPageChange,
-}: Omit<CategoryRequestsTableProps, 'requests' | 'onRowClick'>) {
+}: Pick<CategoryRequestsTableProps, 'total' | 'page' | 'pageSize' | 'onPageChange'>) {
   const { t } = useTranslation();
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const start = (page - 1) * pageSize + 1;
@@ -115,6 +117,8 @@ export function CategoryRequestsTable({
   pageSize,
   onPageChange,
   onRowClick,
+  onApprove,
+  onReject,
 }: CategoryRequestsTableProps) {
   const { t } = useTranslation();
 
@@ -134,6 +138,7 @@ export function CategoryRequestsTable({
                 <TableHead>{t('admin.categoryRequests.table.requestedBy')}</TableHead>
                 <TableHead>{t('admin.categoryRequests.table.requested')}</TableHead>
                 <TableHead>{t('admin.categoryRequests.table.status')}</TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -177,6 +182,38 @@ export function CategoryRequestsTable({
                       >
                         {t(STATUS_LABEL_KEY[request.status])}
                       </span>
+                    </TableCell>
+                    <TableCell
+                      className="whitespace-nowrap text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {request.status === 'Pending' ? (
+                        <div className="flex justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onApprove(request)}
+                            className="rounded-[10px] border px-3.5 py-1.5 text-xs font-semibold text-white"
+                            style={{
+                              borderColor: 'var(--brand-500)',
+                              background: 'var(--brand-500)',
+                            }}
+                          >
+                            {t('admin.categoryRequests.table.create')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onReject(request)}
+                            className="rounded-[10px] border px-3.5 py-1.5 text-xs font-semibold"
+                            style={{
+                              borderColor: 'var(--danger)',
+                              background: 'var(--bg-elevated)',
+                              color: 'var(--danger)',
+                            }}
+                          >
+                            {t('admin.categoryRequests.table.reject')}
+                          </button>
+                        </div>
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 );

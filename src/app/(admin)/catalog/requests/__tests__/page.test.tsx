@@ -1,9 +1,14 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { toast } from 'sonner';
 
 import i18n from '@/i18n';
 
 import CategoryRequestsPage from '../page';
+
+jest.mock('sonner', () => ({
+  toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() },
+}));
 
 // English is the source-of-truth locale and matches the mockup copy, same as the other
 // real-data screens' tests; pt is restored for the other suites.
@@ -82,7 +87,10 @@ function backend(overrides: { list?: Handler } = {}): Handler {
 function listCalls(fetchMock: jest.Mock) {
   return fetchMock.mock.calls
     .map(([input]) => new URL(input as string, 'http://localhost'))
-    .filter((url) => url.searchParams.get('limit') !== '1')
+    .filter(
+      (url) =>
+        url.pathname === '/api/admin/category-requests' && url.searchParams.get('limit') !== '1',
+    )
     .map((url) => Object.fromEntries(url.searchParams));
 }
 
@@ -177,14 +185,12 @@ describe('CategoryRequestsPage', () => {
     expect(within(ramen).getAllByText('—')).toHaveLength(2);
   });
 
-  it('opens the read-only drawer of the clicked request and closes it', async () => {
+  it('opens the drawer of the clicked request and closes it', async () => {
     serve(backend());
     const user = userEvent.setup();
     render(<CategoryRequestsPage />);
-    const row = (await screen.findByText('Rooftop Bars')).closest('tr')!;
 
-    expect(within(row).queryByRole('button')).not.toBeInTheDocument();
-    await user.click(row);
+    await user.click(await screen.findByText('Rooftop Bars'));
 
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByRole('heading', { name: 'Rooftop Bars' })).toBeInTheDocument();
@@ -193,10 +199,7 @@ describe('CategoryRequestsPage', () => {
       within(dialog).queryByRole('button', { name: 'Ask for details' }),
     ).not.toBeInTheDocument();
 
-    const footerClose = within(dialog)
-      .getAllByRole('button', { name: 'Close' })
-      .find((button) => button.textContent === 'Close')!;
-    await user.click(footerClose);
+    await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
@@ -301,6 +304,302 @@ describe('CategoryRequestsPage', () => {
 
     await waitFor(() =>
       expect(listCalls(fetchMock).at(-1)).toEqual({ status: 'REJECTED', page: '1', limit: '20' }),
+    );
+  });
+});
+
+const TREE = [
+  {
+    id: 'group-food',
+    name: 'Food',
+    key: 'food',
+    status: 'ACTIVE',
+    itemsCount: 3,
+    categories: [
+      {
+        id: 'cat-bars',
+        name: 'Bars',
+        key: 'bars',
+        status: 'ACTIVE',
+        itemsCount: 1,
+        subcategories: [],
+      },
+    ],
+  },
+];
+
+type Reply = { status: number; body?: unknown };
+
+function serveDecisions(replies: { approve?: Reply; reject?: Reply } = {}) {
+  const posts: Array<{ path: string; body: unknown }> = [];
+  const fetchMock = jest.fn(async (input: string, init?: RequestInit) => {
+    const url = new URL(input, 'http://localhost');
+    if (init?.method === 'POST') {
+      posts.push({ path: url.pathname, body: JSON.parse(String(init.body)) });
+      const reply = url.pathname.endsWith('/approve')
+        ? (replies.approve ?? {
+            status: 200,
+            body: { id: 'r-1', createdId: 'node-1', level: 'GROUP', labelKey: 'taxonomy.x' },
+          })
+        : (replies.reject ?? { status: 204 });
+      return json(reply.status, reply.body);
+    }
+    if (url.pathname === '/api/admin/categories') return json(200, TREE);
+    const { status, body } = backend()(url);
+    return json(status, body);
+  });
+  global.fetch = fetchMock as unknown as typeof fetch;
+  return { fetchMock, posts };
+}
+
+function totalsCalls(fetchMock: jest.Mock) {
+  return fetchMock.mock.calls.filter(([input]) => String(input).includes('limit=1')).length;
+}
+
+async function openCreateFromRow(user: ReturnType<typeof userEvent.setup>, name: string) {
+  const row = (await screen.findByText(name)).closest('tr')!;
+  await user.click(within(row).getByRole('button', { name: 'Create' }));
+  return screen.findByRole('button', { name: 'Create category' });
+}
+
+async function openRejectFromRow(user: ReturnType<typeof userEvent.setup>, name: string) {
+  const row = (await screen.findByText(name)).closest('tr')!;
+  await user.click(within(row).getByRole('button', { name: 'Reject' }));
+  return screen.findByRole('button', { name: 'Reject request' });
+}
+
+describe('CategoryRequestsPage decisions', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('offers Create and Reject only on pending rows', async () => {
+    serveDecisions();
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    const pending = (await screen.findByText('Rooftop Bars')).closest('tr')!;
+    expect(within(pending).getByRole('button', { name: 'Create' })).toBeInTheDocument();
+    expect(within(pending).getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Approved (2)' }));
+    const approved = (await screen.findByText('Tiki Bars')).closest('tr')!;
+    expect(within(approved).queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('approves a request as a top-level category and refreshes the list and KPIs', async () => {
+    const { fetchMock, posts } = serveDecisions();
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    await screen.findByText('Rooftop Bars');
+    const listBefore = listCalls(fetchMock).length;
+    const totalsBefore = totalsCalls(fetchMock);
+
+    await user.click(await openCreateFromRow(user, 'Rooftop Bars'));
+
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('Parent category created', {
+        description: '"Rooftop Bars" was added to the tree.',
+      }),
+    );
+    expect(posts).toEqual([
+      {
+        path: '/api/admin/category-requests/r-1/approve',
+        body: { level: 'GROUP', iconKey: expect.any(String), status: 'ACTIVE' },
+      },
+    ]);
+    await waitFor(() => expect(listCalls(fetchMock).length).toBeGreaterThan(listBefore));
+    expect(totalsCalls(fetchMock)).toBeGreaterThan(totalsBefore);
+    expect(screen.queryByRole('button', { name: 'Create category' })).not.toBeInTheDocument();
+  });
+
+  it('approves a request under a parent and names the parent in the toast', async () => {
+    const { posts } = serveDecisions();
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    await openCreateFromRow(user, 'Rooftop Bars');
+
+    await user.click(screen.getByRole('button', { name: 'Child category' }));
+    await user.click(screen.getByRole('button', { name: 'Create category' }));
+
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('Category created', {
+        description: '"Rooftop Bars" was added under Food › Bars.',
+      }),
+    );
+    expect(posts[0]!.body).toEqual({
+      level: 'SUBCATEGORY',
+      categoryId: 'cat-bars',
+      iconKey: expect.any(String),
+      status: 'ACTIVE',
+    });
+  });
+
+  it('keeps the modal open and explains when the name already exists', async () => {
+    const { fetchMock } = serveDecisions({
+      approve: { status: 409, body: { error: 'x', code: 'CATEGORY_NAME_EXISTS' } },
+    });
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    await screen.findByText('Rooftop Bars');
+    const listBefore = listCalls(fetchMock).length;
+
+    await user.click(await openCreateFromRow(user, 'Rooftop Bars'));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Name already in use', {
+        description:
+          'A category named "Rooftop Bars" already exists. Reject this request or rename the existing category first.',
+      }),
+    );
+    expect(screen.getByRole('button', { name: 'Create category' })).toBeEnabled();
+    expect(listCalls(fetchMock)).toHaveLength(listBefore);
+  });
+
+  it.each([
+    [
+      'already resolved',
+      { status: 409, body: { error: 'x', code: 'CATEGORY_REQUEST_ALREADY_RESOLVED' } },
+      'Request already reviewed',
+      'This request was already approved or rejected. The list was refreshed.',
+    ],
+    [
+      'not found',
+      { status: 404, body: { error: 'x', code: 'CATEGORY_REQUEST_NOT_FOUND' } },
+      'Request not found',
+      'This request no longer exists. The list was refreshed.',
+    ],
+  ])(
+    'closes the modal and refreshes when the approval finds the request %s',
+    async (_label, reply, title, description) => {
+      const { fetchMock } = serveDecisions({ approve: reply });
+      const user = userEvent.setup();
+      render(<CategoryRequestsPage />);
+      await screen.findByText('Rooftop Bars');
+      const listBefore = listCalls(fetchMock).length;
+
+      await user.click(await openCreateFromRow(user, 'Rooftop Bars'));
+
+      await waitFor(() => expect(toast.error).toHaveBeenCalledWith(title, { description }));
+      await waitFor(() => expect(listCalls(fetchMock).length).toBeGreaterThan(listBefore));
+      expect(screen.queryByRole('button', { name: 'Create category' })).not.toBeInTheDocument();
+    },
+  );
+
+  it('shows a generic failure and keeps the modal open when the approval fails', async () => {
+    serveDecisions({ approve: { status: 502, body: { error: 'Failed' } } });
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+
+    await user.click(await openCreateFromRow(user, 'Rooftop Bars'));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Couldn't create the category", {
+        description: 'Something went wrong. Please try again.',
+      }),
+    );
+    expect(screen.getByRole('button', { name: 'Create category' })).toBeEnabled();
+  });
+
+  it('sends a single approval when Create is clicked twice', async () => {
+    let release: () => void = () => {};
+    const { fetchMock, posts } = serveDecisions();
+    const base = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (input: string, init?: RequestInit) => {
+      if (init?.method === 'POST') await new Promise<void>((resolve) => (release = resolve));
+      return base(input, init);
+    });
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    const create = await openCreateFromRow(user, 'Rooftop Bars');
+
+    await user.click(create);
+    await waitFor(() => expect(create).toBeDisabled());
+    await user.click(create);
+    release();
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    expect(posts).toHaveLength(1);
+  });
+
+  it('rejects a request from its row with a reason and refreshes', async () => {
+    const { fetchMock, posts } = serveDecisions();
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    await screen.findByText('Rooftop Bars');
+    const listBefore = listCalls(fetchMock).length;
+
+    const confirm = await openRejectFromRow(user, 'Rooftop Bars');
+    await user.type(screen.getByLabelText(/Reason/), 'Duplicate of Bars');
+    await user.click(confirm);
+
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('Request rejected', {
+        description: 'ana was notified.',
+      }),
+    );
+    expect(posts).toEqual([
+      { path: '/api/admin/category-requests/r-1/reject', body: { reason: 'Duplicate of Bars' } },
+    ]);
+    await waitFor(() => expect(listCalls(fetchMock).length).toBeGreaterThan(listBefore));
+    expect(screen.queryByRole('button', { name: 'Reject request' })).not.toBeInTheDocument();
+  });
+
+  it('rejects from the drawer and closes it', async () => {
+    const { posts } = serveDecisions();
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    await user.click(await screen.findByText('Rooftop Bars'));
+    const drawer = await screen.findByRole('dialog');
+
+    await user.click(within(drawer).getByRole('button', { name: 'Reject' }));
+    await user.click(await screen.findByRole('button', { name: 'Reject request' }));
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    expect(posts).toEqual([{ path: '/api/admin/category-requests/r-1/reject', body: {} }]);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('opens the create modal from the drawer', async () => {
+    serveDecisions();
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    await user.click(await screen.findByText('Rooftop Bars'));
+    const drawer = await screen.findByRole('dialog');
+
+    await user.click(within(drawer).getByRole('button', { name: 'Create category' }));
+
+    expect(
+      await screen.findByText(
+        'Requested by ana. Confirm where it belongs in the tree before creating it.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    [
+      { status: 409, body: { error: 'x', code: 'CATEGORY_REQUEST_ALREADY_RESOLVED' } },
+      'Request already reviewed',
+    ],
+    [
+      { status: 404, body: { error: 'x', code: 'CATEGORY_REQUEST_NOT_FOUND' } },
+      'Request not found',
+    ],
+    [{ status: 502, body: { error: 'Failed' } }, "Couldn't reject the request"],
+  ])('explains a failed rejection (%j)', async (reply, title) => {
+    serveDecisions({ reject: reply });
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+
+    await user.click(await openRejectFromRow(user, 'Rooftop Bars'));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(title, { description: expect.any(String) }),
     );
   });
 });
