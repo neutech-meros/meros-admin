@@ -3,27 +3,53 @@
 import { useTranslation } from 'react-i18next';
 
 import { DrawerBlocks, type DrawerBlock } from '@/components/admin/drawer/DrawerBlocks';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
-import { requestStatusTone, STATUS_LABEL_KEY } from '@/lib/admin/category-requests';
-import type { CategoryRequest } from '@/lib/mocks/admin/category-requests';
+import {
+  LEVEL_LABEL_KEY,
+  requesterInitials,
+  requestStatusTone,
+  STATUS_LABEL_KEY,
+} from '@/lib/admin/category-requests';
+import type { CategoryRequestItem } from '@/lib/admin/category-requests-api';
+
+const K = 'admin.categoryRequests.drawer';
+const UNAVAILABLE = '—';
 
 interface CategoryRequestDetailDrawerProps {
-  request: CategoryRequest | null;
+  request: CategoryRequestItem | null;
   onClose: () => void;
-  onAskForDetails: (request: CategoryRequest) => void;
-  onReject: (request: CategoryRequest) => void;
-  onApprove: (request: CategoryRequest) => void;
+  onApprove: (request: CategoryRequestItem) => void;
+  onReject: (request: CategoryRequestItem) => void;
+}
+
+function decisionBlocks(request: CategoryRequestItem, t: (key: string) => string): DrawerBlock[] {
+  if (request.decision === null) return [];
+  const blocks: DrawerBlock[] = [
+    {
+      kind: 'kv',
+      label: t(`${K}.decidedOn`),
+      value: request.decision.decidedAt ?? UNAVAILABLE,
+      numeric: true,
+    },
+  ];
+  if (request.status === 'Rejected') {
+    blocks.push({
+      kind: 'kv',
+      label: t(`${K}.rejectionReason`),
+      value: request.decision.reason ?? UNAVAILABLE,
+    });
+  }
+  return blocks;
 }
 
 export function CategoryRequestDetailDrawer({
   request,
   onClose,
-  onAskForDetails,
-  onReject,
   onApprove,
+  onReject,
 }: CategoryRequestDetailDrawerProps) {
   const { t } = useTranslation();
-  const K = 'admin.categoryRequests.drawer';
 
   if (!request) {
     return (
@@ -34,26 +60,16 @@ export function CategoryRequestDetailDrawer({
   }
 
   const tone = requestStatusTone(request.status);
-  const open = request.status === 'Pending' || request.status === 'More info';
-
   const blocks: DrawerBlock[] = [
     { kind: 'kv', label: t(`${K}.proposedName`), value: request.name },
-    { kind: 'kv', label: t(`${K}.parentPath`), value: request.parent },
-    { kind: 'kv', label: t(`${K}.level`), value: request.level },
     {
       kind: 'kv',
-      label: t(`${K}.requestedBy`),
-      value: `${request.requester} · ${request.handle}`,
+      label: t(`${K}.level`),
+      value: request.level === null ? UNAVAILABLE : t(LEVEL_LABEL_KEY[request.level]),
     },
-    { kind: 'kv', label: t(`${K}.account`), value: request.role },
+    { kind: 'kv', label: t(`${K}.requestedBy`), value: request.requester },
     { kind: 'kv', label: t(`${K}.requestedOn`), value: request.date, numeric: true },
-    {
-      kind: 'kv',
-      label: t(`${K}.communityVotes`),
-      value: t(`${K}.communityVotesValue`, { count: request.votes }),
-    },
-    { kind: 'text', label: t(`${K}.whyTheyNeedIt`), value: request.why },
-    { kind: 'text', label: t(`${K}.overlapCheck`), value: request.similar },
+    ...decisionBlocks(request, t),
   ];
 
   return (
@@ -72,12 +88,15 @@ export function CategoryRequestDetailDrawer({
           style={{ borderColor: 'var(--border-subtle)' }}
         >
           <div className="flex min-w-0 items-center gap-3.5">
-            <div
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-[15px] font-semibold text-white"
-              style={{ background: request.avatarColor }}
-            >
-              {request.initials}
-            </div>
+            <Avatar className="h-11 w-11">
+              {request.avatarUrl ? <AvatarImage src={request.avatarUrl} alt="" /> : null}
+              <AvatarFallback
+                className="text-[15px] font-semibold"
+                style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}
+              >
+                {requesterInitials(request.requester)}
+              </AvatarFallback>
+            </Avatar>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <SheetTitle className="text-lg font-semibold">{request.name}</SheetTitle>
@@ -89,7 +108,7 @@ export function CategoryRequestDetailDrawer({
                 </span>
               </div>
               <SheetDescription className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                {t(`${K}.subtitle`, { parent: request.parent })}
+                {t(`${K}.subtitle`, { requester: request.requester })}
               </SheetDescription>
             </div>
           </div>
@@ -101,20 +120,8 @@ export function CategoryRequestDetailDrawer({
           className="flex flex-shrink-0 justify-end gap-2 border-t p-5"
           style={{ borderColor: 'var(--border-subtle)' }}
         >
-          {open ? (
+          {request.status === 'Pending' ? (
             <>
-              <button
-                type="button"
-                onClick={() => onAskForDetails(request)}
-                className="rounded-[10px] border px-4 py-2.5 text-[13.5px] font-semibold"
-                style={{
-                  borderColor: 'var(--border-subtle)',
-                  background: 'var(--bg-elevated)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {t(`${K}.askForDetails`)}
-              </button>
               <button
                 type="button"
                 onClick={() => onReject(request)}

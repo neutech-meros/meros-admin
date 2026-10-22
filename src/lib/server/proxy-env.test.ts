@@ -159,4 +159,18 @@ describe('getProxyEnv and isProxyEnabled', () => {
       /ADMIN_USER_DETAILS_PROXY_ENABLED/,
     );
   });
+
+  it('enables the categories proxy in production only when explicitly set to true', () => {
+    setEnv({ NODE_ENV: 'production', ADMIN_CATEGORIES_PROXY_ENABLED: 'true' });
+
+    expect(isProxyEnabled('ADMIN_CATEGORIES_PROXY_ENABLED')).toBe(true);
+  });
+
+  it('rejects a garbage value for the categories proxy flag instead of silently enabling it', () => {
+    setEnv({ NODE_ENV: 'production', ADMIN_CATEGORIES_PROXY_ENABLED: 'yes' });
+
+    expect(() => isProxyEnabled('ADMIN_CATEGORIES_PROXY_ENABLED')).toThrow(
+      /ADMIN_CATEGORIES_PROXY_ENABLED/,
+    );
+  });
 });
