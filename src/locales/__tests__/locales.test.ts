@@ -95,6 +95,60 @@ describe('admin.categoryRequests locales', () => {
     }
   });
 
+  it('translates every Portuguese and Spanish value instead of reusing the English text', () => {
+    const sharedWithEnglish = new Set(['table.status', 'rejectDialog.counter']);
+    const untranslated = enPaths.filter(
+      (path) =>
+        !sharedWithEnglish.has(path) &&
+        (leafValue(pt, path) === leafValue(en, path) ||
+          leafValue(es, path) === leafValue(en, path)),
+    );
+    expect(untranslated).toEqual([]);
+  });
+
+  it('has the keys of the reject dialog, conflict toasts, decision fields and list states', () => {
+    for (const path of [
+      'rejectDialog.title',
+      'rejectDialog.description',
+      'rejectDialog.reasonLabel',
+      'rejectDialog.tooLong',
+      'rejectDialog.confirm',
+      'toasts.nameExistsTitle',
+      'toasts.nameExistsDescription',
+      'toasts.alreadyResolvedTitle',
+      'toasts.notFoundTitle',
+      'toasts.approveFailedTitle',
+      'toasts.rejectFailedTitle',
+      'drawer.decidedOn',
+      'drawer.rejectionReason',
+      'emptyTitle',
+      'loadError',
+      'createModal.treeError',
+    ]) {
+      expect(enPaths).toContain(path);
+    }
+  });
+
+  it('no longer has the keys of the hidden "More info" status and the mock-only fields', () => {
+    for (const path of [
+      'tabMoreInfo',
+      'kpiMoreInfo',
+      'status.moreInfo',
+      'drawer.askForDetails',
+      'drawer.parentPath',
+      'drawer.account',
+      'drawer.communityVotes',
+      'drawer.whyTheyNeedIt',
+      'drawer.overlapCheck',
+      'table.parentPath',
+      'table.votes',
+      'toasts.detailsRequestedTitle',
+      'createModal.namePlaceholder',
+    ]) {
+      expect(enPaths).not.toContain(path);
+    }
+  });
+
   it('has the list states and pagination the screen renders', () => {
     for (const path of [
       'loading',

@@ -235,7 +235,6 @@
         "parentCategoryLabel": "Categoría principal",
         "subcategoryLabel": "Subcategoría",
         "nameLabel": "Nombre de la categoría",
-        "namePlaceholder": "Nombre de la categoría",
         "previewLabel": "Vista previa",
         "treeLoading": "Cargando categorías...",
         "treeError": "No se pudieron cargar las categorías. Inténtalo de nuevo.",
