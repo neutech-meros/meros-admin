@@ -212,6 +212,17 @@ describe('CategoryRequestsPage', () => {
     expect(screen.queryByRole('navigation', { name: 'Pagination' })).not.toBeInTheDocument();
   });
 
+  it('shows the load error when the category requests proxy is disabled', async () => {
+    serve(() => ({ status: 404, body: { error: 'This endpoint is disabled' } }));
+
+    render(<CategoryRequestsPage />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "Couldn't load category requests. Please try again later.",
+    );
+    await waitFor(() => expect(kpi('Pending review')).toHaveTextContent('—'));
+  });
+
   it('shows an error with a retry that reloads the list', async () => {
     let fail = true;
     const fetchMock = serve(
@@ -416,6 +427,33 @@ describe('CategoryRequestsPage decisions', () => {
     await waitFor(() => expect(listCalls(fetchMock).length).toBeGreaterThan(listBefore));
     expect(totalsCalls(fetchMock)).toBeGreaterThan(totalsBefore);
     expect(screen.queryByRole('button', { name: 'Create category' })).not.toBeInTheDocument();
+  });
+
+  it('approves a request as a subcategory under the chosen parent group', async () => {
+    const { posts } = serveDecisions();
+    const user = userEvent.setup();
+    render(<CategoryRequestsPage />);
+    await openCreateFromRow(user, 'Rooftop Bars');
+
+    await user.click(screen.getByRole('button', { name: 'Subcategory' }));
+    await user.click(screen.getByRole('button', { name: 'Create category' }));
+
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('Category created', {
+        description: '"Rooftop Bars" was added under Food.',
+      }),
+    );
+    expect(posts).toEqual([
+      {
+        path: '/api/admin/category-requests/r-1/approve',
+        body: {
+          level: 'CATEGORY',
+          groupId: 'group-food',
+          iconKey: expect.any(String),
+          status: 'ACTIVE',
+        },
+      },
+    ]);
   });
 
   it('approves a request under a parent and names the parent in the toast', async () => {
